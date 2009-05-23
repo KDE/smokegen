@@ -1,0 +1,34 @@
+
+set( EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR} )
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/testconfig.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/testconfig.h)
+
+
+########### next target ###############
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/.. ${CMAKE_CURRENT_SOURCE_DIR}/../rpp ${QT_INCLUDES} ${CMAKE_CURRENT_BINARY_DIR})
+
+set(parsertest_SRCS test_parser.cpp)
+
+QT4_GENERATE_MOC(${parsertest_SRCS} ${CMAKE_CURRENT_BINARY_DIR}/test_parser.moc)
+add_executable(parsertest ${parsertest_SRCS})
+target_link_libraries(parsertest ${QT_QTCORE_LIBRARY} ${QT_QTTEST_LIBRARY} cppparser)
+add_dependencies(parsertest test_parser.moc)
+
+########### next target ###############
+
+set(generatortest_SRCS test_generator.cpp)
+
+QT4_GENERATE_MOC(${parsertest_SRCS} ${CMAKE_CURRENT_BINARY_DIR}/test_generator.moc)
+add_executable(generatortest ${generatortest_SRCS})
+target_link_libraries(generatortest ${QT_QTCORE_LIBRARY} ${QT_QTTEST_LIBRARY} cppparser)
+add_dependencies(generatortest test_generator.moc)
+
+########### next target ###############
+
+set(pooltest_SRCS test_pool.cpp)
+
+
+add_executable(pooltest ${pooltest_SRCS})
+target_link_libraries(pooltest ${QT_QTCORE_LIBRARY} ${QT_QTTEST_LIBRARY} cppparser)
+
+
