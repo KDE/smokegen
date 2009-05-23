@@ -11,21 +11,22 @@
  *                                                                         *
  ***************************************************************************/
 
-#include <QtCore/QList>
+#include <QtCore/QStringList>
 #include <QtCore/QUrl>
+#include <QtDebug>
 
 #include "indexedstring.h"
 // #include "repositories/stringrepository.h"
 
 // #include "referencecounting.h"
 
-QList<QString> strings;
+Q_GLOBAL_STATIC(QStringList, strings);
 
 int getIndex(const QString& str) {
-    int idx = strings.indexOf(str);
+    int idx = strings()->indexOf(str);
     if (idx > -1) return idx;
-    strings.append(str);
-    return strings.count() - 1;
+    strings()->append(str);
+    return strings()->count() - 1;
 }
 
 IndexedString::IndexedString() : m_index(0) {
@@ -39,7 +40,7 @@ IndexedString::IndexedString( const char* str, unsigned short length, unsigned i
   else if(length == 1)
     m_index = 0xffff0000 | str[0];
   else {
-    m_index = getIndex(str);
+    m_index = getIndex(QString::fromUtf8(str, length));
     /*QMutexLocker lock(globalIndexedStringRepository->mutex());
     
     m_index = globalIndexedStringRepository->index(IndexedStringRepositoryItemRequest(str, hash ? hash : hashString(str, length), length));
@@ -65,7 +66,7 @@ IndexedString::IndexedString( const QUrl& url ) {
   else if(size == 1)
     m_index = 0xffff0000 | str[0];
   else {
-    m_index = getIndex(str);
+    m_index = getIndex(QString::fromUtf8(str));
     /*QMutexLocker lock(globalIndexedStringRepository->mutex());
     m_index = globalIndexedStringRepository->index(IndexedStringRepositoryItemRequest(str, hashString(str, size), size));
     
@@ -86,7 +87,7 @@ IndexedString::IndexedString( const QString& string ) {
   else if(size == 1)
     m_index = 0xffff0000 | str[0];
   else {
-    m_index = getIndex(str);
+    m_index = getIndex(string);
     /*QMutexLocker lock(globalIndexedStringRepository->mutex());
     m_index = globalIndexedStringRepository->index(IndexedStringRepositoryItemRequest(str, hashString(str, size), size));
 
@@ -102,7 +103,7 @@ IndexedString::IndexedString( const char* str) {
   else if(length == 1)
     m_index = 0xffff0000 | str[0];
   else {
-    m_index = getIndex(str);
+    m_index = getIndex(QString::fromUtf8(str));
     /*QMutexLocker lock(globalIndexedStringRepository->mutex());
     m_index = globalIndexedStringRepository->index(IndexedStringRepositoryItemRequest(str, hashString(str, length), length));
     
@@ -118,7 +119,7 @@ IndexedString::IndexedString( const QByteArray& str) {
   else if(length == 1)
     m_index = 0xffff0000 | str[0];
   else {
-    m_index = getIndex(str);
+    m_index = getIndex(QString::fromUtf8(str));
     /*QMutexLocker lock(globalIndexedStringRepository->mutex());
     m_index = globalIndexedStringRepository->index(IndexedStringRepositoryItemRequest(str, hashString(str, length), length));
     
@@ -181,7 +182,7 @@ QString IndexedString::str() const {
   else if((m_index & 0xffff0000) == 0xffff0000)
     return QString(QChar((char)m_index & 0xff));
   else
-    return strings.at(m_index); /*stringFromItem(globalIndexedStringRepository->itemFromIndex(m_index));*/
+    return strings()->at(m_index); /*stringFromItem(globalIndexedStringRepository->itemFromIndex(m_index));*/
 }
 
 int IndexedString::length() const {
@@ -190,7 +191,7 @@ int IndexedString::length() const {
   else if((m_index & 0xffff0000) == 0xffff0000)
     return 1;
   else
-    return strings.at(m_index).length(); /*globalIndexedStringRepository->itemFromIndex(m_index)->length;*/
+    return strings()->at(m_index).length(); /*globalIndexedStringRepository->itemFromIndex(m_index)->length;*/
 }
 
 QByteArray IndexedString::byteArray() const {
@@ -199,7 +200,7 @@ QByteArray IndexedString::byteArray() const {
   else if((m_index & 0xffff0000) == 0xffff0000)
     return QString(QChar((char)m_index & 0xff)).toUtf8();
   else
-    return strings.at(m_index).toUtf8(); /*arrayFromItem(globalIndexedStringRepository->itemFromIndex(m_index));*/
+    return strings()->at(m_index).toUtf8(); /*arrayFromItem(globalIndexedStringRepository->itemFromIndex(m_index));*/
 }
 
 unsigned int IndexedString::hashString(const char* str, unsigned short length) {
