@@ -20,7 +20,7 @@
 
 #include "pp-engine.h"
 
-#include <kdebug.h>
+#include <QtDebug>
 
 #include "preprocessor.h"
 #include "pp-environment.h"
@@ -37,7 +37,7 @@ int main (int /*argc*/, char *argv[])
   char const *filename = *++argv;
   if (!filename)
     {
-      kDebug(9007) << "usage: pp file.cpp";
+      qDebug() << "usage: pp file.cpp";
       return EXIT_FAILURE;
     }
 
@@ -57,7 +57,7 @@ int main (int /*argc*/, char *argv[])
 
   QStringList resultLines = result.split('\n');
   for (int i = 0; i < resultLines.count(); ++i)
-    kDebug(9007) << i << ":" << resultLines[i];
+    qDebug() << i << ":" << resultLines[i];
 
   preprocess.environment()->locationTable()->dump();
   
