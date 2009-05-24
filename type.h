@@ -99,7 +99,8 @@ class Member
 public:
     enum Flag {
         Virtual = 0x1,
-        Static = 0x2
+        PureVirtual = 0x2,
+        Static = 0x4
     };
     typedef QFlags<Flag> Flags;
 
