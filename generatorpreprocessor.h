@@ -27,7 +27,7 @@
 class Preprocessor : public rpp::Preprocessor
 {
 public:
-    Preprocessor(const QString& name = QString());
+    Preprocessor(const QString& fileName = QString());
     virtual ~Preprocessor();
     
     virtual rpp::Stream* sourceNeeded(QString& fileName, rpp::Preprocessor::IncludeType type, int sourceLine, bool skipCurrentPath);

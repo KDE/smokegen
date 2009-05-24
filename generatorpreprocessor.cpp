@@ -22,8 +22,8 @@
 #include <rpp/pp-engine.h>
 #include <rpp/pp-stream.h>
 
-Preprocessor::Preprocessor(const QString& name)
-    : m_fileName(name)
+Preprocessor::Preprocessor(const QString& fileName)
+    : m_fileName(fileName)
 {
     pp = new rpp::pp(this);
     pp->setEnvironment(new GeneratorEnvironment(pp));
