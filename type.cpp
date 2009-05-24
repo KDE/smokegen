@@ -19,4 +19,6 @@
 #include "type.h"
 
 QHash<QString, Class> classes;
+QHash<QString, Typedef> typedefs;
+QHash<QString, Function> functions;
 QHash<QString, Type> types;
