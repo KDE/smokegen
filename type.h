@@ -103,10 +103,14 @@ public:
     };
     typedef QFlags<Flag> Flags;
 
-    Member(const QString& name = QString(), Type* type = 0, Access access = Access_public) : m_name(name), m_type(type), m_access(access) {}
+    Member(Class* klass = 0, const QString& name = QString(), Type* type = 0, Access access = Access_public)
+        : m_class(klass), m_name(name), m_type(type), m_access(access) {}
     virtual ~Member() {}
 
-    bool isValid() { return (!m_name.isEmpty() && m_type); }
+    bool isValid() { return (!m_name.isEmpty() && m_type && m_class); }
+
+    void setClass(Class* klass) { m_class = klass; }
+    Class* getClass() { return m_class; }
 
     void setName(const QString& name) { m_name = name; }
     QString name() { return m_name; }
@@ -121,6 +125,7 @@ public:
     Flags flags() { return m_flags; }
 
 protected:
+    Class* m_class;
     QString m_name;
     Type* m_type;
     Access m_access;
@@ -151,8 +156,8 @@ typedef QList<Parameter> ParameterList;
 class Method : public Member
 {
 public:
-    Method(const QString& name = QString(), Type* type = 0, Access access = Access_public, ParameterList params = ParameterList())
-        : Member(name, type, access), m_params(params), m_isConstructor(false), m_isDestructor(false), m_isConst(false) {}
+    Method(Class* klass = 0, const QString& name = QString(), Type* type = 0, Access access = Access_public, ParameterList params = ParameterList())
+        : Member(klass, name, type, access), m_params(params), m_isConstructor(false), m_isDestructor(false), m_isConst(false) {}
     virtual ~Method() {}
 
     ParameterList parameters() { return m_params; }
@@ -177,7 +182,8 @@ protected:
 class Field : public Member
 {
 public:
-    Field(const QString& name = QString(), Type* type = 0, Access access = Access_public) : Member(name, type, access) {}
+    Field(Class* klass = 0, const QString& name = QString(), Type* type = 0, Access access = Access_public)
+        : Member(klass, name, type, access) {}
     virtual ~Field() {}
 };
 
