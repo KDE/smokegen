@@ -18,5 +18,5 @@
 
 #include "type.h"
 
-QList<Class> classes;
-QList<Type> types;
+QHash<QString, Class> classes;
+QHash<QString, Type> types;

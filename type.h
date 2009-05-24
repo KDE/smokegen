@@ -20,7 +20,7 @@
 #define TYPE_H
 
 #include <QString>
-#include <QList>
+#include <QHash>
 
 class Method;
 class Field;
@@ -72,16 +72,91 @@ private:
     QList<BaseClassSpecifier> m_bases;
 };
 
+class Type;
+
+class Typedef
+{
+public:
+    Typedef(Type* type, const QString& name) : m_type(type), m_name(name) {}
+
+    void setType(Type* type) { m_type = type; }
+    Type* type() { return m_type; }
+
+    void setName(const QString& name) { m_name = name; }
+    QString name() { return m_name; }
+
+private:
+    Type* m_type;
+    QString m_name;
+};
+
 class Member
 {
+public:
+    Member(const QString& name = QString(), Type* type = 0, Access access = Access_public) : m_name(name), m_type(type), m_access(access) {}
+    virtual ~Member() {}
+
+    void setName(const QString& name) { m_name = name; }
+    QString name() { return m_name; }
+
+    void setType(Type* type) { m_type = type; }
+    Type* type() { return m_type; }
+
+    void setAccess(Access access) { m_access = access; }
+    Access access() { return m_access; }
+
+protected:
+    QString m_name;
+    Type* m_type;
+    Access m_access;
 };
+
+class Parameter
+{
+public:
+    Parameter(const QString& name = QString(), Type* type = 0) : m_name(name), m_type(type) {}
+    virtual ~Parameter() {}
+
+    void setName(const QString& name) { m_name = name; }
+    QString name() { return m_name; }
+
+    void setType(Type* type) { m_type = type; }
+    Type* type() { return m_type; }
+
+protected:
+    QString m_name;
+    Type* m_type;
+};
+
+typedef QList<Parameter> ParameterList;
 
 class Method : public Member
 {
+public:
+    Method(const QString& name = QString(), Type* type = 0, Access access = Access_public, ParameterList params = ParameterList())
+        : Member(name, type, access), m_params(params), m_isConstructor(false), m_isDestructor(false) {}
+    virtual ~Method() {}
+
+    ParameterList parameters() { return m_params; }
+    void appendParameter(const Parameter& param) { m_params.append(param); }
+
+    void setIsConstructor(bool isCtor) { m_isConstructor = isCtor; }
+    bool isConstructor() { return m_isConstructor; }
+
+    void setIsDestructor(bool isDtor) { m_isDestructor = isDtor; }
+    bool isDestructor() { return m_isDestructor; }
+
+protected:
+    ParameterList m_params;
+    bool m_isConstructor;
+    bool m_isDestructor;
 };
 
 class Field : public Member
 {
+public:
+    Field(const QString& name = QString(), Type* type = 0, Access access = Access_public) : Member(name, type, access) {}
+    virtual ~Field() {}
 };
 
 class Type
@@ -90,7 +165,7 @@ public:
     
 };
 
-extern QList<Class> classes;
-extern QList<Type> types;
+extern QHash<QString, Class> classes;
+extern QHash<QString, Type> types;
 
 #endif // TYPE_H
