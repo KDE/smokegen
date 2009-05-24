@@ -1,7 +1,5 @@
 project(parser)
 
-find_package(Qt4 REQUIRED)
-
 add_subdirectory(tests)
 
 ########### next target ###############
@@ -42,6 +40,5 @@ set(cppparser_LIB_SRCS
 # Note: This library doesn't follow API/ABI/BC rules and shouldn't have a SOVERSION
 #       Its only purpose is to support the plugin without needing to add all source files
 #       to the plugin target
-include_directories(${QT_INCLUDES})
 add_library(cppparser SHARED ${cppparser_LIB_SRCS})
 target_link_libraries(cppparser ${QT_QTCORE_LIBRARY})

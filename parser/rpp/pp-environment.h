@@ -26,7 +26,8 @@
 #include <QMap>
 
 #include <QStack>
-// #include "pp-macro.h"
+
+#include "../indexedstring.h"
 
 namespace rpp {
 
