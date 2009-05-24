@@ -56,6 +56,7 @@ int main(int argc, char **argv)
     const QStringList& args = app.arguments();
 
     QList<QDir> includeDirs;
+    QList<QFileInfo> headerList;
     QFileInfo classList, definesList;
     QDir output;
 
@@ -76,10 +77,10 @@ int main(int argc, char **argv)
             showUsage();
             return EXIT_SUCCESS;
         } else {
-            qCritical() << "option" << args[i] <<  "not known";
-            return EXIT_FAILURE;
+            headerList << QFileInfo(args[i]);
         }
     }
+    
     if (!output.exists()) {
         qWarning() << "output directoy" << output.path() << "doesn't exist; creating it...";
         QDir::current().mkpath(output.path());
