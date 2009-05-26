@@ -186,18 +186,17 @@ void pp::handle_include(bool skip_current_path, Stream& input, Stream& output)
   QString includeName(QString::fromUtf8(stringFromContents(includeNameB)));
 
   Stream* include = m_preprocessor->sourceNeeded(includeName, quote == '"' ? Preprocessor::IncludeLocal : Preprocessor::IncludeGlobal, input.inputPosition().line, skip_current_path);
-  Q_ASSERT(!include);
 
-  /*if (include && !include->atEnd()) {
-    m_files.push(includeName);
+  if (include && !include->atEnd()) {
+//     m_files.push(IndexedString(includeName));
 
-    output.mark(includeName, 0);
+//     output.mark(Anchor(0, 0));
 
     operator()(*include, output);
 
     // restore the file name and sync the buffer
-    output.mark(m_files.pop(), input.inputPosition().line);
-  }*/
+//     output.mark(input.inputPosition());
+  }
 
   delete include;
 }
