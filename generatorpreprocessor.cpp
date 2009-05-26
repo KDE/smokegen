@@ -21,7 +21,7 @@
 
 #include <QtDebug>
 
-Preprocessor::Preprocessor(QList<QDir> includeDirs, QStringList defines, const QFileInfo& file)
+Preprocessor::Preprocessor(const QList<QDir>& includeDirs, const QStringList& defines, const QFileInfo& file)
     : m_includeDirs(includeDirs), m_defines(defines), m_file(file)
 {
     pp = new rpp::pp(this);

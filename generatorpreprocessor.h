@@ -34,7 +34,7 @@
 class Preprocessor : public rpp::Preprocessor
 {
 public:
-    Preprocessor(QList<QDir> includeDirs = QList<QDir>(), QStringList defines = QStringList(),
+    Preprocessor(const QList<QDir>& includeDirs = QList<QDir>(), const QStringList& defines = QStringList(),
                  const QFileInfo& file = QFileInfo());
     virtual ~Preprocessor();
     
