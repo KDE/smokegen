@@ -19,6 +19,9 @@
 #include "generatorpreprocessor.h"
 #include "generatorenvironment.h"
 
+#include <rpp/pp-environment.h>
+#include <rpp/pp-macro.h>
+
 #include <QtDebug>
 
 Preprocessor::Preprocessor(const QList<QDir>& includeDirs, const QStringList& defines, const QFileInfo& file)
@@ -28,6 +31,46 @@ Preprocessor::Preprocessor(const QList<QDir>& includeDirs, const QStringList& de
     pp->setEnvironment(new GeneratorEnvironment(pp));
     if (file.exists())
         m_fileStack.push(file);
+    
+    m_topBlock = new rpp::MacroBlock(0);
+    
+    // some basic definitions
+    rpp::pp_macro* exportMacro = new rpp::pp_macro;
+    exportMacro->name = IndexedString("__cplusplus");
+    exportMacro->definition.append(IndexedString('1'));
+    exportMacro->function_like = false;
+    exportMacro->variadics = false;
+    m_topBlock->setMacro(exportMacro);
+
+    exportMacro = new rpp::pp_macro;
+    exportMacro->name = IndexedString("__GNUC__");
+    exportMacro->definition.append(IndexedString('4'));
+    exportMacro->function_like = false;
+    exportMacro->variadics = false;
+    m_topBlock->setMacro(exportMacro);
+
+    exportMacro = new rpp::pp_macro;
+    exportMacro->name = IndexedString("__GNUC_MINOR__");
+    exportMacro->definition.append(IndexedString('1'));
+    exportMacro->function_like = false;
+    exportMacro->variadics = false;
+    m_topBlock->setMacro(exportMacro);
+
+    exportMacro = new rpp::pp_macro;
+    exportMacro->name = IndexedString("__linux__");
+    exportMacro->function_like = false;
+    exportMacro->variadics = false;
+    m_topBlock->setMacro(exportMacro);
+    
+    foreach (QString define, defines) {
+        exportMacro = new rpp::pp_macro;
+        exportMacro->name = IndexedString(define);
+        exportMacro->function_like = false;
+        exportMacro->variadics = false;
+        m_topBlock->setMacro(exportMacro);
+    }
+    
+    pp->environment()->visitBlock(m_topBlock);
 }
 
 

@@ -31,6 +31,10 @@
 #include <rpp/pp-stream.h>
 #include <rpp/preprocessor.h>
 
+namespace rpp {
+    class MacroBlock;
+}
+
 class Preprocessor : public rpp::Preprocessor
 {
 public:
@@ -54,6 +58,7 @@ public:
 
 private:
     rpp::pp *pp;
+    rpp::MacroBlock *m_topBlock;
     QList<QDir> m_includeDirs;
     QStringList m_defines;
     QFileInfo m_file;

@@ -32,6 +32,7 @@
 #include <iostream>
 
 #include "generatorpreprocessor.h"
+#include "generatorvisitor.h"
 
 void showUsage()
 {
@@ -117,6 +118,12 @@ int main(int argc, char **argv)
     
     foreach (QFileInfo file, headerList) {
         Preprocessor pp(includeDirs, defines, file);
-        qDebug() << stringFromContents(pp.preprocess());
+        Control c;
+        Parser parser(&c);
+        ParseSession session;
+        session.setContentsAndGenerateLocationTable(pp.preprocess());
+        TranslationUnitAST* ast = parser.parse(&session);
+        GeneratorVisitor visitor;
+        visitor.visit(ast);
     }
 }
