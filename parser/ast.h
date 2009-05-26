@@ -26,10 +26,6 @@
     enum { __node_kind = Kind_##k };
 
 class ParseSession;
-namespace KDevelop
-{
-class DUContext;
-}
 struct AccessSpecifierAST;
 struct AsmDefinitionAST;
 struct BaseClauseAST;
@@ -199,11 +195,6 @@ struct AST
 
   std::size_t start_token;
   std::size_t end_token;
-
-  /** Context opened by this AST
-    *This is usually not filled for all AST's, only for those that open a new context
-    */
-  KDevelop::DUContext* ducontext;
 };
 
 struct CommentAST {
