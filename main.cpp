@@ -33,6 +33,7 @@
 
 #include "generatorpreprocessor.h"
 #include "generatorvisitor.h"
+#include "type.h"
 
 void showUsage()
 {
@@ -123,7 +124,11 @@ int main(int argc, char **argv)
         ParseSession session;
         session.setContentsAndGenerateLocationTable(pp.preprocess());
         TranslationUnitAST* ast = parser.parse(&session);
-        GeneratorVisitor visitor;
+        GeneratorVisitor visitor(&session);
         visitor.visit(ast);
+    }
+    
+    foreach (const QString& str, ::classes.keys()) {
+        qDebug() << str;
     }
 }

@@ -19,17 +19,30 @@
 #ifndef PARSERVISITOR_H
 #define PARSERVISITOR_H
 
+#include <QStringList>
+#include <QStack>
+
 #include <default_visitor.h>
+#include <parsesession.h>
+#include <lexer.h>
+
+#include "type.h"
+
+class NameCompiler;
+class TypeCompiler;
 
 class GeneratorVisitor : public DefaultVisitor
 {
 public:
+    GeneratorVisitor(ParseSession *session);
 
 protected:
+    inline const Token& token(std::size_t token) { return m_session->token_stream->token(token); }
+
     virtual void visitAccessSpecifier(AccessSpecifierAST* node);
-    virtual void visitBaseClause(BaseClauseAST* node);
     virtual void visitBaseSpecifier(BaseSpecifierAST* node);
     virtual void visitClassSpecifier(ClassSpecifierAST* node);
+    virtual void visitDeclarator(DeclaratorAST* node);
     virtual void visitFunctionDefinition(FunctionDefinitionAST* node);
     virtual void visitNamespace(NamespaceAST* node);
     virtual void visitParameterDeclaration(ParameterDeclarationAST* node);
@@ -41,6 +54,21 @@ protected:
     virtual void visitTypedef(TypedefAST* node);
     virtual void visitUsing(UsingAST* node);
     virtual void visitUsingDirective(UsingDirectiveAST* node);
+
+private:
+    NameCompiler *nc;
+    TypeCompiler *tc;
+    
+    ParseSession *m_session;
+    
+    short createClass;
+    short inClass;
+    
+    Class::Kind kind;
+    QStack<Class*> klass;
+    QStack<Access> access;
+    
+    QStringList nspace;
 };
 
 #endif // PARSERVISITOR_H
