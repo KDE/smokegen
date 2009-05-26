@@ -19,9 +19,6 @@
 #include "generatorpreprocessor.h"
 #include "generatorenvironment.h"
 
-#include <rpp/pp-engine.h>
-#include <rpp/pp-stream.h>
-
 #include <QtDebug>
 
 Preprocessor::Preprocessor(QList<QDir> includeDirs, QStringList defines, const QFileInfo& file)
@@ -86,6 +83,12 @@ PreprocessedContents Preprocessor::preprocess()
 
 rpp::Stream* Preprocessor::sourceNeeded(QString& fileName, rpp::Preprocessor::IncludeType type, int sourceLine, bool skipCurrentPath)
 {
+    rpp::Stream *stream = 0;
+    if (type == rpp::Preprocessor::IncludeGlobal && m_cache.contains(fileName)) { 
+        stream = new rpp::Stream(&m_cache[fileName]);
+        return stream;
+    }
+    
     QString path;
     if (type == rpp::Preprocessor::IncludeLocal) {
         if (m_file.absoluteDir().exists(fileName))
@@ -104,7 +107,13 @@ rpp::Stream* Preprocessor::sourceNeeded(QString& fileName, rpp::Preprocessor::In
     file.open(QFile::ReadOnly);
     QByteArray array = file.readAll();
     file.close();
-    QHash<QString, PreprocessedContents>::iterator iter = m_cache.insert(fileName, convertFromByteArray(array));
-    return new rpp::Stream(&iter.value());
+    if (type == rpp::Preprocessor::IncludeGlobal) {
+        QHash<QString, PreprocessedContents>::iterator iter = m_cache.insert(fileName, convertFromByteArray(array));
+        stream = new rpp::Stream(&iter.value());
+    } else {
+        m_localContent.append(convertFromByteArray(array));
+        stream = new rpp::Stream(&m_localContent.last());
+    }
+    return stream;
 }
 

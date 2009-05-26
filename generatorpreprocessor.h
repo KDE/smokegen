@@ -56,6 +56,7 @@ private:
     QFileInfo m_file;
     PreprocessedContents m_contents;
     QHash<QString, PreprocessedContents> m_cache;
+    QList<PreprocessedContents> m_localContent;
 };
 
 #endif // GENERATORPREPROCESSOR_H
