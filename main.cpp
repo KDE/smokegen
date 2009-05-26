@@ -116,8 +116,7 @@ int main(int argc, char **argv)
     }
     
     foreach (QFileInfo file, headerList) {
-        Preprocessor pp;
-        pp.setFile(file);
+        Preprocessor pp(includeDirs, defines, file);
         qDebug() << stringFromContents(pp.preprocess());
     }
 }

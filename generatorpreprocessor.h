@@ -23,9 +23,12 @@
 #include <QFileInfo>
 #include <QHash>
 #include <QList>
+#include <QPair>
+#include <QStack>
 #include <QString>
 
 #include <rpp/pp-engine.h>
+#include <rpp/pp-stream.h>
 #include <rpp/preprocessor.h>
 
 class Preprocessor : public rpp::Preprocessor
@@ -55,8 +58,19 @@ private:
     QStringList m_defines;
     QFileInfo m_file;
     PreprocessedContents m_contents;
-    QHash<QString, PreprocessedContents> m_cache;
+    QHash<QString, QPair<QFileInfo, PreprocessedContents> > m_cache;
     QList<PreprocessedContents> m_localContent;
+    QStack<QFileInfo> m_fileStack;
+};
+
+class HeaderStream : public rpp::Stream
+{
+public:
+    HeaderStream(PreprocessedContents* contents, QStack<QFileInfo>* stack) : rpp::Stream(contents), m_stack(stack) {}
+    virtual ~HeaderStream() { m_stack->pop(); }
+
+private:
+    QStack<QFileInfo>* m_stack;
 };
 
 #endif // GENERATORPREPROCESSOR_H

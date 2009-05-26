@@ -26,6 +26,8 @@ Preprocessor::Preprocessor(QList<QDir> includeDirs, QStringList defines, const Q
 {
     pp = new rpp::pp(this);
     pp->setEnvironment(new GeneratorEnvironment(pp));
+    if (file.exists())
+        m_fileStack.push(file);
 }
 
 
@@ -36,6 +38,8 @@ Preprocessor::~Preprocessor()
 
 void Preprocessor::setFile(const QFileInfo& file)
 {
+    m_fileStack.clear();
+    m_fileStack.push(file);
     m_file = file;
 }
 
@@ -83,16 +87,17 @@ PreprocessedContents Preprocessor::preprocess()
 
 rpp::Stream* Preprocessor::sourceNeeded(QString& fileName, rpp::Preprocessor::IncludeType type, int sourceLine, bool skipCurrentPath)
 {
-    rpp::Stream *stream = 0;
+    // are the contents already cached?
     if (type == rpp::Preprocessor::IncludeGlobal && m_cache.contains(fileName)) { 
-        stream = new rpp::Stream(&m_cache[fileName]);
-        return stream;
+        QPair<QFileInfo, PreprocessedContents>& cached = m_cache[fileName];
+        m_fileStack.push(cached.first);
+        return new HeaderStream(&cached.second, &m_fileStack);
     }
     
     QString path;
     if (type == rpp::Preprocessor::IncludeLocal) {
-        if (m_file.absoluteDir().exists(fileName))
-            path = m_file.absoluteDir().filePath(fileName);
+        if (m_fileStack.last().absoluteDir().exists(fileName))
+            path = m_fileStack.last().absoluteDir().filePath(fileName);
     } else {
         foreach (QDir dir, m_includeDirs) {
             if (dir.exists(fileName)) {
@@ -101,19 +106,32 @@ rpp::Stream* Preprocessor::sourceNeeded(QString& fileName, rpp::Preprocessor::In
             }
         }
     }
+    
     if (path.isEmpty())
         return 0;
+    
     QFile file(path);
     file.open(QFile::ReadOnly);
     QByteArray array = file.readAll();
     file.close();
+    
     if (type == rpp::Preprocessor::IncludeGlobal) {
-        QHash<QString, PreprocessedContents>::iterator iter = m_cache.insert(fileName, convertFromByteArray(array));
-        stream = new rpp::Stream(&iter.value());
+        // cache the identifier (fileName), the accompanying QFileInfo and the contents
+        QHash<QString, QPair<QFileInfo, PreprocessedContents> >::iterator iter =
+            m_cache.insert(fileName, qMakePair(QFileInfo(path), convertFromByteArray(array)));
+        /* Push the QFileInfo of the included file on the file stack, so if sourceNeeded() is called for that file,
+           we know where to search for headers included with a IncludeLocal. The HeaderStream will be destroyed when the
+           file has been processed and it'll then pop() the stack */
+        m_fileStack.push(iter.value().first);
+        return new HeaderStream(&iter.value().second, &m_fileStack);
     } else {
+        /* Don't cache locally included files - the meaning of a file name may change when recursing into
+           other directories.
+           We also don't need to push any files on the fileStack because the directory for local includes is
+           not changing. */
         m_localContent.append(convertFromByteArray(array));
-        stream = new rpp::Stream(&m_localContent.last());
+        return new rpp::Stream(&m_localContent.last());
     }
-    return stream;
+    return 0;
 }
 
