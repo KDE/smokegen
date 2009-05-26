@@ -114,4 +114,10 @@ int main(int argc, char **argv)
         }
         file.close();
     }
+    
+    foreach (QFileInfo file, headerList) {
+        Preprocessor pp;
+        pp.setFile(file);
+        qDebug() << stringFromContents(pp.preprocess());
+    }
 }

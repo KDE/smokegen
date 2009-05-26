@@ -19,6 +19,10 @@
 #ifndef GENERATORPREPROCESSOR_H
 #define GENERATORPREPROCESSOR_H
 
+#include <QDir>
+#include <QFileInfo>
+#include <QHash>
+#include <QList>
 #include <QString>
 
 #include <rpp/pp-engine.h>
@@ -27,21 +31,31 @@
 class Preprocessor : public rpp::Preprocessor
 {
 public:
-    Preprocessor(const QString& fileName = QString());
+    Preprocessor(QList<QDir> includeDirs = QList<QDir>(), QStringList defines = QStringList(),
+                 const QFileInfo& file = QFileInfo());
     virtual ~Preprocessor();
     
     virtual rpp::Stream* sourceNeeded(QString& fileName, rpp::Preprocessor::IncludeType type, int sourceLine, bool skipCurrentPath);
 
-    void setFileName(const QString& name);
-    QString fileName();
+    void setFile(const QFileInfo& file);
+    QFileInfo file();
+    
+    void setIncludeDirs(QList<QDir> dirs);
+    QList<QDir> includeDirs();
+    
+    void setDefines(QStringList defines);
+    QStringList defines();
     
     PreprocessedContents preprocess();
     PreprocessedContents lastContents();
 
 private:
     rpp::pp *pp;
-    QString m_fileName;
+    QList<QDir> m_includeDirs;
+    QStringList m_defines;
+    QFileInfo m_file;
     PreprocessedContents m_contents;
+    QHash<QString, PreprocessedContents> m_cache;
 };
 
 #endif // GENERATORPREPROCESSOR_H

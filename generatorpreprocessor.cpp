@@ -22,8 +22,10 @@
 #include <rpp/pp-engine.h>
 #include <rpp/pp-stream.h>
 
-Preprocessor::Preprocessor(const QString& fileName)
-    : m_fileName(fileName)
+#include <QtDebug>
+
+Preprocessor::Preprocessor(QList<QDir> includeDirs, QStringList defines, const QFileInfo& file)
+    : m_includeDirs(includeDirs), m_defines(defines), m_file(file)
 {
     pp = new rpp::pp(this);
     pp->setEnvironment(new GeneratorEnvironment(pp));
@@ -35,14 +37,38 @@ Preprocessor::~Preprocessor()
     delete pp;
 }
 
-void Preprocessor::setFileName(const QString& name)
+void Preprocessor::setFile(const QFileInfo& file)
 {
-    m_fileName = name;
+    m_file = file;
 }
 
-QString Preprocessor::fileName()
+QFileInfo Preprocessor::file()
 {
-    return m_fileName;
+    return m_file;
+}
+
+
+void Preprocessor::setIncludeDirs(QList< QDir > dirs)
+{
+    m_includeDirs = dirs;
+}
+
+
+QList< QDir > Preprocessor::includeDirs()
+{
+    return m_includeDirs;
+}
+
+
+void Preprocessor::setDefines(QStringList defines)
+{
+    m_defines = defines;
+}
+
+
+QStringList Preprocessor::defines()
+{
+    return m_defines;
 }
 
 
@@ -54,12 +80,31 @@ PreprocessedContents Preprocessor::lastContents()
 
 PreprocessedContents Preprocessor::preprocess()
 {
-    m_contents = pp->processFile(m_fileName);
+    m_contents = pp->processFile(m_file.absoluteFilePath());
     return m_contents;
 }
 
 rpp::Stream* Preprocessor::sourceNeeded(QString& fileName, rpp::Preprocessor::IncludeType type, int sourceLine, bool skipCurrentPath)
 {
-    return rpp::Preprocessor::sourceNeeded(fileName, type, sourceLine, skipCurrentPath);
+    QString path;
+    if (type == rpp::Preprocessor::IncludeLocal) {
+        if (m_file.absoluteDir().exists(fileName))
+            path = m_file.absoluteDir().filePath(fileName);
+    } else {
+        foreach (QDir dir, m_includeDirs) {
+            if (dir.exists(fileName)) {
+                path = dir.filePath(fileName);
+                break;
+            }
+        }
+    }
+    if (path.isEmpty())
+        return 0;
+    QFile file(path);
+    file.open(QFile::ReadOnly);
+    QByteArray array = file.readAll();
+    file.close();
+    QHash<QString, PreprocessedContents>::iterator iter = m_cache.insert(fileName, convertFromByteArray(array));
+    return new rpp::Stream(&iter.value());
 }
 
