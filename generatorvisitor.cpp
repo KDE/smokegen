@@ -25,7 +25,8 @@
 
 #include <QtDebug>
 
-GeneratorVisitor::GeneratorVisitor(ParseSession *session) : m_session(session), inClass(0), pointerDepth(0), isRef(0)
+GeneratorVisitor::GeneratorVisitor(ParseSession *session) 
+    : m_session(session), createType(false), inClass(0), pointerDepth(0), isRef(0), currentTypeRef(0)
 {
     nc = new NameCompiler(m_session);
     tc = new TypeCompiler(m_session);
@@ -129,26 +130,32 @@ void GeneratorVisitor::visitClassSpecifier(ClassSpecifierAST* node)
 
 void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
 {
-    // finish currentType
-    QVector<bool> pointerDepth;
-    bool isRef = false;
-    this->pointerDepth = &pointerDepth;
-    this->isRef = &isRef;
-    visitNodes(this, node->ptr_ops);
-    this->pointerDepth = 0;
-    this->isRef = 0;
-    
-    currentType.setPointerDepth(pointerDepth.count());
-    for (int i = 0; i < pointerDepth.count(); i++) {
-        if (pointerDepth[i])
-            currentType.setIsConstPointer(i, true);
+    if (createType) {
+        // finish currentType
+        QVector<bool> pointerDepth;
+        bool isRef = false;
+        this->pointerDepth = &pointerDepth;
+        this->isRef = &isRef;
+        visitNodes(this, node->ptr_ops);
+        this->pointerDepth = 0;
+        this->isRef = 0;
+        
+        currentType.setPointerDepth(pointerDepth.count());
+        for (int i = 0; i < pointerDepth.count(); i++) {
+            if (pointerDepth[i])
+                currentType.setIsConstPointer(i, true);
+        }
+        currentType.setIsRef(isRef);
+        
+        QString typeString = currentType.toString();
+        if (types.contains(typeString)) {
+            currentTypeRef = &types[typeString];
+        } else {
+            QHash<QString, Type>::iterator iter = types.insert(typeString, currentType);
+            currentTypeRef = &iter.value();
+        }
+        createType = false;
     }
-    currentType.setIsRef(isRef);
-    
-    QString typeStr = currentType.toString();
-    if (!typeStr.isEmpty())
-        types[typeStr] = currentType;
-    
     DefaultVisitor::visitDeclarator(node);
 }
 
@@ -211,6 +218,7 @@ void GeneratorVisitor::visitSimpleTypeSpecifier(SimpleTypeSpecifierAST* node)
         currentType = Type(klass, tc->isConstant(), tc->isVolatile());
     else
         currentType = Type(tc->qualifiedName().join("::"), tc->isConstant(), tc->isVolatile());
+    createType = true;
     DefaultVisitor::visitSimpleTypeSpecifier(node);
 }
 

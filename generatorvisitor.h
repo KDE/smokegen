@@ -62,12 +62,14 @@ private:
     
     ParseSession *m_session;
     
+    bool createType;
     short inClass;
     
     QVector<bool> *pointerDepth;
     bool *isRef;
     
     Type currentType;
+    Type* currentTypeRef;
     Class::Kind kind;
     QStack<Class*> klass;
     QStack<Access> access;
