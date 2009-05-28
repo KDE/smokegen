@@ -38,6 +38,8 @@ public:
 
 protected:
     inline const Token& token(std::size_t token) { return m_session->token_stream->token(token); }
+    QPair<bool, bool> parseCv(const ListNode<std::size_t> *cv);
+    Class* resolveClassName(const QString& name);
 
     virtual void visitAccessSpecifier(AccessSpecifierAST* node);
     virtual void visitBaseSpecifier(BaseSpecifierAST* node);
@@ -46,7 +48,6 @@ protected:
     virtual void visitFunctionDefinition(FunctionDefinitionAST* node);
     virtual void visitNamespace(NamespaceAST* node);
     virtual void visitParameterDeclaration(ParameterDeclarationAST* node);
-    virtual void visitParameterDeclarationClause(ParameterDeclarationClauseAST* node);
     virtual void visitPtrOperator(PtrOperatorAST* node);
     virtual void visitSimpleDeclaration(SimpleDeclarationAST* node);
     virtual void visitSimpleTypeSpecifier(SimpleTypeSpecifierAST* node);
@@ -61,12 +62,18 @@ private:
     
     ParseSession *m_session;
     
-    short createClass;
     short inClass;
     
+    QVector<bool> *pointerDepth;
+    bool *isRef;
+    
+    Type currentType;
     Class::Kind kind;
     QStack<Class*> klass;
     QStack<Access> access;
+    
+    QStack<QStringList> usingTypes;
+    QStack<QStringList> usingNamespaces;
     
     QStringList nspace;
 };

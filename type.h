@@ -46,13 +46,17 @@ public:
         bool isVirtual;
     };
     
-    Class(const QString& name = QString(), Kind kind = Kind_Class) : m_name(name), m_kind(kind) {}
+    Class(const QString& name = QString(), const QString nspace = QString(), Kind kind = Kind_Class)
+          : m_name(name), m_nspace(nspace), m_kind(kind) {}
     ~Class() {}
     
     bool isValid() { return !m_name.isEmpty(); }
     
     void setName(const QString& name) { m_name = name; }
     QString name() { return m_name; } const
+    
+    void setNameSpace(const QString& nspace) { m_nspace = nspace; }
+    QString nameSpace() { return m_nspace; }
     
     void setKind(Kind kind) { m_kind = kind; }
     Kind kind() { return m_kind; } const
@@ -68,6 +72,7 @@ public:
     
 private:
     QString m_name;
+    QString m_nspace;
     Kind m_kind;
     QList<Method> m_methods;
     QList<Field> m_fields;
@@ -79,7 +84,7 @@ class Type;
 class Typedef
 {
 public:
-    Typedef(Type* type, const QString& name) : m_type(type), m_name(name) {}
+    Typedef(Type* type, const QString& name, const QString nspace = QString()) : m_type(type), m_name(name), m_nspace(nspace) {}
 
     bool isValid() { return (!m_name.isEmpty() && m_type); }
 
@@ -89,9 +94,13 @@ public:
     void setName(const QString& name) { m_name = name; }
     QString name() { return m_name; }
 
+    void setNameSpace(const QString& nspace) { m_nspace = nspace; }
+    QString nameSpace() { return m_nspace; }
+
 private:
     Type* m_type;
     QString m_name;
+    QString m_nspace;
 };
 
 class Member
@@ -220,16 +229,35 @@ class Type
 public:
     Type(Class* klass = 0, bool isConst = false, bool isVolatile = false, int pointerDepth = 0, bool isRef = false)
         : m_class(klass), m_typedef(0), m_isConst(isConst), m_isVolatile(isVolatile), m_pointerDepth(pointerDepth), m_isRef(isRef) {}
-    Type(Typedef* tdef = 0, bool isConst = false, bool isVolatile = false, int pointerDepth = 0, bool isRef = false)
+    Type(Typedef* tdef, bool isConst = false, bool isVolatile = false, int pointerDepth = 0, bool isRef = false)
         : m_class(0), m_typedef(tdef), m_isConst(isConst), m_isVolatile(isVolatile), m_pointerDepth(pointerDepth), m_isRef(isRef) {}
+    Type(const QString& name, bool isConst = false, bool isVolatile = false, int pointerDepth = 0, bool isRef = false)
+        : m_class(0), m_typedef(0), m_name(name), m_isConst(isConst), m_isVolatile(isVolatile), m_pointerDepth(pointerDepth), m_isRef(isRef) {}
 
     void setClass(Class* klass) { m_class = klass; m_typedef = 0; }
     Class* getClass() { return m_class; }
     
     void setTypedef(Typedef* tdef) { m_typedef = tdef; m_class = 0; }
     Typedef* getTypedef() { return m_typedef; }
-    
-    bool isValid() { return (m_class || m_typedef); }
+
+    void setName(const QString& name) { m_name = name; }
+    QString name() {
+        if (!m_name.isEmpty())
+            return m_name;
+        QString ret;
+        if (m_class) {
+            if (!m_class->nameSpace().isEmpty())
+                ret += m_class->nameSpace() + "::";
+            ret += m_class->name();
+        } else if (m_typedef) {
+            if (!m_typedef->nameSpace().isEmpty())
+                ret += m_typedef->nameSpace() + "::";
+            ret += m_typedef->name();
+        }
+        return ret;
+    }
+
+    bool isValid() { return (m_class || m_typedef || !m_name.isEmpty()); }
     
     void setIsConst(bool isConst) { m_isConst = isConst; }
     bool isConst() { return m_isConst; }
@@ -245,9 +273,23 @@ public:
     void setIsRef(bool isRef) { m_isRef = isRef; }
     bool isRef() { return m_isRef; }
 
+    QString toString() {
+        QString ret;
+        if (m_isVolatile) ret += "volatile ";
+        if (m_isConst) ret += "const ";
+        ret += name();
+        for (int i = 0; i < m_pointerDepth; i++) {
+            if (isConstPointer(i)) ret += " const ";
+            ret += "*";
+        }
+        if (m_isRef) ret += "&";
+        return ret;
+    }
+
 protected:
     Class* m_class;
     Typedef* m_typedef;
+    QString m_name;
     bool m_isConst, m_isVolatile;
     int m_pointerDepth;
     QHash<int, bool> m_constPointer;

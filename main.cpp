@@ -127,8 +127,4 @@ int main(int argc, char **argv)
         GeneratorVisitor visitor(&session);
         visitor.visit(ast);
     }
-    
-    foreach (const QString& str, ::classes.keys()) {
-        qDebug() << str;
-    }
 }
