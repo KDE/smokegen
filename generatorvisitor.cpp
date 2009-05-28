@@ -26,7 +26,7 @@
 #include <QtDebug>
 
 GeneratorVisitor::GeneratorVisitor(ParseSession *session) 
-    : m_session(session), createType(false), inClass(0), pointerDepth(0), isRef(0), currentTypeRef(0)
+    : m_session(session), createType(false), createTypedef(false), inClass(0), pointerDepth(0), isRef(0), currentTypeRef(0)
 {
     nc = new NameCompiler(m_session);
     tc = new TypeCompiler(m_session);
@@ -134,9 +134,11 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
         // finish currentType
         QVector<bool> pointerDepth;
         bool isRef = false;
+        // set global pointers to these vars so visitPtrOperator() can access them
         this->pointerDepth = &pointerDepth;
         this->isRef = &isRef;
         visitNodes(this, node->ptr_ops);
+        // set them to 0 again so nothing bad will happen
         this->pointerDepth = 0;
         this->isRef = 0;
         
@@ -149,12 +151,26 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
         
         QString typeString = currentType.toString();
         if (types.contains(typeString)) {
+            // store a reference to the just created type
             currentTypeRef = &types[typeString];
         } else {
             QHash<QString, Type>::iterator iter = types.insert(typeString, currentType);
             currentTypeRef = &iter.value();
         }
+        
+        // done with creating the type
         createType = false;
+    }
+    if (createTypedef) {
+        // we've just created the type that the typedef points to
+        // so we just need to get the new name and store it
+        nc->run(node->id);
+        QStringList name = nspace;
+        name.append(nc->name());
+        QString joined = name.join("::");
+        if (!typedefs.contains(joined))
+            typedefs[joined] = Typedef(currentTypeRef, nc->name(), nspace.join("::"));
+        createTypedef = false;
     }
     DefaultVisitor::visitDeclarator(node);
 }
@@ -170,6 +186,7 @@ void GeneratorVisitor::visitNamespace(NamespaceAST* node)
     usingTypes.push(QStringList());
     usingNamespaces.push(QStringList());
     DefaultVisitor::visitNamespace(node);
+    // using directives in that namespace aren't interesting anymore :)
     usingTypes.pop();
     usingNamespaces.pop();
     nspace.pop_back();
@@ -229,6 +246,7 @@ void GeneratorVisitor::visitTemplateDeclaration(TemplateDeclarationAST* node)
 
 void GeneratorVisitor::visitTypedef(TypedefAST* node)
 {
+    createTypedef = true;
     DefaultVisitor::visitTypedef(node);
 }
 

@@ -84,7 +84,7 @@ class Type;
 class Typedef
 {
 public:
-    Typedef(Type* type, const QString& name, const QString nspace = QString()) : m_type(type), m_name(name), m_nspace(nspace) {}
+    Typedef(Type* type = 0, const QString& name = QString(), const QString nspace = QString()) : m_type(type), m_name(name), m_nspace(nspace) {}
 
     bool isValid() { return (!m_name.isEmpty() && m_type); }
 

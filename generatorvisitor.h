@@ -63,6 +63,7 @@ private:
     ParseSession *m_session;
     
     bool createType;
+    bool createTypedef;
     short inClass;
     
     QVector<bool> *pointerDepth;
