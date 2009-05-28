@@ -39,7 +39,7 @@ public:
 protected:
     inline const Token& token(std::size_t token) { return m_session->token_stream->token(token); }
     QPair<bool, bool> parseCv(const ListNode<std::size_t> *cv);
-    Class* resolveClassName(const QString& name);
+    QPair<Class*, Typedef*> resolveType(const QString& name);
 
     virtual void visitAccessSpecifier(AccessSpecifierAST* node);
     virtual void visitBaseSpecifier(BaseSpecifierAST* node);

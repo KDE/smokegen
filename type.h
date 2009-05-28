@@ -242,8 +242,6 @@ public:
 
     void setName(const QString& name) { m_name = name; }
     QString name() {
-        if (!m_name.isEmpty())
-            return m_name;
         QString ret;
         if (m_class) {
             if (!m_class->nameSpace().isEmpty())
@@ -253,6 +251,8 @@ public:
             if (!m_typedef->nameSpace().isEmpty())
                 ret += m_typedef->nameSpace() + "::";
             ret += m_typedef->name();
+        } else {
+            return m_name;
         }
         return ret;
     }

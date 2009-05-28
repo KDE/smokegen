@@ -55,13 +55,17 @@ QPair<bool, bool> GeneratorVisitor::parseCv(const ListNode<std::size_t> *cv)
     return ret;
 }
 
-Class* GeneratorVisitor::resolveClassName(const QString & name)
+QPair<Class*, Typedef*> GeneratorVisitor::resolveType(const QString & name)
 {
     // check for 'using type;'
     foreach (const QStringList& list, usingTypes) {
         foreach (const QString& string, list) {
-            if (string.endsWith(name) && classes.contains(string))
-                return &classes[string];
+            if (string.endsWith(name)) {
+                if (classes.contains(string))
+                    return qMakePair<Class*, Typedef*>(&classes[string], 0);
+                else if (typedefs.contains(string))
+                    return qMakePair<Class*, Typedef*>(0, &typedefs[string]);
+            }
         }
     }
 
@@ -71,7 +75,9 @@ Class* GeneratorVisitor::resolveClassName(const QString & name)
         nspace.push_back(name);
         QString n = nspace.join("::");
         if (classes.contains(n))
-            return &classes[n];
+            return qMakePair<Class*, Typedef*>(&classes[n], 0);
+        else if (typedefs.contains(n))
+            return qMakePair<Class*, Typedef*>(0, &typedefs[n]);
         nspace.pop_back();
         if (!nspace.isEmpty())
             nspace.pop_back();
@@ -82,11 +88,13 @@ Class* GeneratorVisitor::resolveClassName(const QString & name)
         foreach (const QString& string, list) {
             QString cname = string + "::" + name;
             if (classes.contains(cname))
-                return &classes[cname];
+                return qMakePair<Class*, Typedef*>(&classes[cname], 0);
+            else if (typedefs.contains(cname))
+                return qMakePair<Class*, Typedef*>(0, &typedefs[cname]);
         }
     }
 
-    return 0;
+    return qMakePair<Class*, Typedef*>(0, 0);
 }
 
 void GeneratorVisitor::visitAccessSpecifier(AccessSpecifierAST* node)
@@ -230,9 +238,11 @@ void GeneratorVisitor::visitSimpleDeclaration(SimpleDeclarationAST* node)
 void GeneratorVisitor::visitSimpleTypeSpecifier(SimpleTypeSpecifierAST* node)
 {
     tc->run(node);
-    Class* klass = resolveClassName(tc->qualifiedName().last());
-    if (klass)
-        currentType = Type(klass, tc->isConstant(), tc->isVolatile());
+    QPair<Class*, Typedef*> klass = resolveType(tc->qualifiedName().last());
+    if (klass.first)
+        currentType = Type(klass.first, tc->isConstant(), tc->isVolatile());
+    if (klass.second)
+        currentType = Type(klass.second, tc->isConstant(), tc->isVolatile());
     else
         currentType = Type(tc->qualifiedName().join("::"), tc->isConstant(), tc->isVolatile());
     createType = true;
