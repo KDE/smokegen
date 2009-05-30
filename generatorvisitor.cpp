@@ -25,8 +25,9 @@
 
 #include <QtDebug>
 
-GeneratorVisitor::GeneratorVisitor(ParseSession *session) 
-    : m_session(session), createType(false), createTypedef(false), inClass(0), pointerDepth(0), isRef(0), currentTypeRef(0)
+GeneratorVisitor::GeneratorVisitor(ParseSession *session, bool resolveTypedefs) 
+    : m_session(session), m_resolveTypedefs(resolveTypedefs), createType(false), createTypedef(false),
+      inClass(0), pointerDepth(0), isRef(0), currentTypeRef(0)
 {
     nc = new NameCompiler(m_session);
     tc = new TypeCompiler(m_session);
@@ -97,6 +98,35 @@ QPair<Class*, Typedef*> GeneratorVisitor::resolveType(const QString & name)
     return qMakePair<Class*, Typedef*>(0, 0);
 }
 
+Type GeneratorVisitor::resolveTypedef(const Typedef* tdef)
+{
+    bool isRef = false, isConst = false, isVolatile = false;
+    QList<bool> pointerDepth;
+    const Type* t = tdef->type();
+    for (int i = 0; i < t->pointerDepth(); i++) {
+        pointerDepth.append(t->isConstPointer(i));
+    }
+    while (t->getTypedef()) {
+        if (!isRef) isRef = t->isRef();
+        if (!isConst) isConst = t->isConst();
+        if (!isVolatile) isVolatile = t->isVolatile();
+        t = t->getTypedef()->type();
+        for (int i = t->pointerDepth() - 1; i >= 0; i--) {
+            pointerDepth.prepend(t->isConstPointer(i));
+        }
+    }
+    Type ret = *t;
+    if (isRef) ret.setIsRef(true);
+    if (isConst) ret.setIsConst(true);
+    if (isVolatile) ret.setIsVolatile(true);
+    
+    ret.setPointerDepth(pointerDepth.count());
+    for (int i = 0; i < pointerDepth.count(); i++) {
+        ret.setIsConstPointer(i, pointerDepth[i]);
+    }
+    return ret;
+}
+
 void GeneratorVisitor::visitAccessSpecifier(AccessSpecifierAST* node)
 {
     if (!inClass) {
@@ -150,12 +180,13 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
         this->pointerDepth = 0;
         this->isRef = 0;
         
-        currentType.setPointerDepth(pointerDepth.count());
+        int offset = currentType.pointerDepth();
+        currentType.setPointerDepth(offset + pointerDepth.count());
         for (int i = 0; i < pointerDepth.count(); i++) {
             if (pointerDepth[i])
-                currentType.setIsConstPointer(i, true);
+                currentType.setIsConstPointer(offset + i, true);
         }
-        currentType.setIsRef(isRef);
+        if (isRef) currentType.setIsRef(true);
         
         QString typeString = currentType.toString();
         if (types.contains(typeString)) {
@@ -239,12 +270,19 @@ void GeneratorVisitor::visitSimpleTypeSpecifier(SimpleTypeSpecifierAST* node)
 {
     tc->run(node);
     QPair<Class*, Typedef*> klass = resolveType(tc->qualifiedName().last());
-    if (klass.first)
+    if (klass.first) {
         currentType = Type(klass.first, tc->isConstant(), tc->isVolatile());
-    if (klass.second)
-        currentType = Type(klass.second, tc->isConstant(), tc->isVolatile());
-    else
+    } else if (klass.second) {
+        if (!m_resolveTypedefs) {
+            currentType = Type(klass.second, tc->isConstant(), tc->isVolatile());
+        } else {
+            currentType = resolveTypedef(klass.second);
+            if (tc->isConstant()) currentType.setIsConst(true);
+            if (tc->isVolatile()) currentType.setIsVolatile(true);
+        }
+    } else {
         currentType = Type(tc->qualifiedName().join("::"), tc->isConstant(), tc->isVolatile());
+    }
     createType = true;
     DefaultVisitor::visitSimpleTypeSpecifier(node);
 }

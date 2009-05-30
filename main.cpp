@@ -61,6 +61,7 @@ int main(int argc, char **argv)
     QList<QFileInfo> headerList;
     QFileInfo classList, definesList;
     QDir output;
+    bool resolveTypdefs = false;
 
     for (int i = 1; i < args.count(); i++) {
         if ((args[i] == "-I" || args[i] == "-c" || args[i] == "-d" || args[i] == "-o") && i + 1 >= args.count()) {
@@ -78,6 +79,8 @@ int main(int argc, char **argv)
         } else if (args[i] == "-h") {
             showUsage();
             return EXIT_SUCCESS;
+        } else if (args[i] == "-t") {
+            resolveTypdefs = true;
         } else {
             headerList << QFileInfo(args[i]);
         }
@@ -124,7 +127,7 @@ int main(int argc, char **argv)
         ParseSession session;
         session.setContentsAndGenerateLocationTable(pp.preprocess());
         TranslationUnitAST* ast = parser.parse(&session);
-        GeneratorVisitor visitor(&session);
+        GeneratorVisitor visitor(&session, resolveTypdefs);
         visitor.visit(ast);
     }
 }
