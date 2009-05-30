@@ -71,6 +71,7 @@ private:
     bool *isRef;
     bool isStatic;
     bool isVirtual;
+    bool isPureVirtual;
     
     Type currentType;
     Type* currentTypeRef;

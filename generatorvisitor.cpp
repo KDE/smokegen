@@ -27,7 +27,8 @@
 
 GeneratorVisitor::GeneratorVisitor(ParseSession *session, bool resolveTypedefs) 
     : m_session(session), m_resolveTypedefs(resolveTypedefs), createType(false), createTypedef(false),
-      inClass(0), pointerDepth(0), isRef(0), isStatic(false), isVirtual(false),currentTypeRef(0), inMethod(false), inParameter(false)
+      inClass(0), pointerDepth(0), isRef(0), isStatic(false), isVirtual(false), isPureVirtual(false), 
+      currentTypeRef(0), inMethod(false), inParameter(false)
 {
     nc = new NameCompiler(m_session);
     tc = new TypeCompiler(m_session);
@@ -194,6 +195,7 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
         QPair<bool, bool> cv = parseCv(node->fun_cv);
         currentMethod.setIsConst(cv.first);
         if (isVirtual) currentMethod.setFlag(Method::Virtual);
+        if (isPureVirtual) currentMethod.setFlag(Method::PureVirtual);
         if (isStatic) currentMethod.setFlag(Method::Static);
         klass.top()->appendMethod(currentMethod);
     }
@@ -260,7 +262,20 @@ void GeneratorVisitor::visitSimpleDeclaration(SimpleDeclarationAST* node)
         const ListNode<std::size_t> *it = node->function_specifiers->toFront(), *end = it;
         do {
             if (it->element && m_session->token_stream->kind(it->element) == Token_virtual) {
+                // found virtual token
                 isVirtual = true;
+                
+                // look for initializers - if we find one, the method is pure virtual
+                if (node->init_declarators) {
+                    const ListNode<InitDeclaratorAST*> *it = node->init_declarators->toFront(), *end = it;
+                    do {
+                        if (it->element && it->element->initializer) {
+                            isPureVirtual = true;
+                            break;
+                        }
+                        it = it->next;
+                    } while (end != it);
+                }
                 break;
             }
             it = it->next;
@@ -277,21 +292,25 @@ void GeneratorVisitor::visitSimpleDeclaration(SimpleDeclarationAST* node)
         } while (end != it);
     }
     DefaultVisitor::visitSimpleDeclaration(node);
-    isStatic = isVirtual = false;
+    isStatic = isVirtual = isPureVirtual = false;
 }
 
 void GeneratorVisitor::visitSimpleTypeSpecifier(SimpleTypeSpecifierAST* node)
 {
     tc->run(node);
+    // the method returns void - we don't need to create a new type for that
     if (tc->qualifiedName().join("::") == "void") {
         currentTypeRef = const_cast<Type*>(&Type::Void);
         DefaultVisitor::visitSimpleTypeSpecifier(node);
         return;
     }
+    // resolve the type in the current context
     QPair<Class*, Typedef*> klass = resolveType(tc->qualifiedName().last());
     if (klass.first) {
+        // it's a class
         currentType = Type(klass.first, tc->isConstant(), tc->isVolatile());
     } else if (klass.second) {
+        // it's a typedef, resolve it or not?
         if (!m_resolveTypedefs) {
             currentType = Type(klass.second, tc->isConstant(), tc->isVolatile());
         } else {
@@ -300,6 +319,7 @@ void GeneratorVisitor::visitSimpleTypeSpecifier(SimpleTypeSpecifierAST* node)
             if (tc->isVolatile()) currentType.setIsVolatile(true);
         }
     } else {
+        // type not known (e.g. integral type)
         currentType = Type(tc->qualifiedName().join("::"), tc->isConstant(), tc->isVolatile());
     }
     createType = true;
