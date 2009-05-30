@@ -22,6 +22,16 @@
 #include <QString>
 #include <QHash>
 
+class Class;
+class Typedef;
+class Function;
+class Type;
+
+extern QHash<QString, Class> classes;
+extern QHash<QString, Typedef> typedefs;
+extern QHash<QString, Function> functions;
+extern QHash<QString, Type> types;
+
 class Method;
 class Field;
 
@@ -79,8 +89,6 @@ private:
     QList<BaseClassSpecifier> m_bases;
 };
 
-class Type;
-
 class Typedef
 {
 public:
@@ -96,6 +104,8 @@ public:
 
     void setNameSpace(const QString& nspace) { m_nspace = nspace; }
     QString nameSpace() const { return m_nspace; }
+
+    Type resolve() const;
 
 private:
     Type* m_type;
@@ -287,6 +297,19 @@ public:
         return ret;
     }
 
+    static Type* registerType(const Type& type) {
+        QString typeString = type.toString();
+        if (types.contains(typeString)) {
+            // return a reference to the existing type
+            return &types[typeString];
+        } else {
+            QHash<QString, Type>::iterator iter = types.insert(typeString, type);
+            return &iter.value();
+        }
+    }
+
+    static const Type Void;
+
 protected:
     Class* m_class;
     Typedef* m_typedef;
@@ -296,10 +319,5 @@ protected:
     QHash<int, bool> m_constPointer;
     bool m_isRef;
 };
-
-extern QHash<QString, Class> classes;
-extern QHash<QString, Typedef> typedefs;
-extern QHash<QString, Function> functions;
-extern QHash<QString, Type> types;
 
 #endif // TYPE_H

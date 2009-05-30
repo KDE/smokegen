@@ -22,3 +22,33 @@ QHash<QString, Class> classes;
 QHash<QString, Typedef> typedefs;
 QHash<QString, Function> functions;
 QHash<QString, Type> types;
+
+const Type Type::Void("void");
+
+Type Typedef::resolve() const {
+    bool isRef = false, isConst = false, isVolatile = false;
+    QList<bool> pointerDepth;
+    const Type* t = this->type();
+    for (int i = 0; i < t->pointerDepth(); i++) {
+        pointerDepth.append(t->isConstPointer(i));
+    }
+    while (t->getTypedef()) {
+        if (!isRef) isRef = t->isRef();
+        if (!isConst) isConst = t->isConst();
+        if (!isVolatile) isVolatile = t->isVolatile();
+        t = t->getTypedef()->type();
+        for (int i = t->pointerDepth() - 1; i >= 0; i--) {
+            pointerDepth.prepend(t->isConstPointer(i));
+        }
+    }
+    Type ret = *t;
+    if (isRef) ret.setIsRef(true);
+    if (isConst) ret.setIsConst(true);
+    if (isVolatile) ret.setIsVolatile(true);
+    
+    ret.setPointerDepth(pointerDepth.count());
+    for (int i = 0; i < pointerDepth.count(); i++) {
+        ret.setIsConstPointer(i, pointerDepth[i]);
+    }
+    return ret;
+}

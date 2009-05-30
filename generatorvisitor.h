@@ -40,7 +40,6 @@ protected:
     inline const Token& token(std::size_t token) { return m_session->token_stream->token(token); }
     QPair<bool, bool> parseCv(const ListNode<std::size_t> *cv);
     QPair<Class*, Typedef*> resolveType(const QString& name);
-    Type resolveTypedef(const Typedef* tdef);
 
     virtual void visitAccessSpecifier(AccessSpecifierAST* node);
     virtual void visitBaseSpecifier(BaseSpecifierAST* node);
@@ -73,6 +72,11 @@ private:
     
     Type currentType;
     Type* currentTypeRef;
+    
+    bool inMethod;
+    bool inParameter;
+    Method currentMethod;
+    
     Class::Kind kind;
     QStack<Class*> klass;
     QStack<Access> access;

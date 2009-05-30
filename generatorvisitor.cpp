@@ -27,7 +27,7 @@
 
 GeneratorVisitor::GeneratorVisitor(ParseSession *session, bool resolveTypedefs) 
     : m_session(session), m_resolveTypedefs(resolveTypedefs), createType(false), createTypedef(false),
-      inClass(0), pointerDepth(0), isRef(0), currentTypeRef(0)
+      inClass(0), pointerDepth(0), isRef(0), currentTypeRef(0), inMethod(false), inParameter(false)
 {
     nc = new NameCompiler(m_session);
     tc = new TypeCompiler(m_session);
@@ -98,35 +98,6 @@ QPair<Class*, Typedef*> GeneratorVisitor::resolveType(const QString & name)
     return qMakePair<Class*, Typedef*>(0, 0);
 }
 
-Type GeneratorVisitor::resolveTypedef(const Typedef* tdef)
-{
-    bool isRef = false, isConst = false, isVolatile = false;
-    QList<bool> pointerDepth;
-    const Type* t = tdef->type();
-    for (int i = 0; i < t->pointerDepth(); i++) {
-        pointerDepth.append(t->isConstPointer(i));
-    }
-    while (t->getTypedef()) {
-        if (!isRef) isRef = t->isRef();
-        if (!isConst) isConst = t->isConst();
-        if (!isVolatile) isVolatile = t->isVolatile();
-        t = t->getTypedef()->type();
-        for (int i = t->pointerDepth() - 1; i >= 0; i--) {
-            pointerDepth.prepend(t->isConstPointer(i));
-        }
-    }
-    Type ret = *t;
-    if (isRef) ret.setIsRef(true);
-    if (isConst) ret.setIsConst(true);
-    if (isVolatile) ret.setIsVolatile(true);
-    
-    ret.setPointerDepth(pointerDepth.count());
-    for (int i = 0; i < pointerDepth.count(); i++) {
-        ret.setIsConstPointer(i, pointerDepth[i]);
-    }
-    return ret;
-}
-
 void GeneratorVisitor::visitAccessSpecifier(AccessSpecifierAST* node)
 {
     if (!inClass) {
@@ -188,14 +159,7 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
         }
         if (isRef) currentType.setIsRef(true);
         
-        QString typeString = currentType.toString();
-        if (types.contains(typeString)) {
-            // store a reference to the just created type
-            currentTypeRef = &types[typeString];
-        } else {
-            QHash<QString, Type>::iterator iter = types.insert(typeString, currentType);
-            currentTypeRef = &iter.value();
-        }
+        currentTypeRef = Type::registerType(currentType);
         
         // done with creating the type
         createType = false;
@@ -210,6 +174,28 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
         if (!typedefs.contains(joined))
             typedefs[joined] = Typedef(currentTypeRef, nc->name(), nspace.join("::"));
         createTypedef = false;
+    }
+    
+    if (node->parameter_declaration_clause && !inMethod) {
+        nc->run(node->id);
+        bool isConstructor = (nc->name() == klass.top()->name());
+        bool isDestructor = (nc->name() == "~" + klass.top()->name());
+        Type* returnType = currentTypeRef;
+        if (isConstructor) {
+            Type t(klass.top()); t.setPointerDepth(1);
+            returnType = Type::registerType(t);
+        } else if (isDestructor) {
+            returnType = const_cast<Type*>(&Type::Void);
+        }
+        currentMethod = Method(klass.top(), nc->name(), returnType, access.top());
+        inMethod = true;
+        visit(node->parameter_declaration_clause);
+        inMethod = false;
+        klass.top()->appendMethod(currentMethod);
+    }
+    if (inParameter) {
+        nc->run(node->id);
+        currentMethod.appendParameter(Parameter(nc->name(), currentTypeRef));
     }
     DefaultVisitor::visitDeclarator(node);
 }
@@ -233,7 +219,9 @@ void GeneratorVisitor::visitNamespace(NamespaceAST* node)
 
 void GeneratorVisitor::visitParameterDeclaration(ParameterDeclarationAST* node)
 {
+    inParameter = true;
     DefaultVisitor::visitParameterDeclaration(node);
+    inParameter = false;
 }
 
 void GeneratorVisitor::visitPtrOperator(PtrOperatorAST* node)
@@ -269,6 +257,11 @@ void GeneratorVisitor::visitSimpleDeclaration(SimpleDeclarationAST* node)
 void GeneratorVisitor::visitSimpleTypeSpecifier(SimpleTypeSpecifierAST* node)
 {
     tc->run(node);
+    if (tc->qualifiedName().join("::") == "void") {
+        currentTypeRef = const_cast<Type*>(&Type::Void);
+        DefaultVisitor::visitSimpleTypeSpecifier(node);
+        return;
+    }
     QPair<Class*, Typedef*> klass = resolveType(tc->qualifiedName().last());
     if (klass.first) {
         currentType = Type(klass.first, tc->isConstant(), tc->isVolatile());
@@ -276,7 +269,7 @@ void GeneratorVisitor::visitSimpleTypeSpecifier(SimpleTypeSpecifierAST* node)
         if (!m_resolveTypedefs) {
             currentType = Type(klass.second, tc->isConstant(), tc->isVolatile());
         } else {
-            currentType = resolveTypedef(klass.second);
+            currentType = klass.second->resolve();
             if (tc->isConstant()) currentType.setIsConst(true);
             if (tc->isVolatile()) currentType.setIsVolatile(true);
         }
