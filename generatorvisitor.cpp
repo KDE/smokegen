@@ -27,7 +27,7 @@
 
 GeneratorVisitor::GeneratorVisitor(ParseSession *session, bool resolveTypedefs) 
     : m_session(session), m_resolveTypedefs(resolveTypedefs), createType(false), createTypedef(false),
-      inClass(0), pointerDepth(0), isRef(0), currentTypeRef(0), inMethod(false), inParameter(false)
+      inClass(0), pointerDepth(0), isRef(0), isStatic(false), isVirtual(false),currentTypeRef(0), inMethod(false), inParameter(false)
 {
     nc = new NameCompiler(m_session);
     tc = new TypeCompiler(m_session);
@@ -193,6 +193,8 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
         inMethod = false;
         QPair<bool, bool> cv = parseCv(node->fun_cv);
         currentMethod.setIsConst(cv.first);
+        if (isVirtual) currentMethod.setFlag(Method::Virtual);
+        if (isStatic) currentMethod.setFlag(Method::Static);
         klass.top()->appendMethod(currentMethod);
     }
     if (inParameter) {
@@ -253,7 +255,29 @@ void GeneratorVisitor::visitSimpleDeclaration(SimpleDeclarationAST* node)
         QHash<QString, Class>::iterator item = classes.insert(name, Class(tc->qualifiedName().last(), nspace.join("::"), kind));
         klass.push(&item.value());
     }
+    
+    if (node->function_specifiers) {
+        const ListNode<std::size_t> *it = node->function_specifiers->toFront(), *end = it;
+        do {
+            if (it->element && m_session->token_stream->kind(it->element) == Token_virtual) {
+                isVirtual = true;
+                break;
+            }
+            it = it->next;
+        } while (end != it);
+    }
+    if (node->storage_specifiers) {
+        const ListNode<std::size_t> *it = node->storage_specifiers->toFront(), *end = it;
+        do {
+            if (it->element && m_session->token_stream->kind(it->element) == Token_static) {
+                isStatic = true;
+                break;
+            }
+            it = it->next;
+        } while (end != it);
+    }
     DefaultVisitor::visitSimpleDeclaration(node);
+    isStatic = isVirtual = false;
 }
 
 void GeneratorVisitor::visitSimpleTypeSpecifier(SimpleTypeSpecifierAST* node)

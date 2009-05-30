@@ -69,6 +69,8 @@ private:
     
     QVector<bool> *pointerDepth;
     bool *isRef;
+    bool isStatic;
+    bool isVirtual;
     
     Type currentType;
     Type* currentTypeRef;
