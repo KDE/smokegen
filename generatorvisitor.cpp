@@ -191,6 +191,8 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
         inMethod = true;
         visit(node->parameter_declaration_clause);
         inMethod = false;
+        QPair<bool, bool> cv = parseCv(node->fun_cv);
+        currentMethod.setIsConst(cv.first);
         klass.top()->appendMethod(currentMethod);
     }
     if (inParameter) {

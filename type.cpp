@@ -23,6 +23,44 @@ QHash<QString, Typedef> typedefs;
 QHash<QString, Function> functions;
 QHash<QString, Type> types;
 
+QString Member::toString(bool withAccess) const
+{
+    QString ret;
+    if (withAccess) {
+        if (m_access == Access_public)
+            ret += "public ";
+        else if (m_access == Access_protected)
+            ret += "protected ";
+        else if (m_access == Access_private)
+            ret += "private ";
+    }
+    if (m_flags & Static)
+        ret += "static ";
+    if (m_flags & Virtual)
+        ret += "virtual ";
+    ret += m_type->toString() + " " + m_name;
+    return ret;
+}
+
+QString Parameter::toString() const
+{
+    return m_type->toString() + " " + m_name;
+}
+
+QString Method::toString(bool withAccess) const
+{
+    QString ret = Member::toString(withAccess);
+    ret += "(";
+    for (int i = 0; i < m_params.count(); i++) {
+        ret += m_params[i].toString();
+        if (i < m_params.count() - 1) ret += ", ";
+    }
+    ret += ")";
+    if (m_isConst) ret += " const";
+    if (m_flags & Member::PureVirtual) ret += " = 0";
+    return ret;
+}
+
 const Type Type::Void("void");
 
 Type Typedef::resolve() const {
@@ -50,5 +88,20 @@ Type Typedef::resolve() const {
     for (int i = 0; i < pointerDepth.count(); i++) {
         ret.setIsConstPointer(i, pointerDepth[i]);
     }
+    return ret;
+}
+
+QString Type::toString() const
+{
+    QString ret;
+    if (m_isVolatile) ret += "volatile ";
+    if (m_isConst) ret += "const ";
+    ret += name();
+    for (int i = 0; i < m_pointerDepth; i++) {
+        ret += "*";
+        if (isConstPointer(i)) ret += " const ";
+    }
+    ret = ret.trimmed();
+    if (m_isRef) ret += "&";
     return ret;
 }

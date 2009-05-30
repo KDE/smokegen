@@ -144,6 +144,8 @@ public:
     void setFlag(Flag flag) { m_flags |= flag; }
     Flags flags() const { return m_flags; }
 
+    virtual QString toString(bool withAccess = false) const;
+
 protected:
     Class* m_class;
     QString m_name;
@@ -165,6 +167,8 @@ public:
 
     void setType(Type* type) { m_type = type; }
     Type* type() const { return m_type; }
+
+    QString toString() const;
 
 protected:
     QString m_name;
@@ -191,6 +195,8 @@ public:
 
     void setIsConst(bool isConst) { m_isConst = isConst; }
     bool isConst() const { return m_isConst; }
+
+    virtual QString toString(bool withAccess = false) const;
 
 protected:
     ParameterList m_params;
@@ -283,19 +289,7 @@ public:
     void setIsRef(bool isRef) { m_isRef = isRef; }
     bool isRef() const { return m_isRef; }
 
-    QString toString() const {
-        QString ret;
-        if (m_isVolatile) ret += "volatile ";
-        if (m_isConst) ret += "const ";
-        ret += name();
-        for (int i = 0; i < m_pointerDepth; i++) {
-            ret += "*";
-            if (isConstPointer(i)) ret += " const ";
-        }
-        ret = ret.trimmed();
-        if (m_isRef) ret += "&";
-        return ret;
-    }
+    QString toString() const;
 
     static Type* registerType(const Type& type) {
         QString typeString = type.toString();
