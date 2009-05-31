@@ -45,6 +45,7 @@ protected:
     virtual void visitBaseSpecifier(BaseSpecifierAST* node);
     virtual void visitClassSpecifier(ClassSpecifierAST* node);
     virtual void visitDeclarator(DeclaratorAST* node);
+    virtual void visitInitializerClause(InitializerClauseAST *);
     virtual void visitNamespace(NamespaceAST* node);
     virtual void visitParameterDeclaration(ParameterDeclarationAST* node);
     virtual void visitPtrOperator(PtrOperatorAST* node);

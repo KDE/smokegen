@@ -267,6 +267,12 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
     DefaultVisitor::visitDeclarator(node);
 }
 
+void GeneratorVisitor::visitInitializerClause(InitializerClauseAST *)
+{
+    // we don't care about initializers
+    return;
+}
+
 void GeneratorVisitor::visitNamespace(NamespaceAST* node)
 {
     nspace.push_back(token(node->namespace_name).symbolString());
