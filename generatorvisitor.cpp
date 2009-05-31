@@ -267,6 +267,20 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
     DefaultVisitor::visitDeclarator(node);
 }
 
+void GeneratorVisitor::visitEnumSpecifier(EnumSpecifierAST* node)
+{
+    nc->run(node->name);
+    currentEnum = Enum(nc->name(), nspace.join("::"), klass.isEmpty() ? 0 : klass.top());
+    visitNodes(this, node->enumerators);
+    enums[currentEnum.toString()] = currentEnum;
+}
+
+void GeneratorVisitor::visitEnumerator(EnumeratorAST* node)
+{
+    currentEnum.appendMember(EnumMember(token(node->id).symbolString(), QString()));
+//     DefaultVisitor::visitEnumerator(node);
+}
+
 void GeneratorVisitor::visitInitializerClause(InitializerClauseAST *)
 {
     // we don't care about initializers

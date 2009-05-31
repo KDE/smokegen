@@ -45,6 +45,8 @@ protected:
     virtual void visitBaseSpecifier(BaseSpecifierAST* node);
     virtual void visitClassSpecifier(ClassSpecifierAST* node);
     virtual void visitDeclarator(DeclaratorAST* node);
+    virtual void visitEnumSpecifier(EnumSpecifierAST *);
+    virtual void visitEnumerator(EnumeratorAST *);
     virtual void visitInitializerClause(InitializerClauseAST *);
     virtual void visitNamespace(NamespaceAST* node);
     virtual void visitParameterDeclaration(ParameterDeclarationAST* node);
@@ -81,6 +83,8 @@ private:
     Method currentMethod;
     
     Function currentFunction;
+    
+    Enum currentEnum;
     
     Class::Kind kind;
     QStack<Class*> klass;

@@ -24,12 +24,14 @@
 
 class Class;
 class Typedef;
+class Enum;
 class GlobalVar;
 class Function;
 class Type;
 
 extern QHash<QString, Class> classes;
 extern QHash<QString, Typedef> typedefs;
+extern QHash<QString, Enum> enums;
 extern QHash<QString, Function> functions;
 extern QHash<QString, GlobalVar> globals;
 extern QHash<QString, Type> types;
@@ -130,6 +132,35 @@ private:
     QString m_name;
     QString m_nspace;
     Class* m_parent;
+};
+
+typedef QPair<QString, QString> EnumMember;
+
+class Enum
+{
+public:
+    Enum(const QString& name = QString(), const QString nspace = QString(), Class* parent = 0)
+         : m_name(name), m_nspace(nspace), m_parent(parent) {}
+
+    void setName(const QString& name) { m_name = name; }
+    QString name() const { return m_name; }
+
+    void setNameSpace(const QString& nspace) { m_nspace = nspace; }
+    QString nameSpace() const { return m_nspace; }
+
+    void setParent(Class* parent) { m_parent = parent; }
+    Class* parent() const { return m_parent; }
+
+    QList<EnumMember> members() const { return m_members; }
+    void appendMember(const EnumMember& member) { m_members.append(member); }
+
+    QString toString() const;
+
+private:
+    QString m_name;
+    QString m_nspace;
+    Class* m_parent;
+    QList<EnumMember> m_members;
 };
 
 class Member
