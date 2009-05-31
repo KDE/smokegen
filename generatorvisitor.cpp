@@ -124,6 +124,20 @@ void GeneratorVisitor::visitAccessSpecifier(AccessSpecifierAST* node)
 
 void GeneratorVisitor::visitBaseSpecifier(BaseSpecifierAST* node)
 {
+    Class::BaseClassSpecifier baseClass;
+    int _kind = token(node->access_specifier).kind;
+    if (_kind == Token_public) {
+        baseClass.access = Access_public;
+    } else if (_kind == Token_protected) {
+        baseClass.access = Access_protected;
+    } else {
+        baseClass.access = Access_private;
+    }
+    baseClass.isVirtual = (node->virt > 0);
+    nc->run(node->name);
+    QPair<Class*, Typedef*> base = resolveType(nc->name());
+    baseClass.baseClass = base.first;
+    klass.top()->appendBaseClass(baseClass);
     DefaultVisitor::visitBaseSpecifier(node);
 }
 
@@ -177,28 +191,38 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
         createTypedef = false;
     }
     
+    // only run this if we're not in a method. only checking for parameter_declaration_clause
+    // won't be enough because function pointer types also have that.
     if (node->parameter_declaration_clause && !inMethod) {
         nc->run(node->id);
         bool isConstructor = (nc->name() == klass.top()->name());
         bool isDestructor = (nc->name() == "~" + klass.top()->name());
         Type* returnType = currentTypeRef;
         if (isConstructor) {
+            // constructors return a pointer to the class they create
             Type t(klass.top()); t.setPointerDepth(1);
             returnType = Type::registerType(t);
         } else if (isDestructor) {
+            // destructors don't have a return type.. so return void
             returnType = const_cast<Type*>(&Type::Void);
         }
         currentMethod = Method(klass.top(), nc->name(), returnType, access.top());
+        currentMethod.setIsConstructor(isConstructor);
+        currentMethod.setIsDestructor(isDestructor);
+        // build parameter list
         inMethod = true;
         visit(node->parameter_declaration_clause);
         inMethod = false;
         QPair<bool, bool> cv = parseCv(node->fun_cv);
+        // const & volatile modifiers
         currentMethod.setIsConst(cv.first);
         if (isVirtual) currentMethod.setFlag(Method::Virtual);
         if (isPureVirtual) currentMethod.setFlag(Method::PureVirtual);
         if (isStatic) currentMethod.setFlag(Method::Static);
         klass.top()->appendMethod(currentMethod);
     }
+    
+    // this declaration is a parameter
     if (inParameter) {
         nc->run(node->id);
         currentMethod.appendParameter(Parameter(nc->name(), currentTypeRef));

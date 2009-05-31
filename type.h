@@ -80,6 +80,8 @@ public:
     QList<BaseClassSpecifier> baseClasses() const { return m_bases; }
     void appendBaseClass(const BaseClassSpecifier& baseClass) { m_bases.append(baseClass); }
     
+    QString toString() const;
+    
 private:
     QString m_name;
     QString m_nspace;

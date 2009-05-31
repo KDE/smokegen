@@ -23,6 +23,14 @@ QHash<QString, Typedef> typedefs;
 QHash<QString, Function> functions;
 QHash<QString, Type> types;
 
+QString Class::toString() const
+{
+    QString ret;
+    if (!m_nspace.isEmpty()) ret += m_nspace + "::";
+    ret += m_name;
+    return ret;
+}
+
 QString Member::toString(bool withAccess) const
 {
     QString ret;
