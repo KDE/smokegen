@@ -27,7 +27,7 @@
 
 GeneratorVisitor::GeneratorVisitor(ParseSession *session, bool resolveTypedefs) 
     : m_session(session), m_resolveTypedefs(resolveTypedefs), createType(false), createTypedef(false),
-      inClass(0), isForwardDecl(true), pointerDepth(0), isRef(0), isStatic(false), isVirtual(false), isPureVirtual(false), 
+      inClass(0), pointerDepth(0), isRef(0), isStatic(false), isVirtual(false), isPureVirtual(false), 
       currentTypeRef(0), inMethod(false), inParameter(false)
 {
     nc = new NameCompiler(m_session);
@@ -148,9 +148,9 @@ void GeneratorVisitor::visitClassSpecifier(ClassSpecifierAST* node)
     else
         access.push(Access_public);
     inClass++;
-    isForwardDecl = false;
+    if (!klass.isEmpty())
+        klass.top()->setIsForwardDecl(false);
     DefaultVisitor::visitClassSpecifier(node);
-    isForwardDecl = true;
     access.pop();
     inClass--;
 }
@@ -225,6 +225,7 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
         klass.top()->appendMethod(currentMethod);
     }
     
+    // global function
     if (node->parameter_declaration_clause && !inMethod && !inClass) {
         nc->run(node->id);
         if (!nc->name().contains("::")) {
@@ -238,6 +239,20 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
             if (!functions.contains(name)) {
                 functions[name] = currentFunction;
             }
+        }
+    }
+    
+    // field
+    if (!inMethod && !klass.isEmpty()) {
+        nc->run(node->id);
+        Field field = Field(klass.top(), nc->name(), currentTypeRef, access.top());
+        klass.top()->appendField(field);
+    } else if (!inMethod && !inClass) {
+        // global variable
+        nc->run(node->id);
+        if (!globals.contains(nc->name())) {
+            GlobalVar var = GlobalVar(nc->name(), currentTypeRef);
+            globals[var.name()] = var;
         }
     }
     
@@ -296,7 +311,7 @@ void GeneratorVisitor::visitSimpleDeclaration(SimpleDeclarationAST* node)
         if (tc->qualifiedName().isEmpty()) return;
         // for nested classes
         Class* parent = klass.isEmpty() ? 0 : klass.top();
-        Class _class = Class(tc->qualifiedName().last(), nspace.join("::"), parent, kind, isForwardDecl);
+        Class _class = Class(tc->qualifiedName().last(), nspace.join("::"), parent, kind);
         QString name = _class.toString();
         // only add the class if it's not added yet or if it overrides a forward declaration
         // this prevents fully parsed classes being overridden by forward declarations

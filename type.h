@@ -245,15 +245,11 @@ public:
     void setType(Type* type) { m_type = type; }
     Type* type() const { return m_type; }
 
-    void setIsConst(bool isConst) { m_isConst = isConst; }
-    bool isConst() const { return m_isConst; }
-
     virtual QString toString() const;
 
 protected:
     QString m_name;
     Type* m_type;
-    bool m_isConst;
 };
 
 class Function : public GlobalVar

@@ -65,7 +65,6 @@ private:
     bool createType;
     bool createTypedef;
     short inClass;
-    bool isForwardDecl;
     
     QVector<bool> *pointerDepth;
     bool *isRef;
