@@ -57,15 +57,29 @@ QPair<bool, bool> GeneratorVisitor::parseCv(const ListNode<std::size_t> *cv)
     return ret;
 }
 
+inline
+bool GeneratorVisitor::isIntegralType(const QStringList& type)
+{
+    static QRegExp exp1("((un)?signed\\s+)?(short|int|long|long long|char)");
+    static QRegExp exp2("(bool|float|double|void)");
+    QString str = type.join(" ");
+    return exp1.exactMatch(str) || exp2.exactMatch(str);
+}
+
+// TODO: this might have to be improved for cases like 'Typedef::Nested foo'
 QPair<Class*, Typedef*> GeneratorVisitor::resolveType(const QString & name)
 {
+#define returnOnExistence(name) \
+        if (classes.contains(name)) {\
+            return qMakePair<Class*, Typedef*>(&classes[name], 0); \
+        } else if (typedefs.contains(name)) { \
+            return qMakePair<Class*, Typedef*>(0, &typedefs[name]); \
+        }
+
     // check for nested classes
     for (int i = klass.count() - 1; i >= 0; i--) {
         QString name = klass[i]->toString() + "::" + name;
-        if (classes.contains(name))
-            return qMakePair<Class*, Typedef*>(&classes[name], 0);
-        else if (typedefs.contains(name))
-            return qMakePair<Class*, Typedef*>(0, &typedefs[name]);
+        returnOnExistence(name);
     }
     
     // check for 'using type;'
@@ -80,10 +94,7 @@ QPair<Class*, Typedef*> GeneratorVisitor::resolveType(const QString & name)
         foreach (const QString& string, list) {
             QString complete = string + rest;
             if (string.endsWith(first)) {
-                if (classes.contains(complete))
-                    return qMakePair<Class*, Typedef*>(&classes[complete], 0);
-                else if (typedefs.contains(complete))
-                    return qMakePair<Class*, Typedef*>(0, &typedefs[complete]);
+                returnOnExistence(complete);
             }
         }
     }
@@ -93,10 +104,7 @@ QPair<Class*, Typedef*> GeneratorVisitor::resolveType(const QString & name)
     do {
         nspace.push_back(name);
         QString n = nspace.join("::");
-        if (classes.contains(n))
-            return qMakePair<Class*, Typedef*>(&classes[n], 0);
-        else if (typedefs.contains(n))
-            return qMakePair<Class*, Typedef*>(0, &typedefs[n]);
+        returnOnExistence(n);
         nspace.pop_back();
         if (!nspace.isEmpty())
             nspace.pop_back();
@@ -106,14 +114,12 @@ QPair<Class*, Typedef*> GeneratorVisitor::resolveType(const QString & name)
     foreach (const QStringList& list, usingNamespaces) {
         foreach (const QString& string, list) {
             QString cname = string + "::" + name;
-            if (classes.contains(cname))
-                return qMakePair<Class*, Typedef*>(&classes[cname], 0);
-            else if (typedefs.contains(cname))
-                return qMakePair<Class*, Typedef*>(0, &typedefs[cname]);
+            returnOnExistence(cname);
         }
     }
 
     return qMakePair<Class*, Typedef*>(0, 0);
+#undef returnOnExistence
 }
 
 void GeneratorVisitor::visitAccessSpecifier(AccessSpecifierAST* node)
@@ -402,8 +408,9 @@ void GeneratorVisitor::visitSimpleTypeSpecifier(SimpleTypeSpecifierAST* node)
 {
     tc->run(node);
     // the method returns void - we don't need to create a new type for that
-    if (tc->qualifiedName().join("::") == "void") {
-        currentTypeRef = const_cast<Type*>(&Type::Void);
+    if (isIntegralType(tc->qualifiedName())) {
+        currentType = Type(tc->qualifiedName().join(" "), tc->isConstant(), tc->isVolatile());
+        createType = true;
         DefaultVisitor::visitSimpleTypeSpecifier(node);
         return;
     }
@@ -422,7 +429,7 @@ void GeneratorVisitor::visitSimpleTypeSpecifier(SimpleTypeSpecifierAST* node)
             if (tc->isVolatile()) currentType.setIsVolatile(true);
         }
     } else {
-        // type not known (e.g. integral type)
+        // type not known
         currentType = Type(tc->qualifiedName().join("::"), tc->isConstant(), tc->isVolatile());
     }
     createType = true;
