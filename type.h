@@ -248,6 +248,8 @@ public:
     void setIsConst(bool isConst) { m_isConst = isConst; }
     bool isConst() const { return m_isConst; }
 
+    virtual QString toString() const;
+
 protected:
     QString m_name;
     Type* m_type;
@@ -262,6 +264,8 @@ public:
 
     ParameterList parameters() const { return m_params; }
     void appendParameter(const Parameter& param) { m_params.append(param); }
+
+    virtual QString toString() const;
 
 protected:
     ParameterList m_params;

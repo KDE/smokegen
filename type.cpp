@@ -120,6 +120,23 @@ Type Typedef::resolve() const {
     return ret;
 }
 
+QString GlobalVar::toString() const
+{
+    return m_type->toString() + " " + m_name;
+}
+
+QString Function::toString() const
+{
+    QString ret = GlobalVar::toString();
+    ret += "(";
+    for (int i = 0; i < m_params.count(); i++) {
+        ret += m_params[i].type()->toString();
+        if (i < m_params.count() - 1) ret += ", ";
+    }
+    ret += ")";
+    return ret;
+}
+
 QString Type::toString() const
 {
     QString ret;

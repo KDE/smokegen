@@ -45,7 +45,6 @@ protected:
     virtual void visitBaseSpecifier(BaseSpecifierAST* node);
     virtual void visitClassSpecifier(ClassSpecifierAST* node);
     virtual void visitDeclarator(DeclaratorAST* node);
-    virtual void visitFunctionDefinition(FunctionDefinitionAST* node);
     virtual void visitNamespace(NamespaceAST* node);
     virtual void visitParameterDeclaration(ParameterDeclarationAST* node);
     virtual void visitPtrOperator(PtrOperatorAST* node);
@@ -66,6 +65,7 @@ private:
     bool createType;
     bool createTypedef;
     short inClass;
+    bool isForwardDecl;
     
     QVector<bool> *pointerDepth;
     bool *isRef;
@@ -79,6 +79,8 @@ private:
     bool inMethod;
     bool inParameter;
     Method currentMethod;
+    
+    Function currentFunction;
     
     Class::Kind kind;
     QStack<Class*> klass;
