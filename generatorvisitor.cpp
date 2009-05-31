@@ -57,15 +57,6 @@ QPair<bool, bool> GeneratorVisitor::parseCv(const ListNode<std::size_t> *cv)
     return ret;
 }
 
-inline
-bool GeneratorVisitor::isIntegralType(const QStringList& type)
-{
-    static QRegExp exp1("((un)?signed\\s+)?(short|int|long|long long|char)");
-    static QRegExp exp2("(bool|float|double|void)");
-    QString str = type.join(" ");
-    return exp1.exactMatch(str) || exp2.exactMatch(str);
-}
-
 // TODO: this might have to be improved for cases like 'Typedef::Nested foo'
 QPair<Class*, Typedef*> GeneratorVisitor::resolveType(const QString & name)
 {
@@ -407,8 +398,7 @@ void GeneratorVisitor::visitSimpleDeclaration(SimpleDeclarationAST* node)
 void GeneratorVisitor::visitSimpleTypeSpecifier(SimpleTypeSpecifierAST* node)
 {
     tc->run(node);
-    // the method returns void - we don't need to create a new type for that
-    if (isIntegralType(tc->qualifiedName())) {
+    if (node->integrals) {
         currentType = Type(tc->qualifiedName().join(" "), tc->isConstant(), tc->isVolatile());
         createType = true;
         DefaultVisitor::visitSimpleTypeSpecifier(node);
