@@ -59,14 +59,31 @@ QPair<bool, bool> GeneratorVisitor::parseCv(const ListNode<std::size_t> *cv)
 
 QPair<Class*, Typedef*> GeneratorVisitor::resolveType(const QString & name)
 {
+    // check for nested classes
+    for (int i = klass.count() - 1; i >= 0; i--) {
+        QString name = klass[i]->toString() + "::" + name;
+        if (classes.contains(name))
+            return qMakePair<Class*, Typedef*>(&classes[name], 0);
+        else if (typedefs.contains(name))
+            return qMakePair<Class*, Typedef*>(0, &typedefs[name]);
+    }
+    
     // check for 'using type;'
+    // if we use 'type', we can also access type::nested, take care of that
+    int index = name.indexOf("::");
+    QString first = name, rest;
+    if (index > -1) {
+        first = name.mid(0, index);
+        rest = name.mid(index);
+    }
     foreach (const QStringList& list, usingTypes) {
         foreach (const QString& string, list) {
-            if (string.endsWith(name)) {
-                if (classes.contains(string))
-                    return qMakePair<Class*, Typedef*>(&classes[string], 0);
-                else if (typedefs.contains(string))
-                    return qMakePair<Class*, Typedef*>(0, &typedefs[string]);
+            QString complete = string + rest;
+            if (string.endsWith(first)) {
+                if (classes.contains(complete))
+                    return qMakePair<Class*, Typedef*>(&classes[complete], 0);
+                else if (typedefs.contains(complete))
+                    return qMakePair<Class*, Typedef*>(0, &typedefs[complete]);
             }
         }
     }
@@ -391,7 +408,7 @@ void GeneratorVisitor::visitSimpleTypeSpecifier(SimpleTypeSpecifierAST* node)
         return;
     }
     // resolve the type in the current context
-    QPair<Class*, Typedef*> klass = resolveType(tc->qualifiedName().last());
+    QPair<Class*, Typedef*> klass = resolveType(tc->qualifiedName().join("::"));
     if (klass.first) {
         // it's a class
         currentType = Type(klass.first, tc->isConstant(), tc->isVolatile());
