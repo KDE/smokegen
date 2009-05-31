@@ -56,8 +56,8 @@ public:
         bool isVirtual;
     };
     
-    Class(const QString& name = QString(), const QString nspace = QString(), Kind kind = Kind_Class)
-          : m_name(name), m_nspace(nspace), m_kind(kind) {}
+    Class(const QString& name = QString(), const QString nspace = QString(), Class* parent = 0, Kind kind = Kind_Class, bool isForward = true)
+          : m_name(name), m_nspace(nspace), m_parent(parent), m_kind(kind), m_forward(isForward) {}
     ~Class() {}
     
     bool isValid() const { return !m_name.isEmpty(); }
@@ -68,8 +68,14 @@ public:
     void setNameSpace(const QString& nspace) { m_nspace = nspace; }
     QString nameSpace() const { return m_nspace; }
     
+    void setParent(Class* parent) { m_parent = parent; }
+    Class* parent() const { return m_parent; }
+    
     void setKind(Kind kind) { m_kind = kind; }
     Kind kind() const { return m_kind; } const
+    
+    void setIsForwardDecl(bool forward) { m_forward = forward; }
+    bool isForwardDecl() const { return m_forward; }
     
     QList<Method> methods() const { return m_methods; } const
     void appendMethod(const Method& method) { m_methods.append(method); }
@@ -85,7 +91,9 @@ public:
 private:
     QString m_name;
     QString m_nspace;
+    Class* m_parent;
     Kind m_kind;
+    bool m_forward;
     QList<Method> m_methods;
     QList<Field> m_fields;
     QList<BaseClassSpecifier> m_bases;
@@ -94,7 +102,8 @@ private:
 class Typedef
 {
 public:
-    Typedef(Type* type = 0, const QString& name = QString(), const QString nspace = QString()) : m_type(type), m_name(name), m_nspace(nspace) {}
+    Typedef(Type* type = 0, const QString& name = QString(), const QString nspace = QString(), Class* parent = 0)
+            : m_type(type), m_name(name), m_nspace(nspace), m_parent(parent) {}
 
     bool isValid() const { return (!m_name.isEmpty() && m_type); }
 
@@ -107,12 +116,18 @@ public:
     void setNameSpace(const QString& nspace) { m_nspace = nspace; }
     QString nameSpace() const { return m_nspace; }
 
+    void setParent(Class* parent) { m_parent = parent; }
+    Class* parent() const { return m_parent; }
+
+    QString toString() const;
+
     Type resolve() const;
 
 private:
     Type* m_type;
     QString m_name;
     QString m_nspace;
+    Class* m_parent;
 };
 
 class Member

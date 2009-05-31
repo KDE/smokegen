@@ -148,6 +148,7 @@ void GeneratorVisitor::visitClassSpecifier(ClassSpecifierAST* node)
     else
         access.push(Access_public);
     inClass++;
+    klass.top()->setIsForwardDecl(false);
     DefaultVisitor::visitClassSpecifier(node);
     inClass--;
 }
@@ -183,17 +184,17 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
         // we've just created the type that the typedef points to
         // so we just need to get the new name and store it
         nc->run(node->id);
-        QStringList name = nspace;
-        name.append(nc->name());
-        QString joined = name.join("::");
-        if (!typedefs.contains(joined))
-            typedefs[joined] = Typedef(currentTypeRef, nc->name(), nspace.join("::"));
+        Class* parent = klass.isEmpty() ? 0 : klass.top();
+        Typedef tdef = Typedef(currentTypeRef, nc->name(), nspace.join("::"), parent);
+        QString name = tdef.toString();
+        if (!typedefs.contains(name))
+            typedefs[name] = tdef;
         createTypedef = false;
     }
     
     // only run this if we're not in a method. only checking for parameter_declaration_clause
     // won't be enough because function pointer types also have that.
-    if (node->parameter_declaration_clause && !inMethod) {
+    if (node->parameter_declaration_clause && !inMethod && inClass) {
         nc->run(node->id);
         bool isConstructor = (nc->name() == klass.top()->name());
         bool isDestructor = (nc->name() == "~" + klass.top()->name());
@@ -232,6 +233,7 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
 
 void GeneratorVisitor::visitFunctionDefinition(FunctionDefinitionAST* node)
 {
+    return;
     DefaultVisitor::visitFunctionDefinition(node);
 }
 
@@ -267,6 +269,7 @@ void GeneratorVisitor::visitPtrOperator(PtrOperatorAST* node)
 
 void GeneratorVisitor::visitSimpleDeclaration(SimpleDeclarationAST* node)
 {
+    bool popKlass = false;
     int _kind = token(node->start_token).kind;
     if (_kind == Token_class) {
         kind = Class::Kind_Class;
@@ -275,11 +278,17 @@ void GeneratorVisitor::visitSimpleDeclaration(SimpleDeclarationAST* node)
     }
     if (_kind == Token_class || _kind == Token_struct) {
         tc->run(node->type_specifier);
-        QString name;
-        if (nspace.count() > 0) name = nspace.join("::").append("::");
-        name.append(tc->qualifiedName().last());
-        QHash<QString, Class>::iterator item = classes.insert(name, Class(tc->qualifiedName().last(), nspace.join("::"), kind));
-        klass.push(&item.value());
+        if (tc->qualifiedName().isEmpty()) return;
+        Class* parent = klass.isEmpty() ? 0 : klass.top();
+        Class _class = Class(tc->qualifiedName().last(), nspace.join("::"), parent, kind);
+        QString name = _class.toString();
+        // only add the class if it's not added yet or if it overrides a forward declaration
+        // this prevents fully parsed classes being overridden by forward declarations
+        if (!classes.contains(name) || classes[name].isForwardDecl()) {
+            QHash<QString, Class>::iterator item = classes.insert(name, _class);
+            klass.push(&item.value());
+            popKlass = true;
+        }
     }
     
     if (node->function_specifiers) {
@@ -316,6 +325,8 @@ void GeneratorVisitor::visitSimpleDeclaration(SimpleDeclarationAST* node)
         } while (end != it);
     }
     DefaultVisitor::visitSimpleDeclaration(node);
+    if (popKlass)
+        klass.pop();
     isStatic = isVirtual = isPureVirtual = false;
 }
 
@@ -352,7 +363,8 @@ void GeneratorVisitor::visitSimpleTypeSpecifier(SimpleTypeSpecifierAST* node)
 
 void GeneratorVisitor::visitTemplateDeclaration(TemplateDeclarationAST* node)
 {
-    DefaultVisitor::visitTemplateDeclaration(node);
+    // skip template declarations
+    return;
 }
 
 void GeneratorVisitor::visitTypedef(TypedefAST* node)
