@@ -21,6 +21,7 @@
 QHash<QString, Class> classes;
 QHash<QString, Typedef> typedefs;
 QHash<QString, Function> functions;
+QHash<QString, GlobalVar> globals;
 QHash<QString, Type> types;
 
 QString Class::toString() const

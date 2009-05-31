@@ -24,12 +24,14 @@
 
 class Class;
 class Typedef;
+class GlobalVar;
 class Function;
 class Type;
 
 extern QHash<QString, Class> classes;
 extern QHash<QString, Typedef> typedefs;
 extern QHash<QString, Function> functions;
+extern QHash<QString, GlobalVar> globals;
 extern QHash<QString, Type> types;
 
 class Method;
@@ -177,7 +179,7 @@ public:
     Parameter(const QString& name = QString(), Type* type = 0) : m_name(name), m_type(type) {}
     virtual ~Parameter() {}
 
-    bool isValid() const { return (!m_name.isEmpty() && m_type); }
+    bool isValid() const { return m_type; }
 
     void setName(const QString& name) { m_name = name; }
     QString name() const { return m_name; }
@@ -230,11 +232,10 @@ public:
     virtual ~Field() {}
 };
 
-class Function
+class GlobalVar
 {
 public:
-    Function(const QString& name = QString(), Type* type = 0, ParameterList params = ParameterList())
-        : m_name(name), m_type(type), m_params(params) {}
+    GlobalVar(const QString& name = QString(), Type* type = 0) : m_name(name), m_type(type) {}
 
     bool isValid() const { return (!m_name.isEmpty() && m_type); }
 
@@ -244,17 +245,26 @@ public:
     void setType(Type* type) { m_type = type; }
     Type* type() const { return m_type; }
 
+    void setIsConst(bool isConst) { m_isConst = isConst; }
+    bool isConst() const { return m_isConst; }
+
+protected:
+    QString m_name;
+    Type* m_type;
+    bool m_isConst;
+};
+
+class Function : public GlobalVar
+{
+public:
+    Function(const QString& name = QString(), Type* type = 0, ParameterList params = ParameterList())
+        : GlobalVar(name, type), m_params(params) {}
+
     ParameterList parameters() const { return m_params; }
     void appendParameter(const Parameter& param) { m_params.append(param); }
 
-    void setIsStatic(bool isStatic) { m_isStatic = isStatic; }
-    bool isStatic() const { return m_isStatic; }
-
-private:
-    QString m_name;
-    Type* m_type;
+protected:
     ParameterList m_params;
-    bool m_isStatic;
 };
 
 class Type

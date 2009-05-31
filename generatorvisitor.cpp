@@ -279,6 +279,7 @@ void GeneratorVisitor::visitSimpleDeclaration(SimpleDeclarationAST* node)
     if (_kind == Token_class || _kind == Token_struct) {
         tc->run(node->type_specifier);
         if (tc->qualifiedName().isEmpty()) return;
+        // for nested classes
         Class* parent = klass.isEmpty() ? 0 : klass.top();
         Class _class = Class(tc->qualifiedName().last(), nspace.join("::"), parent, kind);
         QString name = _class.toString();
