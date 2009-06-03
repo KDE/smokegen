@@ -380,6 +380,12 @@ void GeneratorVisitor::visitTemplateDeclaration(TemplateDeclarationAST* node)
     return;
 }
 
+void GeneratorVisitor::visitTemplateArgument(TemplateArgumentAST* node)
+{
+    // skip template arguments - they're handled by TypeCompiler
+    return;
+}
+
 void GeneratorVisitor::visitTypedef(TypedefAST* node)
 {
     createTypedef = true;

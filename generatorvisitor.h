@@ -54,6 +54,7 @@ protected:
     virtual void visitSimpleDeclaration(SimpleDeclarationAST* node);
     virtual void visitSimpleTypeSpecifier(SimpleTypeSpecifierAST* node);
     virtual void visitTemplateDeclaration(TemplateDeclarationAST* node);
+    virtual void visitTemplateArgument(TemplateArgumentAST* node);
     virtual void visitTypedef(TypedefAST* node);
     virtual void visitUsing(UsingAST* node);
     virtual void visitUsingDirective(UsingDirectiveAST* node);
