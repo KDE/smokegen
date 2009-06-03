@@ -347,6 +347,10 @@ public:
     void setIsRef(bool isRef) { m_isRef = isRef; }
     bool isRef() const { return m_isRef; }
 
+    const QList<Type>& templateArguments() const { return m_templateArgs; }
+    void appendTemplateArgument(const Type& type) { m_templateArgs.append(type); }
+    void setTemplateArguments(const QList<Type>& types) { m_templateArgs = types; }
+
     QString toString() const;
 
     static Type* registerType(const Type& type) {
@@ -370,6 +374,7 @@ protected:
     int m_pointerDepth;
     QHash<int, bool> m_constPointer;
     bool m_isRef;
+    QList<Type> m_templateArgs;
 };
 
 #endif // TYPE_H

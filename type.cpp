@@ -158,6 +158,14 @@ QString Type::toString() const
     if (m_isVolatile) ret += "volatile ";
     if (m_isConst) ret += "const ";
     ret += name();
+    if (!m_templateArgs.isEmpty()) {
+        ret += "< ";
+        for (int i = 0; i < m_templateArgs.count(); i++) {
+            if (i > 0) ret += ',';
+            ret += m_templateArgs[i].toString();
+        }
+        ret += " >";
+    }
     for (int i = 0; i < m_pointerDepth; i++) {
         ret += "*";
         if (isConstPointer(i)) ret += " const ";
