@@ -17,9 +17,9 @@
 */
 
 #include <ast.h>
-#include <name_compiler.h>
 #include <tokens.h>
-#include <type_compiler.h>
+#include "name_compiler.h"
+#include "type_compiler.h"
 
 #include "generatorvisitor.h"
 
@@ -27,11 +27,11 @@
 
 GeneratorVisitor::GeneratorVisitor(ParseSession *session, bool resolveTypedefs) 
     : m_session(session), m_resolveTypedefs(resolveTypedefs), createType(false), createTypedef(false),
-      inClass(0), pointerDepth(0), isRef(0), isStatic(false), isVirtual(false), isPureVirtual(false), 
+      inClass(0), isStatic(false), isVirtual(false), isPureVirtual(false), 
       currentTypeRef(0), inMethod(false), inParameter(false)
 {
-    nc = new NameCompiler(m_session);
-    tc = new TypeCompiler(m_session);
+    nc = new NameCompiler(m_session, this);
+    tc = new TypeCompiler(m_session, this);
     
     usingTypes.push(QStringList());
     usingNamespaces.push(QStringList());
@@ -172,28 +172,10 @@ void GeneratorVisitor::visitClassSpecifier(ClassSpecifierAST* node)
 void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
 {
     if (createType) {
-        // finish currentType
-        QVector<bool> pointerDepth;
-        bool isRef = false;
-        // set global pointers to these vars so visitPtrOperator() can access them
-        this->pointerDepth = &pointerDepth;
-        this->isRef = &isRef;
-        visitNodes(this, node->ptr_ops);
-        // set them to 0 again so nothing bad will happen
-        this->pointerDepth = 0;
-        this->isRef = 0;
-        
-        int offset = currentType.pointerDepth();
-        currentType.setPointerDepth(offset + pointerDepth.count());
-        for (int i = 0; i < pointerDepth.count(); i++) {
-            if (pointerDepth[i])
-                currentType.setIsConstPointer(offset + i, true);
-        }
-        if (isRef) currentType.setIsRef(true);
-        
+        // run it again on the list of pointer operators to add them to the type
+        tc->run(node->ptr_ops);
+        currentType = tc->type();
         currentTypeRef = Type::registerType(currentType);
-        
-        // done with creating the type
         createType = false;
     }
     if (createTypedef) {
@@ -320,17 +302,6 @@ void GeneratorVisitor::visitParameterDeclaration(ParameterDeclarationAST* node)
     inParameter = false;
 }
 
-void GeneratorVisitor::visitPtrOperator(PtrOperatorAST* node)
-{
-    if (pointerDepth && token_text(m_session->token_stream->kind(node->op))[0] == '*') {
-        QPair<bool, bool> cv = parseCv(node->cv);
-        pointerDepth->append(cv.first);
-    } else if (isRef && token_text(m_session->token_stream->kind(node->op))[0] == '&') {
-        *isRef = true;
-    }
-    DefaultVisitor::visitPtrOperator(node);
-}
-
 void GeneratorVisitor::visitSimpleDeclaration(SimpleDeclarationAST* node)
 {
     bool popKlass = false;
@@ -397,31 +368,8 @@ void GeneratorVisitor::visitSimpleDeclaration(SimpleDeclarationAST* node)
 
 void GeneratorVisitor::visitSimpleTypeSpecifier(SimpleTypeSpecifierAST* node)
 {
+    // first run on the type specifier to get the name of the type
     tc->run(node);
-    if (node->integrals) {
-        currentType = Type(tc->qualifiedName().join(" "), tc->isConstant(), tc->isVolatile());
-        createType = true;
-        DefaultVisitor::visitSimpleTypeSpecifier(node);
-        return;
-    }
-    // resolve the type in the current context
-    QPair<Class*, Typedef*> klass = resolveType(tc->qualifiedName().join("::"));
-    if (klass.first) {
-        // it's a class
-        currentType = Type(klass.first, tc->isConstant(), tc->isVolatile());
-    } else if (klass.second) {
-        // it's a typedef, resolve it or not?
-        if (!m_resolveTypedefs) {
-            currentType = Type(klass.second, tc->isConstant(), tc->isVolatile());
-        } else {
-            currentType = klass.second->resolve();
-            if (tc->isConstant()) currentType.setIsConst(true);
-            if (tc->isVolatile()) currentType.setIsVolatile(true);
-        }
-    } else {
-        // type not known
-        currentType = Type(tc->qualifiedName().join("::"), tc->isConstant(), tc->isVolatile());
-    }
     createType = true;
     DefaultVisitor::visitSimpleTypeSpecifier(node);
 }

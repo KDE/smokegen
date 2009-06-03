@@ -9,6 +9,8 @@ set(smokegenerator_SRC
     generatorenvironment.cpp
     generatorvisitor.cpp
     generatorpreprocessor.cpp
+    type_compiler.cpp
+    name_compiler.cpp
     type.cpp
 )
 

@@ -35,11 +35,12 @@ class GeneratorVisitor : public DefaultVisitor
 {
 public:
     GeneratorVisitor(ParseSession *session, bool resolveTypedefs = false);
+    QPair<Class*, Typedef*> resolveType(const QString& name);
+    QPair<bool, bool> parseCv(const ListNode<std::size_t> *cv);
+    inline bool resolveTypdefs() const { return m_resolveTypedefs; }
 
 protected:
     inline const Token& token(std::size_t token) { return m_session->token_stream->token(token); }
-    QPair<bool, bool> parseCv(const ListNode<std::size_t> *cv);
-    QPair<Class*, Typedef*> resolveType(const QString& name);
 
     virtual void visitAccessSpecifier(AccessSpecifierAST* node);
     virtual void visitBaseSpecifier(BaseSpecifierAST* node);
@@ -50,7 +51,6 @@ protected:
     virtual void visitInitializerClause(InitializerClauseAST *);
     virtual void visitNamespace(NamespaceAST* node);
     virtual void visitParameterDeclaration(ParameterDeclarationAST* node);
-    virtual void visitPtrOperator(PtrOperatorAST* node);
     virtual void visitSimpleDeclaration(SimpleDeclarationAST* node);
     virtual void visitSimpleTypeSpecifier(SimpleTypeSpecifierAST* node);
     virtual void visitTemplateDeclaration(TemplateDeclarationAST* node);
@@ -69,8 +69,6 @@ private:
     bool createTypedef;
     short inClass;
     
-    QVector<bool> *pointerDepth;
-    bool *isRef;
     bool isStatic;
     bool isVirtual;
     bool isPureVirtual;

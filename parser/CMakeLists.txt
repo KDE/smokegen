@@ -8,9 +8,7 @@ set(cppparser_LIB_SRCS
     ast.cpp
     default_visitor.cpp
     memorypool.cpp
-    name_compiler.cpp
     visitor.cpp
-    class_compiler.cpp
     control.cpp
     lexer.cpp
     parser.cpp
@@ -18,7 +16,6 @@ set(cppparser_LIB_SRCS
     tokens.cpp
     dumptree.cpp
     parsesession.cpp
-    type_compiler.cpp
     commentparser.cpp
     commentformatter.cpp
     codegenerator.cpp
