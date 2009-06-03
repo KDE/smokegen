@@ -105,7 +105,7 @@ QString Typedef::toString() const
     return ret;
 }
 
-const Type Type::Void("void");
+const Type* Type::Void = Type::registerType(Type("void"));
 
 Type Typedef::resolve() const {
     bool isRef = false, isConst = false, isVolatile = false;

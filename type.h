@@ -364,7 +364,7 @@ public:
         }
     }
 
-    static const Type Void;
+    static const Type* Void;
 
 protected:
     Class* m_class;

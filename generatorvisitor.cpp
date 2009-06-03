@@ -203,7 +203,7 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
             returnType = Type::registerType(t);
         } else if (isDestructor) {
             // destructors don't have a return type.. so return void
-            returnType = const_cast<Type*>(&Type::Void);
+            returnType = const_cast<Type*>(Type::Void);
         }
         currentMethod = Method(klass.top(), nc->name(), returnType, access.top());
         currentMethod.setIsConstructor(isConstructor);
