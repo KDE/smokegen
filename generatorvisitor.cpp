@@ -37,8 +37,6 @@ GeneratorVisitor::GeneratorVisitor(ParseSession *session, bool resolveTypedefs)
     usingNamespaces.push(QStringList());
 }
 
-
-inline
 QPair<bool, bool> GeneratorVisitor::parseCv(const ListNode<std::size_t> *cv)
 {
     QPair<bool, bool> ret(false, false);
@@ -178,27 +176,30 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
         currentTypeRef = Type::registerType(currentType);
         createType = false;
     }
+    
+    if (currentType.isFunctionPointer() && node->sub_declarator)
+        nc->run(node->sub_declarator->id);
+    else
+        nc->run(node->id);
+    const QString declName = nc->name();
+    
     if (createTypedef) {
         // we've just created the type that the typedef points to
         // so we just need to get the new name and store it
-        if (!currentTypeRef->isFunctionPointer())
-            nc->run(node->id);
-        else
-            nc->run(node->sub_declarator->id);
         Class* parent = klass.isEmpty() ? 0 : klass.top();
-        Typedef tdef = Typedef(currentTypeRef, nc->name(), nspace.join("::"), parent);
+        Typedef tdef = Typedef(currentTypeRef, declName, nspace.join("::"), parent);
         QString name = tdef.toString();
         if (!typedefs.contains(name))
             typedefs[name] = tdef;
         createTypedef = false;
+        return;
     }
-    
+
     // only run this if we're not in a method. only checking for parameter_declaration_clause
     // won't be enough because function pointer types also have that.
     if (node->parameter_declaration_clause && !inMethod && inClass) {
-        nc->run(node->id);
-        bool isConstructor = (nc->name() == klass.top()->name());
-        bool isDestructor = (nc->name() == "~" + klass.top()->name());
+        bool isConstructor = (declName == klass.top()->name());
+        bool isDestructor = (declName == "~" + klass.top()->name());
         Type* returnType = currentTypeRef;
         if (isConstructor) {
             // constructors return a pointer to the class they create
@@ -208,7 +209,7 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
             // destructors don't have a return type.. so return void
             returnType = const_cast<Type*>(Type::Void);
         }
-        currentMethod = Method(klass.top(), nc->name(), returnType, access.top());
+        currentMethod = Method(klass.top(), declName, returnType, access.top());
         currentMethod.setIsConstructor(isConstructor);
         currentMethod.setIsDestructor(isDestructor);
         // build parameter list
@@ -222,14 +223,14 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
         if (isPureVirtual) currentMethod.setFlag(Method::PureVirtual);
         if (isStatic) currentMethod.setFlag(Method::Static);
         klass.top()->appendMethod(currentMethod);
+        return;
     }
     
     // global function
-    if (node->parameter_declaration_clause && !inMethod && !inClass) {
-        nc->run(node->id);
-        if (!nc->name().contains("::")) {
+    if (node->parameter_declaration_clause && !inMethod && !inClass && !currentTypeRef->isFunctionPointer()) {
+        if (!declName.contains("::")) {
             Type* returnType = currentTypeRef;
-            currentFunction = Function(nc->name(), returnType);
+            currentFunction = Function(declName, returnType);
             // build parameter list
             inMethod = true;
             visit(node->parameter_declaration_clause);
@@ -239,30 +240,30 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
                 functions[name] = currentFunction;
             }
         }
+        return;
     }
     
     // field
     if (!inMethod && !klass.isEmpty()) {
-        nc->run(node->id);
-        Field field = Field(klass.top(), nc->name(), currentTypeRef, access.top());
+        Field field = Field(klass.top(), declName, currentTypeRef, access.top());
         klass.top()->appendField(field);
+        return;
     } else if (!inMethod && !inClass) {
         // global variable
-        nc->run(node->id);
-        if (!globals.contains(nc->name())) {
-            GlobalVar var = GlobalVar(nc->name(), currentTypeRef);
+        if (!globals.contains(declName)) {
+            GlobalVar var = GlobalVar(declName, currentTypeRef);
             globals[var.name()] = var;
         }
+        return;
     }
     
     // this declaration is a parameter
     if (inParameter) {
         if (inClass)
-            currentMethod.appendParameter(Parameter(nc->name(), currentTypeRef));
+            currentMethod.appendParameter(Parameter(declName, currentTypeRef));
         else
-            currentFunction.appendParameter(Parameter(nc->name(), currentTypeRef));
+            currentFunction.appendParameter(Parameter(declName, currentTypeRef));
     }
-    DefaultVisitor::visitDeclarator(node);
 }
 
 void GeneratorVisitor::visitEnumSpecifier(EnumSpecifierAST* node)
