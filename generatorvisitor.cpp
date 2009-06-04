@@ -173,7 +173,7 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
 {
     if (createType) {
         // run it again on the list of pointer operators to add them to the type
-        tc->run(node->ptr_ops);
+        tc->run(node);
         currentType = tc->type();
         currentTypeRef = Type::registerType(currentType);
         createType = false;
@@ -181,7 +181,10 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
     if (createTypedef) {
         // we've just created the type that the typedef points to
         // so we just need to get the new name and store it
-        nc->run(node->id);
+        if (!currentTypeRef->isFunctionPointer())
+            nc->run(node->id);
+        else
+            nc->run(node->sub_declarator->id);
         Class* parent = klass.isEmpty() ? 0 : klass.top();
         Typedef tdef = Typedef(currentTypeRef, nc->name(), nspace.join("::"), parent);
         QString name = tdef.toString();
@@ -254,7 +257,6 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
     
     // this declaration is a parameter
     if (inParameter) {
-        nc->run(node->id);
         if (inClass)
             currentMethod.appendParameter(Parameter(nc->name(), currentTypeRef));
         else
@@ -297,6 +299,8 @@ void GeneratorVisitor::visitNamespace(NamespaceAST* node)
 
 void GeneratorVisitor::visitParameterDeclaration(ParameterDeclarationAST* node)
 {
+    if (inParameter)
+        return;
     inParameter = true;
     DefaultVisitor::visitParameterDeclaration(node);
     inParameter = false;

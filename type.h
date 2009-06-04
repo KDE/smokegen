@@ -302,11 +302,11 @@ class Type
 {
 public:
     Type(Class* klass = 0, bool isConst = false, bool isVolatile = false, int pointerDepth = 0, bool isRef = false)
-        : m_class(klass), m_typedef(0), m_isConst(isConst), m_isVolatile(isVolatile), m_pointerDepth(pointerDepth), m_isRef(isRef) {}
+        : m_class(klass), m_typedef(0), m_isConst(isConst), m_isVolatile(isVolatile), m_pointerDepth(pointerDepth), m_isRef(isRef), m_isFunctionPointer(false) {}
     Type(Typedef* tdef, bool isConst = false, bool isVolatile = false, int pointerDepth = 0, bool isRef = false)
-        : m_class(0), m_typedef(tdef), m_isConst(isConst), m_isVolatile(isVolatile), m_pointerDepth(pointerDepth), m_isRef(isRef) {}
+        : m_class(0), m_typedef(tdef), m_isConst(isConst), m_isVolatile(isVolatile), m_pointerDepth(pointerDepth), m_isRef(isRef), m_isFunctionPointer(false) {}
     Type(const QString& name, bool isConst = false, bool isVolatile = false, int pointerDepth = 0, bool isRef = false)
-        : m_class(0), m_typedef(0), m_name(name), m_isConst(isConst), m_isVolatile(isVolatile), m_pointerDepth(pointerDepth), m_isRef(isRef) {}
+        : m_class(0), m_typedef(0), m_name(name), m_isConst(isConst), m_isVolatile(isVolatile), m_pointerDepth(pointerDepth), m_isRef(isRef), m_isFunctionPointer(false) {}
 
     void setClass(Class* klass) { m_class = klass; m_typedef = 0; }
     Class* getClass() const { return m_class; }
@@ -351,6 +351,11 @@ public:
     void appendTemplateArgument(const Type& type) { m_templateArgs.append(type); }
     void setTemplateArguments(const QList<Type>& types) { m_templateArgs = types; }
 
+    void setIsFunctionPointer(bool isPtr) { m_isFunctionPointer = isPtr; }
+    bool isFunctionPointer() const { return m_isFunctionPointer; }
+    ParameterList parameters() const { return m_params; }
+    void appendParameter(const Parameter& param) { m_params.append(param); }
+
     QString toString() const;
 
     static Type* registerType(const Type& type) {
@@ -375,6 +380,8 @@ protected:
     QHash<int, bool> m_constPointer;
     bool m_isRef;
     QList<Type> m_templateArgs;
+    bool m_isFunctionPointer;
+    ParameterList m_params;
 };
 
 #endif // TYPE_H

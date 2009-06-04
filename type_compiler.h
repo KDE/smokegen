@@ -47,13 +47,14 @@ public:
 
   const Type& type() const { return m_realType; }
 
-  void run(TypeSpecifierAST *node, const ListNode<PtrOperatorAST*> *ptr_ops = 0);
-  void run(const ListNode<PtrOperatorAST*> *ptr_ops);
+  void run(TypeSpecifierAST *node, const DeclaratorAST* declarator = 0);
+  void run(const DeclaratorAST *declarator);
 
 protected:
   virtual void visitClassSpecifier(ClassSpecifierAST *node);
   virtual void visitEnumSpecifier(EnumSpecifierAST *node);
   virtual void visitElaboratedTypeSpecifier(ElaboratedTypeSpecifierAST *node);
+  virtual void visitParameterDeclaration(ParameterDeclarationAST* node);
   virtual void visitPtrOperator(PtrOperatorAST* node);
   virtual void visitSimpleTypeSpecifier(SimpleTypeSpecifierAST *node);
 

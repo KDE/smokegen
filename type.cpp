@@ -74,7 +74,10 @@ QString Member::toString(bool withAccess) const
 
 QString Parameter::toString() const
 {
-    return m_type->toString() + " " + m_name;
+    QString ret = m_type->toString();
+    if (!m_name.isEmpty())
+        ret +=  " " + m_name;
+    return ret;
 }
 
 QString Method::toString(bool withAccess) const
@@ -165,6 +168,14 @@ QString Type::toString() const
             ret += m_templateArgs[i].toString();
         }
         ret += " >";
+    }
+    if (m_isFunctionPointer) {
+        ret += "(*)(";
+        for (int i = 0; i < m_params.count(); i++) {
+            if (i > 0) ret += ',';
+            ret += m_params[i].toString();
+        }
+        ret += ')';
     }
     for (int i = 0; i < m_pointerDepth; i++) {
         ret += "*";

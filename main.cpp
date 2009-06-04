@@ -130,4 +130,9 @@ int main(int argc, char **argv)
         GeneratorVisitor visitor(&session, resolveTypdefs);
         visitor.visit(ast);
     }
+    
+    foreach (const QString& key, ::functions.keys()) {
+        const Function& f = functions[key];
+        qDebug() << f.toString();
+    }
 }

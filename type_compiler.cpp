@@ -26,13 +26,14 @@
 #include <parsesession.h>
 
 #include <QtCore/QString>
+#include <QtDebug>
 
 TypeCompiler::TypeCompiler(ParseSession* session, GeneratorVisitor* visitor)
   : m_session(session), m_visitor(visitor)
 {
 }
 
-void TypeCompiler::run(TypeSpecifierAST* node, const ListNode< PtrOperatorAST* > *ptr_ops)
+void TypeCompiler::run(TypeSpecifierAST* node, const DeclaratorAST* declarator)
 {
   m_type.clear();
   m_realType = Type();
@@ -57,19 +58,28 @@ void TypeCompiler::run(TypeSpecifierAST* node, const ListNode< PtrOperatorAST* >
     }
   visit(node);
   
-  if (ptr_ops)
-    run(ptr_ops);
+  if (declarator)
+    run(declarator);
 }
 
-void TypeCompiler::run(const ListNode< PtrOperatorAST* > *ptr_ops)
+void TypeCompiler::run(const DeclaratorAST* declarator)
 {
-    visitNodes(this, ptr_ops);
-    if (isRef) m_realType.setIsRef(true);
-    int offset = m_realType.pointerDepth();
-    m_realType.setPointerDepth(offset + pointerDepth.count());
-    for (int i = 0; i < pointerDepth.count(); i++) {
-        if (pointerDepth[i])
-        m_realType.setIsConstPointer(offset + i, true);
+    if (declarator->ptr_ops) {
+        visitNodes(this, declarator->ptr_ops);
+        if (isRef) m_realType.setIsRef(true);
+        int offset = m_realType.pointerDepth();
+        m_realType.setPointerDepth(offset + pointerDepth.count());
+        for (int i = 0; i < pointerDepth.count(); i++) {
+            if (pointerDepth[i])
+            m_realType.setIsConstPointer(offset + i, true);
+        }
+    }
+    
+    NameCompiler name_cc(m_session, m_visitor);
+    name_cc.run(declarator->id);
+    if (declarator->parameter_declaration_clause && declarator->sub_declarator && name_cc.qualifiedName().isEmpty()) {
+        m_realType.setIsFunctionPointer(true);
+        visit(declarator->parameter_declaration_clause);
     }
 }
 
@@ -87,6 +97,18 @@ void TypeCompiler::visitEnumSpecifier(EnumSpecifierAST *node)
 void TypeCompiler::visitElaboratedTypeSpecifier(ElaboratedTypeSpecifierAST *node)
 {
   visit(node->name);
+}
+
+void TypeCompiler::visitParameterDeclaration(ParameterDeclarationAST* node)
+{
+    TypeCompiler tc(m_session, m_visitor);
+    tc.run(node->type_specifier, node->declarator);
+    NameCompiler name_cc(m_session, m_visitor);
+    if (tc.type().isFunctionPointer())
+        name_cc.run(node->declarator->sub_declarator->id);
+    else if (node->declarator)
+        name_cc.run(node->declarator->id);
+    m_realType.appendParameter(Parameter(name_cc.name(), Type::registerType(tc.type())));
 }
 
 void TypeCompiler::visitPtrOperator(PtrOperatorAST* node)
