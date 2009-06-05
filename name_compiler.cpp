@@ -110,8 +110,8 @@ QString decode(ParseSession* session, AST* ast, bool without_spaces = false)
   return id;
 }*/
 
-NameCompiler::NameCompiler(ParseSession* session, GeneratorVisitor*)
-  : m_session(session)
+NameCompiler::NameCompiler(ParseSession* session, GeneratorVisitor* visitor)
+  : m_session(session), m_visitor(visitor)
 {
 }
 
@@ -139,10 +139,14 @@ void NameCompiler::visitUnqualifiedName(UnqualifiedNameAST *node)
       static QString operatorString("operator");
       QString tmp = operatorString;
 
-      if (op_id->op && op_id->op->op)
+      if (op_id->op && op_id->op->op) {
         tmp +=  decode(m_session, op_id->op, true);
-      else
-        tmp += QLatin1String("{...cast...}");
+      } else {
+        TypeCompiler tc(m_session, m_visitor);
+        tc.run(op_id->type_specifier);
+        tc.run(op_id->ptr_ops);
+        tmp += " " + tc.type().toString();
+      }
 
       tmp_name = IndexedString(tmp);
       m_typeSpecifier = op_id->type_specifier;

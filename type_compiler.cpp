@@ -64,22 +64,26 @@ void TypeCompiler::run(TypeSpecifierAST* node, const DeclaratorAST* declarator)
 
 void TypeCompiler::run(const DeclaratorAST* declarator)
 {
-    if (declarator->ptr_ops) {
-        visitNodes(this, declarator->ptr_ops);
-        if (isRef) m_realType.setIsRef(true);
-        int offset = m_realType.pointerDepth();
-        m_realType.setPointerDepth(offset + pointerDepth.count());
-        for (int i = 0; i < pointerDepth.count(); i++) {
-            if (pointerDepth[i])
-            m_realType.setIsConstPointer(offset + i, true);
-        }
-    }
+    if (declarator->ptr_ops)
+        run(declarator->ptr_ops);
     
     NameCompiler name_cc(m_session, m_visitor);
     name_cc.run(declarator->id);
     if (declarator->parameter_declaration_clause && declarator->sub_declarator && name_cc.qualifiedName().isEmpty()) {
         m_realType.setIsFunctionPointer(true);
         visit(declarator->parameter_declaration_clause);
+    }
+}
+
+void TypeCompiler::run(const ListNode< PtrOperatorAST* > *ptr_ops)
+{
+    visitNodes(this, ptr_ops);
+    if (isRef) m_realType.setIsRef(true);
+    int offset = m_realType.pointerDepth();
+    m_realType.setPointerDepth(offset + pointerDepth.count());
+    for (int i = 0; i < pointerDepth.count(); i++) {
+        if (pointerDepth[i])
+        m_realType.setIsConstPointer(offset + i, true);
     }
 }
 

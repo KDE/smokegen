@@ -37,6 +37,12 @@ GeneratorVisitor::GeneratorVisitor(ParseSession *session, bool resolveTypedefs)
     usingNamespaces.push(QStringList());
 }
 
+GeneratorVisitor::~GeneratorVisitor()
+{
+    delete nc;
+    delete tc;
+}
+
 QPair<bool, bool> GeneratorVisitor::parseCv(const ListNode<std::size_t> *cv)
 {
     QPair<bool, bool> ret(false, false);

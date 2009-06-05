@@ -35,6 +35,7 @@ class GeneratorVisitor : public DefaultVisitor
 {
 public:
     GeneratorVisitor(ParseSession *session, bool resolveTypedefs = false);
+    virtual ~GeneratorVisitor();
     QPair<Class*, Typedef*> resolveType(const QString& name);
     QPair<bool, bool> parseCv(const ListNode<std::size_t> *cv);
     inline bool resolveTypdefs() const { return m_resolveTypedefs; }

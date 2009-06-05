@@ -49,6 +49,7 @@ public:
 
   void run(TypeSpecifierAST *node, const DeclaratorAST* declarator = 0);
   void run(const DeclaratorAST *declarator);
+  void run(const ListNode<PtrOperatorAST*> *ptr_ops);
 
 protected:
   virtual void visitClassSpecifier(ClassSpecifierAST *node);
