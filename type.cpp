@@ -18,12 +18,12 @@
 
 #include "type.h"
 
-QHash<QString, Class> classes;
-QHash<QString, Typedef> typedefs;
-QHash<QString, Enum> enums;
-QHash<QString, Function> functions;
-QHash<QString, GlobalVar> globals;
-QHash<QString, Type> types;
+QMap<QString, Class> classes;
+QMap<QString, Typedef> typedefs;
+QMap<QString, Enum> enums;
+QMap<QString, Function> functions;
+QMap<QString, GlobalVar> globals;
+QMap<QString, Type> types;
 
 QString Class::toString() const
 {
