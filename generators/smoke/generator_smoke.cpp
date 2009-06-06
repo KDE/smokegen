@@ -32,6 +32,9 @@ QStringList classList;
 
 QString module = "qt";
 
+QHash<const Class*, QList<const Class*> > superClassCache;
+QHash<const Class*, QList<const Class*> > descendantsClassCache;
+
 void writeSmokeData();
 
 extern "C" Q_DECL_EXPORT
@@ -54,13 +57,31 @@ void generate(const QDir& outputDir, const QList<QFileInfo>& headerList, const Q
     writeSmokeData();
 }
 
-QList<Class*> superClassList(const Class* klass)
+QList<const Class*> superClassList(const Class* klass)
 {
-    QList<Class*> ret;
+    QList<const Class*> ret;
+    if (superClassCache.contains(klass))
+        return superClassCache[klass];
     foreach (const Class::BaseClassSpecifier& base, klass->baseClasses()) {
         ret << base.baseClass;
         ret.append(superClassList(base.baseClass));
     }
+    // cache
+    superClassCache[klass] = ret;
+    return ret;
+}
+
+QList<const Class*> descendantsList(const Class* klass)
+{
+    QList<const Class*> ret;
+    if (descendantsClassCache.contains(klass))
+        return descendantsClassCache[klass];
+    for (QHash<QString, Class>::const_iterator iter = classes.constBegin(); iter != classes.constEnd(); iter++) {
+        if (superClassList(&iter.value()).contains(klass))
+            ret << &iter.value();
+    }
+    // cache
+    descendantsClassCache[klass] = ret;
     return ret;
 }
 
@@ -82,11 +103,16 @@ void writeSmokeData()
         out << "      switch(to) {\n";
         const Class& klass = classes[iter.key()];
         foreach (const Class* base, superClassList(&klass)) {
-            QString baseClassName = base->toString();
+            QString className = base->toString();
             out << QString("        case %1: return (void*)(%2*)(%3*)xptr;\n")
-                .arg(classIndex[baseClassName]).arg(baseClassName).arg(klass.toString());
+                .arg(classIndex[className]).arg(className).arg(klass.toString());
         }
         out << QString("        case %1: return (void*)(%2*)xptr;\n").arg(iter.value()).arg(klass.toString());
+        foreach (const Class* desc, descendantsList(&klass)) {
+            QString className = desc->toString();
+            out << QString("        case %1: return (void*)(%2*)(%3*)xptr;\n")
+                .arg(classIndex[className]).arg(className).arg(klass.toString());
+        }
         out << "        default: return xptr;\n";
         out << "      }\n";
     }
