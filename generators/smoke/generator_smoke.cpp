@@ -20,6 +20,7 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QHash>
+#include <QSet>
 #include <QString>
 #include <QtDebug>
 
@@ -31,6 +32,8 @@ QList<QFileInfo> headerList;
 QStringList classList;
 
 QString module = "qt";
+
+QSet<Class*> externClasses;
 
 QHash<const Class*, QList<const Class*> > superClassCache;
 QHash<const Class*, QList<const Class*> > descendantsClassCache;
@@ -118,6 +121,13 @@ void writeSmokeData()
     }
     out << "    default: return xptr;\n";
     out << "  }\n";
-    out << "}\n";
+    out << "}\n\n";
+    
+    // write out the inheritance list
+    out << "// Group of Indexes (0 separated) used as super class lists.\n";
+    out << "// Classes with super classes have an index into this array.\n";
+    out << "static Smoke::Index " << module << "_inheritanceList[] = {\n";
+    out << "    0,\t// 0: (no super class)\n";
+    out << "}\n\n";
     smokedata.close();
 }
