@@ -18,6 +18,7 @@
 */
 
 #include <QString>
+#include <QtDebug>
 
 #include <type.h>
 

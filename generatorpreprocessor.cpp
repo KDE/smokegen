@@ -24,6 +24,8 @@
 
 #include <QtDebug>
 
+QList<QString> parsedHeaders;
+
 Preprocessor::Preprocessor(const QList<QDir>& includeDirs, const QStringList& defines, const QFileInfo& file)
     : m_includeDirs(includeDirs), m_defines(defines), m_file(file)
 {
@@ -144,7 +146,7 @@ rpp::Stream* Preprocessor::sourceNeeded(QString& fileName, rpp::Preprocessor::In
     } else {
         foreach (QDir dir, m_includeDirs) {
             if (dir.exists(fileName)) {
-                path = dir.filePath(fileName);
+                path = dir.absoluteFilePath(fileName);
                 break;
             }
         }
@@ -157,6 +159,8 @@ rpp::Stream* Preprocessor::sourceNeeded(QString& fileName, rpp::Preprocessor::In
     file.open(QFile::ReadOnly);
     QByteArray array = file.readAll();
     file.close();
+    
+    parsedHeaders << path;
     
     if (type == rpp::Preprocessor::IncludeGlobal) {
         // cache the identifier (fileName), the accompanying QFileInfo and the contents

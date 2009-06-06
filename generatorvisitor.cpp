@@ -329,13 +329,12 @@ void GeneratorVisitor::visitSimpleDeclaration(SimpleDeclarationAST* node)
         Class* parent = klass.isEmpty() ? 0 : klass.top();
         Class _class = Class(tc->qualifiedName().last(), nspace.join("::"), parent, kind);
         QString name = _class.toString();
-        // Only add the class if it's not added yet or if it overrides a forward declaration.
-        // This prevents fully parsed classes being overridden by forward declarations.
-        if (!classes.contains(name) || classes[name].isForwardDecl()) {
-            QMap<QString, Class>::iterator item = classes.insert(name, _class);
-            klass.push(&item.value());
-            popKlass = true;
-        }
+        // This class has already been parsed.
+        if (classes.contains(name) && !classes[name].isForwardDecl())
+            return;
+        QMap<QString, Class>::iterator item = classes.insert(name, _class);
+        klass.push(&item.value());
+        popKlass = true;
     }
     
     if (node->function_specifiers) {

@@ -35,6 +35,8 @@ namespace rpp {
     class MacroBlock;
 }
 
+extern QList<QString> parsedHeaders;
+
 class Preprocessor : public rpp::Preprocessor
 {
 public:

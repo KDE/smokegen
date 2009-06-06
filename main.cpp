@@ -21,6 +21,7 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QLibrary>
 
 #include <QtDebug>
 
@@ -34,6 +35,8 @@
 #include "generatorpreprocessor.h"
 #include "generatorvisitor.h"
 #include "type.h"
+
+typedef void (*GenerateFn)();
 
 void showUsage()
 {
@@ -61,6 +64,7 @@ int main(int argc, char **argv)
     QList<QFileInfo> headerList;
     QFileInfo classList, definesList;
     QDir output;
+    QString generator;
     bool resolveTypdefs = false;
 
     for (int i = 1; i < args.count(); i++) {
@@ -76,6 +80,8 @@ int main(int argc, char **argv)
             definesList = QFileInfo(args[++i]);
         } else if (args[i] == "-o") {
             output = QDir(args[++i]);
+        } else if (args[i] == "-g") {
+            generator = args[++i];
         } else if (args[i] == "-h") {
             showUsage();
             return EXIT_SUCCESS;
@@ -96,6 +102,19 @@ int main(int argc, char **argv)
             qWarning() << "include directory" << dir.path() << "doesn't exist";
             includeDirs.removeAll(dir);
         }
+    }
+    
+    QLibrary lib("generator_" + generator);
+    lib.load();
+    if (!lib.isLoaded()) {
+        qCritical() << lib.errorString();
+        return EXIT_FAILURE;
+    }
+    qDebug() << "using generator" << lib.fileName();
+    GenerateFn generate = (GenerateFn) lib.resolve("generate");
+    if (!generate) {
+        qCritical() << "couldn't resolve symbol 'generate', aborting";
+        return EXIT_FAILURE;
     }
     
     QStringList classes;
@@ -119,8 +138,12 @@ int main(int argc, char **argv)
         }
         file.close();
     }
-    
+        
     foreach (QFileInfo file, headerList) {
+        qDebug() << "parsing" << file.absoluteFilePath();
+        // this has already been parsed because it was included by some header
+        if (parsedHeaders.contains(file.absoluteFilePath()))
+            continue;
         Preprocessor pp(includeDirs, defines, file);
         Control c;
         Parser parser(&c);
@@ -130,4 +153,6 @@ int main(int argc, char **argv)
         GeneratorVisitor visitor(&session, resolveTypdefs);
         visitor.visit(ast);
     }
+    
+    generate();
 }
