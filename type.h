@@ -21,7 +21,6 @@
 
 #include <QString>
 #include <QHash>
-#include <QMap>
 
 class Class;
 class Typedef;
@@ -30,12 +29,12 @@ class GlobalVar;
 class Function;
 class Type;
 
-extern QMap<QString, Class> classes;
-extern QMap<QString, Typedef> typedefs;
-extern QMap<QString, Enum> enums;
-extern QMap<QString, Function> functions;
-extern QMap<QString, GlobalVar> globals;
-extern QMap<QString, Type> types;
+extern QHash<QString, Class> classes;
+extern QHash<QString, Typedef> typedefs;
+extern QHash<QString, Enum> enums;
+extern QHash<QString, Function> functions;
+extern QHash<QString, GlobalVar> globals;
+extern QHash<QString, Type> types;
 
 class Method;
 class Field;
@@ -365,7 +364,7 @@ public:
             // return a reference to the existing type
             return &types[typeString];
         } else {
-            QMap<QString, Type>::iterator iter = types.insert(typeString, type);
+            QHash<QString, Type>::iterator iter = types.insert(typeString, type);
             return &iter.value();
         }
     }

@@ -332,7 +332,7 @@ void GeneratorVisitor::visitSimpleDeclaration(SimpleDeclarationAST* node)
         // This class has already been parsed.
         if (classes.contains(name) && !classes[name].isForwardDecl())
             return;
-        QMap<QString, Class>::iterator item = classes.insert(name, _class);
+        QHash<QString, Class>::iterator item = classes.insert(name, _class);
         klass.push(&item.value());
         popKlass = true;
     }

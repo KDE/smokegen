@@ -36,7 +36,7 @@
 #include "generatorvisitor.h"
 #include "type.h"
 
-typedef void (*GenerateFn)();
+typedef void (*GenerateFn)(const QDir& outputDir, const QList<QFileInfo>& headerList, const QStringList& classes);
 
 void showUsage()
 {
@@ -154,5 +154,5 @@ int main(int argc, char **argv)
         visitor.visit(ast);
     }
     
-    generate();
+    generate(output, headerList, classes);
 }
