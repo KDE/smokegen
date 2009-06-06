@@ -123,7 +123,7 @@ int main(int argc, char **argv)
         file.open(QIODevice::ReadOnly);
         while (!file.atEnd()) {
             QByteArray array = file.readLine();
-            if (!array.isEmpty()) classes << array;
+            if (!array.isEmpty()) classes << array.trimmed();
         }
         file.close();
     }

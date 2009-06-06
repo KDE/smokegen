@@ -153,10 +153,11 @@ void GeneratorVisitor::visitBaseSpecifier(BaseSpecifierAST* node)
     }
     baseClass.isVirtual = (node->virt > 0);
     nc->run(node->name);
-    QPair<Class*, Typedef*> base = resolveType(nc->name());
+    QPair<Class*, Typedef*> base = resolveType(nc->qualifiedName().join("::"));
+    if (!base.first)
+        return;
     baseClass.baseClass = base.first;
     klass.top()->appendBaseClass(baseClass);
-    DefaultVisitor::visitBaseSpecifier(node);
 }
 
 void GeneratorVisitor::visitClassSpecifier(ClassSpecifierAST* node)

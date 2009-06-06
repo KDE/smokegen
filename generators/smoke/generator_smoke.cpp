@@ -41,13 +41,27 @@ void generate(const QDir& outputDir, const QList<QFileInfo>& headerList, const Q
     ::headerList = headerList;
     classList = classes;
     int i = 1;
+    
     // build table classname => index
     for (QHash<QString, Class>::const_iterator iter = ::classes.constBegin(); iter != ::classes.constEnd(); iter++) {
-//         if (classes.contains(iter.key()))
-            classIndex[iter.key()] = i++;
+        if (classList.contains(iter.key()))
+            classIndex[iter.key()] = 1;
     }
     
+    for (QMap<QString, int>::iterator iter = classIndex.begin(); iter != classIndex.end(); iter++)
+        iter.value() = i++;
+    
     writeSmokeData();
+}
+
+QList<Class*> superClassList(const Class* klass)
+{
+    QList<Class*> ret;
+    foreach (const Class::BaseClassSpecifier& base, klass->baseClasses()) {
+        ret << base.baseClass;
+        ret.append(superClassList(base.baseClass));
+    }
+    return ret;
 }
 
 void writeSmokeData()
@@ -59,18 +73,24 @@ void writeSmokeData()
         out << "#include <" << file.fileName() << ">\n";
     out << "\n#include <smoke.h>\n";
     out << "#include <" << module << "_smoke.h>\n\n";
+    
+    // write out module_cast() function
     out << "static void *" << module << "_cast(void *xptr, Smoke::Index from, Smoke::Index to) {\n";
     out << "  switch(from) {\n";
     for (QMap<QString, int>::const_iterator iter = classIndex.constBegin(); iter != classIndex.constEnd(); iter++) {
         out << "    case " << iter.value() << ":   //" << iter.key() << "\n";
         out << "      switch(to) {\n";
         const Class& klass = classes[iter.key()];
-        foreach (const Class::BaseClassSpecifier& baseClass, klass.baseClasses()) {
-            QString baseClassName = baseClass.baseClass->toString();
-            out << "        case " << classIndex[baseClassName] << ": return (void*)(" << baseClassName << "*)(" << klass.toString() << "*)xptr;\n";
+        foreach (const Class* base, superClassList(&klass)) {
+            QString baseClassName = base->toString();
+            out << QString("        case %1: return (void*)(%2*)(%3*)xptr;\n")
+                .arg(classIndex[baseClassName]).arg(baseClassName).arg(klass.toString());
         }
+        out << QString("        case %1: return (void*)(%2*)xptr;\n").arg(iter.value()).arg(klass.toString());
+        out << "        default: return xptr;\n";
         out << "      }\n";
     }
+    out << "    default: return xptr;\n";
     out << "  }\n";
     out << "}\n";
     smokedata.close();
