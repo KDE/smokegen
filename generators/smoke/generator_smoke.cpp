@@ -42,6 +42,7 @@ QSet<Class*> externClasses;
 extern "C" Q_DECL_EXPORT
 void generate(const QDir& outputDir, const QList<QFileInfo>& headerList, const QStringList& classes)
 {
+    qDebug() << "Generating SMOKE sources...";
     ::outputDir = outputDir;
     ::headerList = headerList;
     classList = classes;

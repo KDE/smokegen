@@ -46,6 +46,8 @@ void showUsage()
     "    -I <include dir>" << std::endl <<
     "    -c <path to file containing a list of classes>" << std::endl <<
     "    -d <path to file containing #defines>" << std::endl <<
+    "    -g <generator to use>" << std::endl <<
+    "    -t resolve typedefs" << std::endl <<
     "    -o <output dir>" << std::endl <<
     "    -h shows this message" << std::endl;
 }

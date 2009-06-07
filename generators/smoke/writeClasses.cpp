@@ -75,6 +75,17 @@ void writeClassFiles()
     }
 }
 
+QString stackItemField(const Type* type)
+{
+    if (type->pointerDepth() > 0 || !type->isIntegral())
+        return "s_class";
+    
+    QString typeName = type->name();
+    typeName.replace("unsigned ", "u");
+    typeName.replace("signed ", "");
+    return "s_" + typeName;
+}
+
 void writeClass(QTextStream& out, const Class* klass)
 {
     const QString className = klass->toString();
@@ -82,5 +93,46 @@ void writeClass(QTextStream& out, const Class* klass)
     
     out << QString("class x_%1 : public %2 {\n").arg(smokeClassName).arg(className);
     out << "    SmokeBinding* _binding;\n";
+    out << "public:\n";
+    for(int i = 0; i < klass->methods().count(); i++) {
+        const Method& meth = klass->methods()[i];
+        out << "    ";
+        if (meth.flags() & Method::Static)
+            out << "static ";
+        out << QString("void x_%1(Smoke::Stack x) {\n").arg(i + 1);
+        out << "        // " << meth.toString() << "\n";
+        out << "        ";
+        if (meth.type() != Type::Void)
+            out << meth.type()->toString() << " xret = ";
+        if (!(meth.flags() & Method::Static))
+            out << "this->";
+        out << className << "::" << meth.name() << "(";
+        for (int j = 0; j < meth.parameters().count(); j++) {
+            const Parameter& param = meth.parameters()[j];
+            if (j > 0) out << ",";
+            out << "(" << param.toString() << ")" << "x[" << j + 1 << "]." << stackItemField(param.type());
+        }
+        out << ");\n";
+        if (meth.type() != Type::Void) {
+            out << "        x[0].";
+            if (meth.type()->pointerDepth() > 0) {
+                out << "s_class = (void*)xret;\n";
+            } else if (meth.type()->isIntegral()) {
+                out << stackItemField(meth.type()) << " = xret;\n";
+            } else if (meth.type()->isRef()) {
+                out << "s_class = (void*)&xret;\n";
+            } else {
+                out << "s_class = (void*)new ";
+                if (Class* retClass = meth.type()->getClass())
+                    out << retClass->toString();
+                else if (Typedef* retTdef = meth.type()->getTypedef())
+                    out << retTdef->toString(); 
+                else
+                    out << meth.type()->name();
+                out << "(xret);\n";
+            }
+        }
+        out << "    }\n";
+    }
     out << "}\n\n";
 }

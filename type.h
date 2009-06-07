@@ -81,13 +81,13 @@ public:
     void setIsForwardDecl(bool forward) { m_forward = forward; }
     bool isForwardDecl() const { return m_forward; }
     
-    QList<Method> methods() const { return m_methods; } const
+    const QList<Method>& methods() const { return m_methods; } const
     void appendMethod(const Method& method) { m_methods.append(method); }
     
-    QList<Field> fields() const { return m_fields; } const
+    const QList<Field>& fields() const { return m_fields; } const
     void appendField(const Field& field) {  m_fields.append(field); }
     
-    QList<BaseClassSpecifier> baseClasses() const { return m_bases; }
+    const QList<BaseClassSpecifier>& baseClasses() const { return m_bases; }
     void appendBaseClass(const BaseClassSpecifier& baseClass) { m_bases.append(baseClass); }
     
     void setFileName(const QString& fileName) { m_file = fileName; }
@@ -161,7 +161,7 @@ public:
     void setParent(Class* parent) { m_parent = parent; }
     Class* parent() const { return m_parent; }
 
-    QList<EnumMember> members() const { return m_members; }
+    const QList<EnumMember>& members() const { return m_members; }
     void appendMember(const EnumMember& member) { m_members.append(member); }
 
     void setFileName(const QString& fileName) { m_file = fileName; }
@@ -249,7 +249,7 @@ public:
         : Member(klass, name, type, access), m_params(params), m_isConstructor(false), m_isDestructor(false), m_isConst(false) {}
     virtual ~Method() {}
 
-    ParameterList parameters() const { return m_params; }
+    const ParameterList& parameters() const { return m_params; }
     void appendParameter(const Parameter& param) { m_params.append(param); }
 
     void setIsConstructor(bool isCtor) { m_isConstructor = isCtor; }
@@ -309,7 +309,7 @@ public:
     Function(const QString& name = QString(), Type* type = 0, ParameterList params = ParameterList())
         : GlobalVar(name, type), m_params(params) {}
 
-    ParameterList parameters() const { return m_params; }
+    const ParameterList& parameters() const { return m_params; }
     void appendParameter(const Parameter& param) { m_params.append(param); }
 
     virtual QString toString() const;
@@ -322,11 +322,11 @@ class Type
 {
 public:
     Type(Class* klass = 0, bool isConst = false, bool isVolatile = false, int pointerDepth = 0, bool isRef = false)
-        : m_class(klass), m_typedef(0), m_isConst(isConst), m_isVolatile(isVolatile), m_pointerDepth(pointerDepth), m_isRef(isRef), m_isFunctionPointer(false) {}
+        : m_class(klass), m_typedef(0), m_isConst(isConst), m_isVolatile(isVolatile), m_pointerDepth(pointerDepth), m_isRef(isRef), m_isIntegral(false), m_isFunctionPointer(false) {}
     Type(Typedef* tdef, bool isConst = false, bool isVolatile = false, int pointerDepth = 0, bool isRef = false)
-        : m_class(0), m_typedef(tdef), m_isConst(isConst), m_isVolatile(isVolatile), m_pointerDepth(pointerDepth), m_isRef(isRef), m_isFunctionPointer(false) {}
+        : m_class(0), m_typedef(tdef), m_isConst(isConst), m_isVolatile(isVolatile), m_pointerDepth(pointerDepth), m_isRef(isRef), m_isIntegral(false), m_isFunctionPointer(false) {}
     Type(const QString& name, bool isConst = false, bool isVolatile = false, int pointerDepth = 0, bool isRef = false)
-        : m_class(0), m_typedef(0), m_name(name), m_isConst(isConst), m_isVolatile(isVolatile), m_pointerDepth(pointerDepth), m_isRef(isRef), m_isFunctionPointer(false) {}
+        : m_class(0), m_typedef(0), m_name(name), m_isConst(isConst), m_isVolatile(isVolatile), m_pointerDepth(pointerDepth), m_isRef(isRef), m_isIntegral(false), m_isFunctionPointer(false) {}
 
     void setClass(Class* klass) { m_class = klass; m_typedef = 0; }
     Class* getClass() const { return m_class; }
@@ -367,13 +367,16 @@ public:
     void setIsRef(bool isRef) { m_isRef = isRef; }
     bool isRef() const { return m_isRef; }
 
+    void setIsIntegral(bool isIntegral) { m_isIntegral = isIntegral; }
+    bool isIntegral() const { return m_isIntegral; }
+
     const QList<Type>& templateArguments() const { return m_templateArgs; }
     void appendTemplateArgument(const Type& type) { m_templateArgs.append(type); }
     void setTemplateArguments(const QList<Type>& types) { m_templateArgs = types; }
 
     void setIsFunctionPointer(bool isPtr) { m_isFunctionPointer = isPtr; }
     bool isFunctionPointer() const { return m_isFunctionPointer; }
-    ParameterList parameters() const { return m_params; }
+    const ParameterList& parameters() const { return m_params; }
     void appendParameter(const Parameter& param) { m_params.append(param); }
 
     QString toString() const;
@@ -399,6 +402,7 @@ protected:
     int m_pointerDepth;
     QHash<int, bool> m_constPointer;
     bool m_isRef;
+    bool m_isIntegral;
     QList<Type> m_templateArgs;
     bool m_isFunctionPointer;
     ParameterList m_params;

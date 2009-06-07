@@ -150,6 +150,7 @@ void TypeCompiler::visitSimpleTypeSpecifier(SimpleTypeSpecifierAST *node)
   
   if (node->integrals) {
     m_realType = Type(m_type.join(" "), isConstant(), isVolatile());
+    m_realType.setIsIntegral(true);
   } else {
     QPair<Class*, Typedef*> type = m_visitor->resolveType(m_type.join("::"));
     if (type.first) {
