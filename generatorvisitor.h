@@ -34,7 +34,7 @@ class TypeCompiler;
 class GeneratorVisitor : public DefaultVisitor
 {
 public:
-    GeneratorVisitor(ParseSession *session, bool resolveTypedefs = false);
+    GeneratorVisitor(ParseSession *session, bool resolveTypedefs = false, const QString& header = QString());
     virtual ~GeneratorVisitor();
     QPair<Class*, Typedef*> resolveType(const QString& name);
     QPair<bool, bool> parseCv(const ListNode<std::size_t> *cv);
@@ -66,6 +66,7 @@ private:
     
     ParseSession *m_session;
     bool m_resolveTypedefs;
+    QString m_header;
     
     bool createType;
     bool createTypedef;

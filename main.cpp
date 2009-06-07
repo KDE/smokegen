@@ -150,7 +150,8 @@ int main(int argc, char **argv)
         ParseSession session;
         session.setContentsAndGenerateLocationTable(pp.preprocess());
         TranslationUnitAST* ast = parser.parse(&session);
-        GeneratorVisitor visitor(&session, resolveTypdefs);
+        // TODO: improve 'header => class' association
+        GeneratorVisitor visitor(&session, resolveTypdefs, file.fileName());
         visitor.visit(ast);
     }
     

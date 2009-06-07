@@ -25,8 +25,8 @@
 
 #include <QtDebug>
 
-GeneratorVisitor::GeneratorVisitor(ParseSession *session, bool resolveTypedefs) 
-    : m_session(session), m_resolveTypedefs(resolveTypedefs), createType(false), createTypedef(false),
+GeneratorVisitor::GeneratorVisitor(ParseSession *session, bool resolveTypedefs, const QString& header) 
+    : m_session(session), m_resolveTypedefs(resolveTypedefs), m_header(header), createType(false), createTypedef(false),
       inClass(0), isStatic(false), isVirtual(false), isPureVirtual(false), 
       currentTypeRef(0), inMethod(false), inParameter(false)
 {
@@ -167,8 +167,10 @@ void GeneratorVisitor::visitClassSpecifier(ClassSpecifierAST* node)
     else
         access.push(Access_public);
     inClass++;
-    if (!klass.isEmpty())
+    if (!klass.isEmpty()) {
+        klass.top()->setFileName(m_header);
         klass.top()->setIsForwardDecl(false);
+    }
     DefaultVisitor::visitClassSpecifier(node);
     access.pop();
     inClass--;
@@ -195,6 +197,7 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
         // so we just need to get the new name and store it
         Class* parent = klass.isEmpty() ? 0 : klass.top();
         Typedef tdef = Typedef(currentTypeRef, declName, nspace.join("::"), parent);
+        tdef.setFileName(m_header);
         QString name = tdef.toString();
         if (!typedefs.contains(name))
             typedefs[name] = tdef;
@@ -277,6 +280,7 @@ void GeneratorVisitor::visitEnumSpecifier(EnumSpecifierAST* node)
 {
     nc->run(node->name);
     currentEnum = Enum(nc->name(), nspace.join("::"), klass.isEmpty() ? 0 : klass.top());
+    currentEnum.setFileName(m_header);
     visitNodes(this, node->enumerators);
     enums[currentEnum.toString()] = currentEnum;
 }

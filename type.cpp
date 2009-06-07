@@ -74,10 +74,7 @@ QString Member::toString(bool withAccess) const
 
 QString Parameter::toString() const
 {
-    QString ret = m_type->toString();
-    if (!m_name.isEmpty())
-        ret +=  " " + m_name;
-    return ret;
+    return m_type->toString();
 }
 
 QString Method::toString(bool withAccess) const

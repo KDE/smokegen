@@ -90,6 +90,9 @@ public:
     QList<BaseClassSpecifier> baseClasses() const { return m_bases; }
     void appendBaseClass(const BaseClassSpecifier& baseClass) { m_bases.append(baseClass); }
     
+    void setFileName(const QString& fileName) { m_file = fileName; }
+    QString fileName() const { return m_file; }
+    
     QString toString() const;
     
 private:
@@ -101,6 +104,8 @@ private:
     QList<Method> m_methods;
     QList<Field> m_fields;
     QList<BaseClassSpecifier> m_bases;
+    
+    QString m_file;
 };
 
 class Typedef
@@ -123,6 +128,9 @@ public:
     void setParent(Class* parent) { m_parent = parent; }
     Class* parent() const { return m_parent; }
 
+    void setFileName(const QString& fileName) { m_file = fileName; }
+    QString fileName() const { return m_file; }
+
     QString toString() const;
 
     Type resolve() const;
@@ -132,6 +140,8 @@ private:
     QString m_name;
     QString m_nspace;
     Class* m_parent;
+    
+    QString m_file;
 };
 
 typedef QPair<QString, QString> EnumMember;
@@ -154,6 +164,9 @@ public:
     QList<EnumMember> members() const { return m_members; }
     void appendMember(const EnumMember& member) { m_members.append(member); }
 
+    void setFileName(const QString& fileName) { m_file = fileName; }
+    QString fileName() const { return m_file; }
+
     QString toString() const;
 
 private:
@@ -161,6 +174,8 @@ private:
     QString m_nspace;
     Class* m_parent;
     QList<EnumMember> m_members;
+    
+    QString m_file;
 };
 
 class Member
@@ -276,11 +291,16 @@ public:
     void setType(Type* type) { m_type = type; }
     Type* type() const { return m_type; }
 
+    void setFileName(const QString& fileName) { m_file = fileName; }
+    QString fileName() { return m_file; }
+
     virtual QString toString() const;
 
 protected:
     QString m_name;
     Type* m_type;
+    
+    QString m_file;
 };
 
 class Function : public GlobalVar
