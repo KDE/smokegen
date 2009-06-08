@@ -152,16 +152,21 @@ void TypeCompiler::visitSimpleTypeSpecifier(SimpleTypeSpecifierAST *node)
     m_realType = Type(m_type.join(" "), isConstant(), isVolatile());
     m_realType.setIsIntegral(true);
   } else {
-    QPair<Class*, Typedef*> type = m_visitor->resolveType(m_type.join("::"));
-    if (type.first) {
-        m_realType = Type(type.first, isConstant(), isVolatile());
-    } else if (type.second) {
+    BasicTypeDeclaration* type = m_visitor->resolveType(m_type.join("::"));
+    Class* klass;
+    Typedef* tdef;
+    Enum* e;
+    if ((klass = dynamic_cast<Class*>(type))) {
+        m_realType = Type(klass, isConstant(), isVolatile());
+    } else if ((tdef = dynamic_cast<Typedef*>(type))) {
         if (m_visitor->resolveTypdefs())
-            m_realType = type.second->resolve();
+            m_realType = tdef->resolve();
         else
-            m_realType = Type(type.second);
+            m_realType = Type(tdef);
         if (isConstant()) m_realType.setIsConst(true);
         if (isVolatile()) m_realType.setIsVolatile(true);
+    } else if ((e = dynamic_cast<Enum*>(type))) {
+        m_realType = Type(e, isConstant(), isVolatile());
     } else {
         m_realType = Type(m_type.join("::"), isConstant(), isVolatile());
     }

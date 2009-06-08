@@ -62,13 +62,15 @@ QPair<bool, bool> GeneratorVisitor::parseCv(const ListNode<std::size_t> *cv)
 }
 
 // TODO: this might have to be improved for cases like 'Typedef::Nested foo'
-QPair<Class*, Typedef*> GeneratorVisitor::resolveType(const QString & name)
+BasicTypeDeclaration* GeneratorVisitor::resolveType(const QString & name)
 {
 #define returnOnExistence(name) \
-        if (classes.contains(name)) {\
-            return qMakePair<Class*, Typedef*>(&classes[name], 0); \
+        if (classes.contains(name)) { \
+            return &classes[name]; \
         } else if (typedefs.contains(name)) { \
-            return qMakePair<Class*, Typedef*>(0, &typedefs[name]); \
+            return &typedefs[name]; \
+        } else if (enums.contains(name)) { \
+            return &enums[name]; \
         }
 
     // check for nested classes
@@ -113,7 +115,7 @@ QPair<Class*, Typedef*> GeneratorVisitor::resolveType(const QString & name)
         }
     }
 
-    return qMakePair<Class*, Typedef*>(0, 0);
+    return 0;
 #undef returnOnExistence
 }
 
@@ -153,10 +155,10 @@ void GeneratorVisitor::visitBaseSpecifier(BaseSpecifierAST* node)
     }
     baseClass.isVirtual = (node->virt > 0);
     nc->run(node->name);
-    QPair<Class*, Typedef*> base = resolveType(nc->qualifiedName().join("::"));
-    if (!base.first)
+    BasicTypeDeclaration* base = resolveType(nc->qualifiedName().join("::"));
+    if (!base || !dynamic_cast<Class*>(base))
         return;
-    baseClass.baseClass = base.first;
+    baseClass.baseClass = static_cast<Class*>(base);
     klass.top()->appendBaseClass(baseClass);
 }
 

@@ -21,6 +21,7 @@
 
 #include <QString>
 #include <QHash>
+#include <QtDebug>
 
 class Class;
 class Typedef;
@@ -45,7 +46,39 @@ enum Access {
     Access_private
 };
 
-class Class
+class Class;
+
+class BasicTypeDeclaration
+{
+public:
+    virtual ~BasicTypeDeclaration() {}
+    virtual bool isValid() const { return !m_name.isEmpty(); }
+    
+    void setName(const QString& name) { m_name = name; }
+    QString name() const { return m_name; }
+    
+    void setNameSpace(const QString& nspace) { m_nspace = nspace; }
+    QString nameSpace() const { return m_nspace; }
+
+    void setParent(Class* parent) { m_parent = parent; }
+    Class* parent() const { return m_parent; }
+
+    void setFileName(const QString& fileName) { m_file = fileName; }
+    QString fileName() const { return m_file; }
+
+    QString toString() const;
+
+protected:
+    BasicTypeDeclaration(const QString& name = QString(), const QString& nspace = QString(), Class* parent = 0)
+        : m_name(name), m_nspace(nspace), m_parent(parent) {}
+
+    QString m_name;
+    QString m_nspace;
+    Class* m_parent;
+    QString m_file;
+};
+
+class Class : public BasicTypeDeclaration
 {
 public:
     enum Kind {
@@ -61,19 +94,8 @@ public:
     };
     
     Class(const QString& name = QString(), const QString nspace = QString(), Class* parent = 0, Kind kind = Kind_Class, bool isForward = true)
-          : m_name(name), m_nspace(nspace), m_parent(parent), m_kind(kind), m_forward(isForward) {}
-    ~Class() {}
-    
-    bool isValid() const { return !m_name.isEmpty(); }
-    
-    void setName(const QString& name) { m_name = name; }
-    QString name() const { return m_name; } const
-    
-    void setNameSpace(const QString& nspace) { m_nspace = nspace; }
-    QString nameSpace() const { return m_nspace; }
-    
-    void setParent(Class* parent) { m_parent = parent; }
-    Class* parent() const { return m_parent; }
+          : BasicTypeDeclaration(name, nspace, parent), m_kind(kind), m_forward(isForward) {}
+    virtual ~Class() {}
     
     void setKind(Kind kind) { m_kind = kind; }
     Kind kind() const { return m_kind; } const
@@ -90,92 +112,46 @@ public:
     const QList<BaseClassSpecifier>& baseClasses() const { return m_bases; }
     void appendBaseClass(const BaseClassSpecifier& baseClass) { m_bases.append(baseClass); }
     
-    void setFileName(const QString& fileName) { m_file = fileName; }
-    QString fileName() const { return m_file; }
-    
-    QString toString() const;
-    
 private:
-    QString m_name;
-    QString m_nspace;
-    Class* m_parent;
     Kind m_kind;
     bool m_forward;
     QList<Method> m_methods;
     QList<Field> m_fields;
     QList<BaseClassSpecifier> m_bases;
-    
-    QString m_file;
 };
 
-class Typedef
+class Typedef : public BasicTypeDeclaration
 {
 public:
     Typedef(Type* type = 0, const QString& name = QString(), const QString nspace = QString(), Class* parent = 0)
-            : m_type(type), m_name(name), m_nspace(nspace), m_parent(parent) {}
+            : BasicTypeDeclaration(name, nspace, parent), m_type(type) {}
+    virtual ~Typedef() {}
 
-    bool isValid() const { return (!m_name.isEmpty() && m_type); }
+    virtual bool isValid() const { return (!m_name.isEmpty() && m_type); }
 
     void setType(Type* type) { m_type = type; }
     Type* type() const { return m_type; }
-
-    void setName(const QString& name) { m_name = name; }
-    QString name() const { return m_name; }
-
-    void setNameSpace(const QString& nspace) { m_nspace = nspace; }
-    QString nameSpace() const { return m_nspace; }
-
-    void setParent(Class* parent) { m_parent = parent; }
-    Class* parent() const { return m_parent; }
-
-    void setFileName(const QString& fileName) { m_file = fileName; }
-    QString fileName() const { return m_file; }
-
-    QString toString() const;
 
     Type resolve() const;
 
 private:
     Type* m_type;
-    QString m_name;
-    QString m_nspace;
-    Class* m_parent;
-    
-    QString m_file;
 };
 
 typedef QPair<QString, QString> EnumMember;
 
-class Enum
+class Enum : public BasicTypeDeclaration
 {
 public:
     Enum(const QString& name = QString(), const QString nspace = QString(), Class* parent = 0)
-         : m_name(name), m_nspace(nspace), m_parent(parent) {}
-
-    void setName(const QString& name) { m_name = name; }
-    QString name() const { return m_name; }
-
-    void setNameSpace(const QString& nspace) { m_nspace = nspace; }
-    QString nameSpace() const { return m_nspace; }
-
-    void setParent(Class* parent) { m_parent = parent; }
-    Class* parent() const { return m_parent; }
+         : BasicTypeDeclaration(name, nspace, parent) {}
+    virtual ~Enum() {}
 
     const QList<EnumMember>& members() const { return m_members; }
     void appendMember(const EnumMember& member) { m_members.append(member); }
 
-    void setFileName(const QString& fileName) { m_file = fileName; }
-    QString fileName() const { return m_file; }
-
-    QString toString() const;
-
 private:
-    QString m_name;
-    QString m_nspace;
-    Class* m_parent;
     QList<EnumMember> m_members;
-    
-    QString m_file;
 };
 
 class Member
@@ -322,33 +298,38 @@ class Type
 {
 public:
     Type(Class* klass = 0, bool isConst = false, bool isVolatile = false, int pointerDepth = 0, bool isRef = false)
-        : m_class(klass), m_typedef(0), m_isConst(isConst), m_isVolatile(isVolatile), m_pointerDepth(pointerDepth), m_isRef(isRef), m_isIntegral(false), m_isFunctionPointer(false) {}
+        : m_class(klass), m_typedef(0), m_enum(0), m_isConst(isConst), m_isVolatile(isVolatile), 
+          m_pointerDepth(pointerDepth), m_isRef(isRef), m_isIntegral(false), m_isFunctionPointer(false) {}
     Type(Typedef* tdef, bool isConst = false, bool isVolatile = false, int pointerDepth = 0, bool isRef = false)
-        : m_class(0), m_typedef(tdef), m_isConst(isConst), m_isVolatile(isVolatile), m_pointerDepth(pointerDepth), m_isRef(isRef), m_isIntegral(false), m_isFunctionPointer(false) {}
+        : m_class(0), m_typedef(tdef), m_enum(0), m_isConst(isConst), m_isVolatile(isVolatile), 
+          m_pointerDepth(pointerDepth), m_isRef(isRef), m_isIntegral(false), m_isFunctionPointer(false) {}
+    Type(Enum* e, bool isConst = false, bool isVolatile = false, int pointerDepth = 0, bool isRef = false)
+        : m_class(0), m_typedef(0), m_enum(e), m_isConst(isConst), m_isVolatile(isVolatile), 
+          m_pointerDepth(pointerDepth), m_isRef(isRef), m_isIntegral(false), m_isFunctionPointer(false) {}    
     Type(const QString& name, bool isConst = false, bool isVolatile = false, int pointerDepth = 0, bool isRef = false)
-        : m_class(0), m_typedef(0), m_name(name), m_isConst(isConst), m_isVolatile(isVolatile), m_pointerDepth(pointerDepth), m_isRef(isRef), m_isIntegral(false), m_isFunctionPointer(false) {}
+        : m_class(0), m_typedef(0), m_enum(0), m_name(name), m_isConst(isConst), m_isVolatile(isVolatile), 
+          m_pointerDepth(pointerDepth), m_isRef(isRef), m_isIntegral(false), m_isFunctionPointer(false) {}
 
-    void setClass(Class* klass) { m_class = klass; m_typedef = 0; }
+    void setClass(Class* klass) { m_class = klass; m_typedef = 0; m_enum = 0; }
     Class* getClass() const { return m_class; }
     
-    void setTypedef(Typedef* tdef) { m_typedef = tdef; m_class = 0; }
+    void setTypedef(Typedef* tdef) { m_typedef = tdef; m_class = 0; m_enum = 0; }
     Typedef* getTypedef() const { return m_typedef; }
+
+    void setEnum(Enum* e) { m_enum = e; m_class = 0; m_typedef = 0; }
+    Enum* getEnum() const { return m_enum; }
 
     void setName(const QString& name) { m_name = name; }
     QString name() const {
-        QString ret;
         if (m_class) {
-            if (!m_class->nameSpace().isEmpty())
-                ret += m_class->nameSpace() + "::";
-            ret += m_class->name();
+            return m_class->toString();
         } else if (m_typedef) {
-            if (!m_typedef->nameSpace().isEmpty())
-                ret += m_typedef->nameSpace() + "::";
-            ret += m_typedef->name();
+            return m_typedef->toString();
+        } else if (m_enum) {
+            return m_enum->toString();
         } else {
             return m_name;
         }
-        return ret;
     }
 
     bool isValid() const { return (m_class || m_typedef || !m_name.isEmpty()); }
@@ -397,6 +378,7 @@ public:
 protected:
     Class* m_class;
     Typedef* m_typedef;
+    Enum* m_enum;
     QString m_name;
     bool m_isConst, m_isVolatile;
     int m_pointerDepth;

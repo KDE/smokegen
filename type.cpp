@@ -25,21 +25,7 @@ QHash<QString, Function> functions;
 QHash<QString, GlobalVar> globals;
 QHash<QString, Type> types;
 
-QString Class::toString() const
-{
-    QString ret;
-    Class* parent = m_parent;
-    while (parent) {
-        ret.prepend(parent->name() + "::");
-        parent = parent->parent();
-    }
-    if (!m_nspace.isEmpty())
-        ret.prepend(m_nspace + "::");
-    ret += m_name;
-    return ret;
-}
-
-QString Enum::toString() const
+QString BasicTypeDeclaration::toString() const
 {
     QString ret;
     Class* parent = m_parent;
@@ -88,20 +74,6 @@ QString Method::toString(bool withAccess) const
     ret += ")";
     if (m_isConst) ret += " const";
     if (m_flags & Member::PureVirtual) ret += " = 0";
-    return ret;
-}
-
-QString Typedef::toString() const
-{
-    QString ret;
-    Class* parent = m_parent;
-    while (parent) {
-        ret.prepend(parent->name() + "::");
-        parent = parent->parent();
-    }
-    if (!m_nspace.isEmpty())
-        ret.prepend(m_nspace + "::");
-    ret += m_name;
     return ret;
 }
 
