@@ -79,11 +79,100 @@ QString stackItemField(const Type* type)
 {
     if (type->pointerDepth() > 0 || !type->isIntegral())
         return "s_class";
+    if (type->getEnum())
+        return "s_enum";
     
     QString typeName = type->name();
     typeName.replace("unsigned ", "u");
     typeName.replace("signed ", "");
     return "s_" + typeName;
+}
+
+QString assignmentString(const Type* type, const QString& var)
+{
+    if (type->pointerDepth() > 0) {
+        return "(void*)" + var;
+    } else if (type->isIntegral()) {
+        return var;
+    } else if (type->isRef()) {
+        return "(void*)&" + var;
+    } else {
+        QString ret = "(void*)new ";
+        if (Class* retClass = type->getClass())
+            ret += retClass->toString();
+        else if (Typedef* retTdef = type->getTypedef())
+            ret += retTdef->toString(); 
+        else
+            ret += type->name();
+        ret += "(xret)";
+        return ret;
+    }
+    return QString();
+}
+
+void generateMethod(QTextStream& out, const QString& className, const Method& meth, int index)
+{
+    out << "    ";
+    if (meth.flags() & Method::Static)
+        out << "static ";
+    out << QString("void x_%1(Smoke::Stack x) {\n").arg(index + 1);
+    out << "        // " << meth.toString() << "\n";
+    out << "        ";
+    if (meth.type() != Type::Void)
+        out << meth.type()->toString() << " xret = ";
+    if (!(meth.flags() & Method::Static))
+        out << "this->";
+    out << className << "::" << meth.name() << "(";
+    for (int j = 0; j < meth.parameters().count(); j++) {
+        const Parameter& param = meth.parameters()[j];
+        if (j > 0) out << ",";
+        out << "(" << param.toString() << ")" << "x[" << j + 1 << "]." << stackItemField(param.type());
+    }
+    out << ");\n";
+    if (meth.type() != Type::Void) {
+        out << "        x[0]." << stackItemField(meth.type()) << " = " << assignmentString(meth.type(), "xret") << ";\n";
+    } else {
+        out << "        (void)x; // noop (for compiler warning)\n";
+    }
+    out << "    }\n";
+}
+
+void generateVirtualMethod(QTextStream& out, const QString& className, const Method& meth)
+{
+    QString x_params, x_list;
+    QString type = meth.type()->toString();
+    out << "    virtual " << type << " " << meth.name() << "(";
+    for (int i = 0; i < meth.parameters().count(); i++) {
+        if (i > 0) { out << ", "; x_list.append(", "); }
+        const Parameter& param = meth.parameters()[i];
+        out << param.type()->toString() << " x" << i + 1;
+        x_params += QString("        x[%1].%2 = x%1;\n").arg(QString::number(i + 1), stackItemField(param.type()));
+        x_list += "x" + QString::number(i + 1);
+    }
+    out << ") {\n";
+    out << QString("        Smoke::StackItem x[%1];\n").arg(meth.parameters().count() + 1);
+    out << x_params;
+    out << QString("        if (this->_binding->callMethod(%1, (void*)this, x)) return").arg(0);
+    if (meth.type() == Type::Void) {
+        out << ";\n";
+    } else {
+        out << QString(" (%1)x[0].%2;\n").arg(type, stackItemField(meth.type()));
+    }
+    out << QString("        this->%1::%2(%3);\n").arg(className).arg(meth.name()).arg(x_list);
+    out << "    }\n";
+}
+
+QList<const Method*> collectVirtualMethods(const Class* klass)
+{
+    QList<const Method*> methods;
+    foreach (const Method& meth, klass->methods()) {
+        if ((meth.flags() & Method::Virtual || meth.flags() & Method::PureVirtual) && !meth.isDestructor())
+            methods << &meth;
+    }
+    foreach (const Class::BaseClassSpecifier& baseClass, klass->baseClasses()) {
+        methods.append(collectVirtualMethods(baseClass.baseClass));
+    }
+    return methods;
 }
 
 void writeClass(QTextStream& out, const Class* klass)
@@ -96,43 +185,10 @@ void writeClass(QTextStream& out, const Class* klass)
     out << "public:\n";
     for(int i = 0; i < klass->methods().count(); i++) {
         const Method& meth = klass->methods()[i];
-        out << "    ";
-        if (meth.flags() & Method::Static)
-            out << "static ";
-        out << QString("void x_%1(Smoke::Stack x) {\n").arg(i + 1);
-        out << "        // " << meth.toString() << "\n";
-        out << "        ";
-        if (meth.type() != Type::Void)
-            out << meth.type()->toString() << " xret = ";
-        if (!(meth.flags() & Method::Static))
-            out << "this->";
-        out << className << "::" << meth.name() << "(";
-        for (int j = 0; j < meth.parameters().count(); j++) {
-            const Parameter& param = meth.parameters()[j];
-            if (j > 0) out << ",";
-            out << "(" << param.toString() << ")" << "x[" << j + 1 << "]." << stackItemField(param.type());
-        }
-        out << ");\n";
-        if (meth.type() != Type::Void) {
-            out << "        x[0].";
-            if (meth.type()->pointerDepth() > 0) {
-                out << "s_class = (void*)xret;\n";
-            } else if (meth.type()->isIntegral()) {
-                out << stackItemField(meth.type()) << " = xret;\n";
-            } else if (meth.type()->isRef()) {
-                out << "s_class = (void*)&xret;\n";
-            } else {
-                out << "s_class = (void*)new ";
-                if (Class* retClass = meth.type()->getClass())
-                    out << retClass->toString();
-                else if (Typedef* retTdef = meth.type()->getTypedef())
-                    out << retTdef->toString(); 
-                else
-                    out << meth.type()->name();
-                out << "(xret);\n";
-            }
-        }
-        out << "    }\n";
+        generateMethod(out, className, meth, i);
+    }
+    foreach (const Method* meth, collectVirtualMethods(klass)) {
+        generateVirtualMethod(out, className, *meth);
     }
     out << "}\n\n";
 }
