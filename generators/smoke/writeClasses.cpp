@@ -110,7 +110,7 @@ QString assignmentString(const Type* type, const QString& var)
     return QString();
 }
 
-void generateMethod(QTextStream& out, const QString& className, const Method& meth, int index)
+void generateMethod(QTextStream& out, const QString& className, const QString& smokeClassName, const Method& meth, int index)
 {
     out << "    ";
     if (meth.flags() & Method::Static)
@@ -118,11 +118,15 @@ void generateMethod(QTextStream& out, const QString& className, const Method& me
     out << QString("void x_%1(Smoke::Stack x) {\n").arg(index + 1);
     out << "        // " << meth.toString() << "\n";
     out << "        ";
-    if (meth.type() != Type::Void)
-        out << meth.type()->toString() << " xret = ";
-    if (!(meth.flags() & Method::Static))
-        out << "this->";
-    out << className << "::" << meth.name() << "(";
+    if (meth.isConstructor()) {
+        out << smokeClassName << "* xret = new " << smokeClassName << "(";
+    } else {
+        if (meth.type() != Type::Void)
+            out << meth.type()->toString() << " xret = ";
+        if (!(meth.flags() & Method::Static))
+            out << "this->";
+        out << className << "::" << meth.name() << "(";
+    }
     for (int j = 0; j < meth.parameters().count(); j++) {
         const Parameter& param = meth.parameters()[j];
         if (j > 0) out << ",";
@@ -143,6 +147,16 @@ void generateMethod(QTextStream& out, const QString& className, const Method& me
         out << "        (void)x; // noop (for compiler warning)\n";
     }
     out << "    }\n";
+    if (meth.isConstructor()) {
+        out << "    explicit " << smokeClassName << '(';
+        QStringList x_list;
+        for (int i = 0; i < meth.parameters().count(); i++) {
+            if (i > 0) out << ", ";
+            out << meth.parameters()[i].type()->toString() << " x" << QString::number(i + 1);
+            x_list << "x" + QString::number(i + 1);
+        }
+        out << ") : " << meth.getClass()->name() << '(' << x_list.join(", ") << ") {}\n";
+    }
 }
 
 void generateVirtualMethod(QTextStream& out, const QString& className, const Method& meth)
@@ -204,16 +218,16 @@ QList<const Method*> collectVirtualMethods(const Class* klass)
 void writeClass(QTextStream& out, const Class* klass)
 {
     const QString className = klass->toString();
-    const QString smokeClassName = QString(className).replace("::", "__");
+    const QString smokeClassName = "x_" + QString(className).replace("::", "__");
     
-    out << QString("class x_%1 : public %2 {\n").arg(smokeClassName).arg(className);
+    out << QString("class %1 : public %2 {\n").arg(smokeClassName).arg(className);
     out << "    SmokeBinding* _binding;\n";
     out << "public:\n";
     for(int i = 0; i < klass->methods().count(); i++) {
         const Method& meth = klass->methods()[i];
         if (meth.access() == Access_private)
             continue;
-        generateMethod(out, className, meth, i);
+        generateMethod(out, className, smokeClassName, meth, i);
     }
     foreach (const Method* meth, collectVirtualMethods(klass)) {
         generateVirtualMethod(out, className, *meth);

@@ -223,6 +223,8 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
         }
         currentMethod = Method(klass.top(), declName, returnType, access.top());
         currentMethod.setIsConstructor(isConstructor);
+        if (isConstructor)
+            currentMethod.setFlag(Member::Static);
         currentMethod.setIsDestructor(isDestructor);
         // build parameter list
         inMethod = true;
