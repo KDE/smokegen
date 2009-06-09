@@ -223,6 +223,10 @@ void writeClass(QTextStream& out, const Class* klass)
     out << QString("class %1 : public %2 {\n").arg(smokeClassName).arg(className);
     out << "    SmokeBinding* _binding;\n";
     out << "public:\n";
+    out << "    void x_0(Smoke::Stack x) {\n";
+    out << "        // set the smoke binding\n";
+    out << "        _binding = (SmokeBinding*)x[1].s_class;\n";
+    out << "    }\n";
     for(int i = 0; i < klass->methods().count(); i++) {
         const Method& meth = klass->methods()[i];
         if (meth.access() == Access_private)
@@ -232,5 +236,7 @@ void writeClass(QTextStream& out, const Class* klass)
     foreach (const Method* meth, collectVirtualMethods(klass)) {
         generateVirtualMethod(out, className, *meth);
     }
+    // destructor
+    out << "    ~" << smokeClassName << QString("() { this->_binding->deleted(%1, (void*)this); }\n").arg(0);
     out << "}\n\n";
 }
