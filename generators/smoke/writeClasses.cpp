@@ -77,7 +77,7 @@ void writeClassFiles()
 
 QString stackItemField(const Type* type)
 {
-    if (type->pointerDepth() > 0 || !type->isIntegral())
+    if ((type->pointerDepth() > 0 || !type->isIntegral()) && !type->getEnum())
         return "s_class";
     if (type->getEnum())
         return "s_enum";
@@ -126,7 +126,15 @@ void generateMethod(QTextStream& out, const QString& className, const Method& me
     for (int j = 0; j < meth.parameters().count(); j++) {
         const Parameter& param = meth.parameters()[j];
         if (j > 0) out << ",";
-        out << "(" << param.toString() << ")" << "x[" << j + 1 << "]." << stackItemField(param.type());
+        QString field = stackItemField(param.type());
+        QString typeName = param.type()->toString();
+        if (field == "s_class" && param.type()->pointerDepth() == 0) {
+            // strip the reference symbol.. we can't have pointers to references
+            if (param.type()->isRef()) typeName.replace('&', "");
+            typeName.append('*');
+            out << '*';
+        }
+        out << "(" << typeName << ")" << "x[" << j + 1 << "]." << field;
     }
     out << ");\n";
     if (meth.type() != Type::Void) {
@@ -146,19 +154,37 @@ void generateVirtualMethod(QTextStream& out, const QString& className, const Met
         if (i > 0) { out << ", "; x_list.append(", "); }
         const Parameter& param = meth.parameters()[i];
         out << param.type()->toString() << " x" << i + 1;
-        x_params += QString("        x[%1].%2 = x%1;\n").arg(QString::number(i + 1), stackItemField(param.type()));
+        x_params += QString("        x[%1].%2 = %3;\n")
+            .arg(QString::number(i + 1)).arg(stackItemField(param.type()))
+            .arg(assignmentString(param.type(), "x" + QString::number(i + 1)));
         x_list += "x" + QString::number(i + 1);
     }
     out << ") {\n";
     out << QString("        Smoke::StackItem x[%1];\n").arg(meth.parameters().count() + 1);
     out << x_params;
-    out << QString("        if (this->_binding->callMethod(%1, (void*)this, x)) return").arg(0);
+    out << QString("        if (this->_binding->callMethod(%1, (void*)this, x)) ").arg(0);
     if (meth.type() == Type::Void) {
-        out << ";\n";
+        out << "return;\n";
     } else {
-        out << QString(" (%1)x[0].%2;\n").arg(type, stackItemField(meth.type()));
+        QString field = stackItemField(meth.type());
+        if (meth.type()->pointerDepth() == 0 && field == "s_class") {
+            QString tmpType = type;
+            if (meth.type()->isRef()) tmpType.replace('&', "");
+            tmpType.append('*');
+            out << "{\n";
+            out << "            " << tmpType << " xptr = (" << tmpType << ")x[0].s_class;\n";
+            out << "            " << type << " xret(*xptr);\n";
+            out << "            delete xptr;\n";
+            out << "            return xret;\n";
+            out << "        }\n";
+        } else {
+            out << QString("return (%1)x[0].%2;\n").arg(type, stackItemField(meth.type()));
+        }
     }
-    out << QString("        this->%1::%2(%3);\n").arg(className).arg(meth.name()).arg(x_list);
+    out << "        ";
+    if (meth.type() != Type::Void)
+        out << "return ";
+    out << QString("this->%1::%2(%3);\n").arg(className).arg(meth.name()).arg(x_list);
     out << "    }\n";
 }
 
@@ -185,6 +211,8 @@ void writeClass(QTextStream& out, const Class* klass)
     out << "public:\n";
     for(int i = 0; i < klass->methods().count(); i++) {
         const Method& meth = klass->methods()[i];
+        if (meth.access() == Access_private)
+            continue;
         generateMethod(out, className, meth, i);
     }
     foreach (const Method* meth, collectVirtualMethods(klass)) {
