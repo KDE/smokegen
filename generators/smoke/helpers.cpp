@@ -56,10 +56,12 @@ QList<const Class*> descendantsList(const Class* klass)
     return ret;
 }
 
-void collectTypes(const QList<QString>& keys)
+void preparse(const QList<QString>& keys)
 {
     foreach (const QString& key, keys) {
-        const Class& klass = classes[key];
+        Class& klass = classes[key];
+        addCopyConstructor(&klass);
+        addDefaultConstructor(&klass);
         foreach (const Method& m, klass.methods()) {
             if (m.access() == Access_private)
                 continue;
@@ -159,4 +161,46 @@ bool hasClassVirtualDestructor(const Class* klass)
     
     cache[klass] = virtualDtorFound;
     return virtualDtorFound;
+}
+
+void addDefaultConstructor(Class* klass)
+{
+    foreach (const Method& meth, klass->methods()) {
+        // if the class already has a constructor or if it has pure virtuals, there's nothing to do for us
+        if (meth.isConstructor() || meth.flags() & Method::PureVirtual)
+            return;
+    }
+    
+    Type t = Type(klass);
+    t.setPointerDepth(1);
+    Method meth = Method(klass, klass->name(), Type::registerType(t));
+    meth.setIsConstructor(true);
+    klass->appendMethod(meth);
+}
+
+void addCopyConstructor(Class* klass)
+{
+    foreach (const Method& meth, klass->methods()) {
+        if (meth.isConstructor() && meth.parameters().count() == 1) {
+            const Type* type = meth.parameters()[0].type();
+            // found a copy c'tor? then there's nothing to do
+            if (type->isConst() && type->isRef() && type->getClass() == klass)
+                return;
+        }
+    }
+    
+    // if the parent can't be copied, a copy c'tor is of no use
+    foreach (const Class::BaseClassSpecifier& base, klass->baseClasses()) {
+        if (!canClassBeCopied(base.baseClass))
+            return;
+    }
+    
+    Type t = Type(klass);
+    t.setPointerDepth(1);
+    Method meth = Method(klass, klass->name(), Type::registerType(t));
+    meth.setIsConstructor(true);
+    // parameter is a constant reference to another object of the same types
+    Type paramType = Type(klass, true); paramType.setIsRef(true);
+    meth.appendParameter(Parameter("copy", Type::registerType(paramType)));
+    klass->appendMethod(meth);
 }

@@ -53,11 +53,14 @@ void writeSmokeData();
 QList<const Class*> superClassList(const Class* klass);
 QList<const Class*> descendantsList(const Class* klass);
 
-void collectTypes(const QList<QString>& keys);
+void preparse(const QList<QString>& keys);
 bool isClassUsed(const Class* klass);
 
 bool canClassBeInstanciated(const Class* klass);
 bool canClassBeCopied(const Class* klass);
 bool hasClassVirtualDestructor(const Class* klass);
+
+void addDefaultConstructor(Class* klass);
+void addCopyConstructor(Class* klass);
 
 #endif

@@ -55,7 +55,7 @@ void generate(const QDir& outputDir, const QList<QFileInfo>& headerList, const Q
     }
     
     QStringList wantedClasses = classIndex.keys();
-    collectTypes(wantedClasses);  // collect all used types
+    preparse(wantedClasses);  // collect all used types, add c'tors.. etc.
     
     // if a class is used somewhere but not listed in the class list, mark it external
     for (QHash<QString, Class>::iterator iter = ::classes.begin(); iter != ::classes.end(); iter++) {
