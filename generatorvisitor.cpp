@@ -75,8 +75,8 @@ BasicTypeDeclaration* GeneratorVisitor::resolveType(const QString & name)
 
     // check for nested classes
     for (int i = klass.count() - 1; i >= 0; i--) {
-        QString name = klass[i]->toString() + "::" + name;
-        returnOnExistence(name);
+        QString _name = klass[i]->toString() + "::" + name;
+        returnOnExistence(_name);
     }
     
     // check for 'using type;'
