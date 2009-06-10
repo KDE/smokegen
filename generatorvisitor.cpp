@@ -295,6 +295,11 @@ void GeneratorVisitor::visitEnumerator(EnumeratorAST* node)
 //     DefaultVisitor::visitEnumerator(node);
 }
 
+void GeneratorVisitor::visitFunctionDefinition(FunctionDefinitionAST* )
+{
+    return;
+}
+
 void GeneratorVisitor::visitInitializerClause(InitializerClauseAST *)
 {
     // we don't care about initializers

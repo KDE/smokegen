@@ -49,6 +49,7 @@ protected:
     virtual void visitDeclarator(DeclaratorAST* node);
     virtual void visitEnumSpecifier(EnumSpecifierAST *);
     virtual void visitEnumerator(EnumeratorAST *);
+    virtual void visitFunctionDefinition(FunctionDefinitionAST* );
     virtual void visitInitializerClause(InitializerClauseAST *);
     virtual void visitNamespace(NamespaceAST* node);
     virtual void visitParameterDeclaration(ParameterDeclarationAST* node);
