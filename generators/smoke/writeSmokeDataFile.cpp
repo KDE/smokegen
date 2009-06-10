@@ -69,6 +69,7 @@ void writeSmokeData()
     out << "// Classes with super classes have an index into this array.\n";
     out << "static Smoke::Index " << module << "_inheritanceList[] = {\n";
     out << "    0,\t// 0: (no super class)\n";
+    inheritanceList << QList<int>();  // dummy item so the index is correct
     for (QMap<QString, int>::const_iterator iter = classIndex.constBegin(); iter != classIndex.constEnd(); iter++) {
         const Class& klass = classes[iter.key()];
         if (!klass.baseClasses().count())
@@ -96,7 +97,7 @@ void writeSmokeData()
     }
     out << "}\n\n";
     
-    
+    // xenum functions
     out << "// These are the xenum functions for manipulating enum pointers\n";
     QSet<QString> enumClassesHandled;
     for (QHash<QString, Enum>::const_iterator it = enums.constBegin(); it != enums.constEnd(); it++) {
@@ -115,6 +116,7 @@ void writeSmokeData()
         }
     }
     
+    // xcall functions
     out << "\n// Those are the xcall functions defined in each x_*.cpp file, for dispatching method calls\n";
     for (QMap<QString, int>::const_iterator iter = classIndex.constBegin(); iter != classIndex.constEnd(); iter++) {
         Class& klass = classes[iter.key()];
@@ -123,5 +125,30 @@ void writeSmokeData()
         QString smokeClassName = QString(klass.toString()).replace("::", "__");
         out << "xcall_" << smokeClassName << "(Smoke::Index, void*, Smoke::Stack);\n";
     }
+    
+    // classes table
+    out << "\n// List of all classes\n";
+    out << "// Name, external, index into inheritanceList, method dispatcher, enum dispatcher, class flags\n";
+    out << "static Smoke::Class " << module << "_classes[] = {\n";
+    out << "    { 0L, false, 0, 0, 0, 0 },\t// 0 (no class)\n";
+    for (QMap<QString, int>::const_iterator iter = classIndex.constBegin(); iter != classIndex.constEnd(); iter++) {
+        Class* klass = &classes[iter.key()];
+        if (externalClasses.contains(klass)) {
+            out << "    { \""  << iter.key() << "\", true, 0, 0, 0, 0 },\t//" << iter.value() << "\n";
+        } else {
+            QString smokeClassName = QString(iter.key()).replace("::", "__");
+            out << "    { \"" << iter.key() << "\", false" << ", "
+                << inheritanceIndex.value(klass, 0) << ", xcall_" << smokeClassName << ", "
+                << (enumClassesHandled.contains(iter.key()) ? QString("xenum_").append(smokeClassName) : "0") << ", ";
+            QString flags = "0";
+            if (canClassBeInstanciated(klass)) flags += "|cf_constructor";
+            if (canClassBeCopied(klass)) flags += "|cf_deepcopy";
+            if (hasClassVirtualDestructor(klass)) flags += "|cf_virtual";
+            flags.replace("0|", ""); // beautify
+            out << flags;
+            out << " },\t//" << iter.value() << "\n";
+        }
+    }
+    out << "}\n";
     smokedata.close();
 }

@@ -61,7 +61,7 @@ void generate(const QDir& outputDir, const QList<QFileInfo>& headerList, const Q
     for (QHash<QString, Class>::iterator iter = ::classes.begin(); iter != ::classes.end(); iter++) {
         if (isClassUsed(&iter.value())) {
             classIndex[iter.key()] = 1;
-            if (!classes.contains(iter.key()))
+            if (!classes.contains(iter.key()) || iter.value().isForwardDecl())
                 externalClasses << &iter.value();
             else    
                 wantedClasses << iter.key();

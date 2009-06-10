@@ -56,4 +56,8 @@ QList<const Class*> descendantsList(const Class* klass);
 void collectTypes(const QList<QString>& keys);
 bool isClassUsed(const Class* klass);
 
+bool canClassBeInstanciated(const Class* klass);
+bool canClassBeCopied(const Class* klass);
+bool hasClassVirtualDestructor(const Class* klass);
+
 #endif
