@@ -149,6 +149,37 @@ void writeSmokeData()
             out << " },\t//" << iter.value() << "\n";
         }
     }
-    out << "}\n";
+    out << "}\n\n";
+    
+    out << "// List of all types needed by the methods (arguments and return values)\n"
+        << "// Name, class ID if arg is a class, and TypeId\n";
+    out << "static Smoke::Type " << module << "_types[] = {\n";
+    out << "    { 0, 0, 0 },\t//0 (no type)\n";
+    QMap<QString, Type*> sortedTypes;
+    for (QSet<Type*>::const_iterator it = usedTypes.constBegin(); it != usedTypes.constEnd(); it++) {
+        sortedTypes.insert((*it)->toString(), *it);
+    }
+    int i = 1;
+    for (QMap<QString, Type*>::const_iterator it = sortedTypes.constBegin(); it != sortedTypes.constEnd(); it++) {
+        const Type* t = it.value();
+        int classIdx = 0;
+        QString flags = "0";
+        if (t->getClass()) {
+            flags += "|Smoke::t_class";
+            classIdx = classIndex.value(t->getClass()->toString(), 0);
+        } else if (t->getEnum() && t->getEnum()->parent()) {
+            flags += "|Smoke::t_enum";
+            classIdx = classIndex.value(t->getEnum()->parent()->toString(), 0);
+        }
+        if (t->isRef())
+            flags += "|Smoke::tf_ref";
+        if (t->pointerDepth() > 0)
+            flags += "|Smoke::tf_ptr";
+        if (!t->isRef() && t->pointerDepth() == 0)
+            flags += "|Smoke::tf_stack";
+        flags.replace("0|", "");
+        out << "    { \"" << it.key() << "\", " << classIdx << ", " << flags << " },\t//" << i++ << "\n";
+    }
+    out << "}\n\n";
     smokedata.close();
 }
