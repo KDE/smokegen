@@ -34,6 +34,7 @@ class QString;
 class QStringList;
 
 class Class;
+class Type;
 
 extern QMap<QString, int> classIndex;
 extern QDir outputDir;
@@ -43,12 +44,16 @@ extern QStringList classList;
 extern int parts;
 extern QString module;
 
-extern QSet<Class*> externClasses;
+extern QSet<Class*> externalClasses;
+extern QSet<Type*> usedTypes;
 
-void writeClassFiles();
+void writeClassFiles(const QList<QString>& keys);
 void writeSmokeData();
 
 QList<const Class*> superClassList(const Class* klass);
 QList<const Class*> descendantsList(const Class* klass);
+
+void collectTypes(const QList<QString>& keys);
+bool isClassUsed(const Class* klass);
 
 #endif

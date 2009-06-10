@@ -30,13 +30,11 @@
 
 void writeClass(QTextStream& out, const Class* klass);
 
-void writeClassFiles()
+void writeClassFiles(const QList<QString>& keys)
 {
     // how many classes go in one file
-    int count = classIndex.count() / parts;
+    int count = keys.count() / parts;
     int count2 = count;
-    
-    QList<QString> keys = classIndex.keys();
     
     for (int i = 0; i < parts; i++) {
         QSet<QString> includes;
@@ -96,6 +94,8 @@ QString assignmentString(const Type* type, const QString& var)
         return var;
     } else if (type->isRef()) {
         return "(void*)&" + var;
+    } else if (type->getEnum()) {
+        return var;
     } else {
         QString ret = "(void*)new ";
         if (Class* retClass = type->getClass())

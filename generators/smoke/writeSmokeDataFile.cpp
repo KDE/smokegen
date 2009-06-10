@@ -63,10 +63,65 @@ void writeSmokeData()
     out << "}\n\n";
     
     // write out the inheritance list
+    QList<QList<int> > inheritanceList;
+    QHash<const Class*, int> inheritanceIndex;
     out << "// Group of Indexes (0 separated) used as super class lists.\n";
     out << "// Classes with super classes have an index into this array.\n";
     out << "static Smoke::Index " << module << "_inheritanceList[] = {\n";
     out << "    0,\t// 0: (no super class)\n";
+    for (QMap<QString, int>::const_iterator iter = classIndex.constBegin(); iter != classIndex.constEnd(); iter++) {
+        const Class& klass = classes[iter.key()];
+        if (!klass.baseClasses().count())
+            continue;
+        QList<int> indices;
+        QStringList comment;
+        foreach (const Class::BaseClassSpecifier& base, klass.baseClasses()) {
+            QString className = base.baseClass->toString();
+            indices << classIndex[className];
+            comment << className;
+        }
+        int idx = 0;
+        if ((idx = inheritanceList.indexOf(indices)) == -1) {
+            inheritanceList << indices;
+            idx = inheritanceList.count() - 1;
+            out << "    ";
+            for (int i = 0; i < indices.count(); i++) {
+                if (i > 0) out << ", ";
+                out << indices[i];
+            }
+            out << ", 0,\t// " << idx << ": " << comment.join(", ") << "\n";
+        }
+        // store the index into inheritanceList for the class
+        inheritanceIndex[&klass] = idx;
+    }
     out << "}\n\n";
+    
+    
+    out << "// These are the xenum functions for manipulating enum pointers\n";
+    QSet<QString> enumClassesHandled;
+    for (QHash<QString, Enum>::const_iterator it = enums.constBegin(); it != enums.constEnd(); it++) {
+        if (it.value().parent() && !externalClasses.contains(it.value().parent())) {
+            QString smokeClassName = it.value().parent()->toString();
+            if (enumClassesHandled.contains(smokeClassName))
+                continue;
+            enumClassesHandled << smokeClassName;
+            smokeClassName.replace("::", "__");
+            out << "void xenum_" << smokeClassName << "(Smoke::EnumOperation, Smoke::Index, void*&, long&);\n";
+        } else if (!it.value().parent()) {
+            if (enumClassesHandled.contains("QGlobalSpace"))
+                continue;
+            out << "void xenum_QGlobalSpace(Smoke::EnumOperation, Smoke::Index, void*&, long&);\n";
+            enumClassesHandled << "QGlobalSpace";
+        }
+    }
+    
+    out << "\n// Those are the xcall functions defined in each x_*.cpp file, for dispatching method calls\n";
+    for (QMap<QString, int>::const_iterator iter = classIndex.constBegin(); iter != classIndex.constEnd(); iter++) {
+        Class& klass = classes[iter.key()];
+        if (externalClasses.contains(&klass))
+            continue;
+        QString smokeClassName = QString(klass.toString()).replace("::", "__");
+        out << "xcall_" << smokeClassName << "(Smoke::Index, void*, Smoke::Stack);\n";
+    }
     smokedata.close();
 }

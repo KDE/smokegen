@@ -55,3 +55,31 @@ QList<const Class*> descendantsList(const Class* klass)
     descendantsClassCache[klass] = ret;
     return ret;
 }
+
+void collectTypes(const QList<QString>& keys)
+{
+    foreach (const QString& key, keys) {
+        const Class& klass = classes[key];
+        foreach (const Method& m, klass.methods()) {
+            if (m.access() == Access_private)
+                continue;
+            usedTypes << m.type();
+            foreach (const Parameter& param, m.parameters())
+                usedTypes << param.type();
+        }
+        foreach (const Field& f, klass.fields()) {
+            if (f.access() == Access_private)
+                continue;
+            usedTypes << f.type();
+        }
+    }
+}
+
+bool isClassUsed(const Class* klass)
+{
+    for (QSet<Type*>::const_iterator it = usedTypes.constBegin(); it != usedTypes.constEnd(); it++) {
+        if ((*it)->getClass() == klass)
+            return true;
+    }
+    return false;
+}

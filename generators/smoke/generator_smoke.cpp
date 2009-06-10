@@ -29,7 +29,6 @@
 
 #include "globals.h"
 
-QMap<QString, int> classIndex;
 QDir outputDir;
 QList<QFileInfo> headerList;
 QStringList classList;
@@ -37,7 +36,9 @@ QStringList classList;
 int parts = 20;
 QString module = "qt";
 
-QSet<Class*> externClasses;
+QMap<QString, int> classIndex;
+QSet<Class*> externalClasses;
+QSet<Type*> usedTypes;
 
 extern "C" Q_DECL_EXPORT
 void generate(const QDir& outputDir, const QList<QFileInfo>& headerList, const QStringList& classes)
@@ -46,17 +47,33 @@ void generate(const QDir& outputDir, const QList<QFileInfo>& headerList, const Q
     ::outputDir = outputDir;
     ::headerList = headerList;
     classList = classes;
-    int i = 1;
     
-    // build table classname => index
     for (QHash<QString, Class>::const_iterator iter = ::classes.constBegin(); iter != ::classes.constEnd(); iter++) {
-        if (classList.contains(iter.key()) && !iter.value().isForwardDecl())
+        if (classList.contains(iter.key()) && !iter.value().isForwardDecl()) {
             classIndex[iter.key()] = 1;
+        }
     }
     
-    for (QMap<QString, int>::iterator iter = classIndex.begin(); iter != classIndex.end(); iter++)
-        iter.value() = i++;
+    QStringList wantedClasses = classIndex.keys();
+    collectTypes(wantedClasses);  // collect all used types
     
-    writeClassFiles();
+    // if a class is used somewhere but not listed in the class list, mark it external
+    for (QHash<QString, Class>::iterator iter = ::classes.begin(); iter != ::classes.end(); iter++) {
+        if (isClassUsed(&iter.value())) {
+            classIndex[iter.key()] = 1;
+            if (!classes.contains(iter.key()))
+                externalClasses << &iter.value();
+            else    
+                wantedClasses << iter.key();
+        }
+    }
+    
+    // build class index here because the list needs to be sorted
+    int i = 1;
+    for (QMap<QString, int>::iterator iter = classIndex.begin(); iter != classIndex.end(); iter++) {
+        iter.value() = i++;
+    }
+    
     writeSmokeData();
+    writeClassFiles(wantedClasses);
 }
