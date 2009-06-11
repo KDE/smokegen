@@ -198,7 +198,8 @@ protected:
 class Parameter
 {
 public:
-    Parameter(const QString& name = QString(), Type* type = 0) : m_name(name), m_type(type) {}
+    Parameter(const QString& name = QString(), Type* type = 0, bool isDefault = false)
+        : m_name(name), m_type(type), m_default(isDefault) {}
     virtual ~Parameter() {}
 
     bool isValid() const { return m_type; }
@@ -209,11 +210,15 @@ public:
     void setType(Type* type) { m_type = type; }
     Type* type() const { return m_type; }
 
+    void setIsDefault(bool isDefault) { m_default = isDefault; }
+    bool isDefault() { return m_default; }
+
     QString toString() const;
 
 protected:
     QString m_name;
     Type* m_type;
+    bool m_default;
 };
 
 typedef QList<Parameter> ParameterList;

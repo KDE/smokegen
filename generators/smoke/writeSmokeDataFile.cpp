@@ -167,16 +167,30 @@ void writeSmokeData()
         if (t->getClass()) {
             flags += "|Smoke::t_class";
             classIdx = classIndex.value(t->getClass()->toString(), 0);
-        } else if (t->getEnum() && t->getEnum()->parent()) {
+        } else if (t->isIntegral() && t->name() != "void") {
+            flags += "|Smoke::t_";
+            QString typeName = t->name();
+            typeName.replace("unsigned ", "u");
+            typeName.replace("signed ", "");
+            typeName.replace("long long", "long");
+            typeName.replace("long double", "double");
+            flags += typeName;
+        } else if (t->getEnum()) {
             flags += "|Smoke::t_enum";
-            classIdx = classIndex.value(t->getEnum()->parent()->toString(), 0);
+            if (t->getEnum()->parent())
+                classIdx = classIndex.value(t->getEnum()->parent()->toString(), 0);
+        } else {
+            flags += "|Smoke::t_voidp";
         }
+        
         if (t->isRef())
             flags += "|Smoke::tf_ref";
         if (t->pointerDepth() > 0)
             flags += "|Smoke::tf_ptr";
         if (!t->isRef() && t->pointerDepth() == 0)
             flags += "|Smoke::tf_stack";
+        if (t->isConst())
+            flags += "|Smoke::tf_const";
         flags.replace("0|", "");
         out << "    { \"" << it.key() << "\", " << classIdx << ", " << flags << " },\t//" << i++ << "\n";
     }

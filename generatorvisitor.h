@@ -75,7 +75,7 @@ private:
     
     bool isStatic;
     bool isVirtual;
-    bool isPureVirtual;
+    bool hasInitializer;
     
     Type currentType;
     Type* currentTypeRef;

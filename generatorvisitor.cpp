@@ -27,7 +27,7 @@
 
 GeneratorVisitor::GeneratorVisitor(ParseSession *session, bool resolveTypedefs, const QString& header) 
     : m_session(session), m_resolveTypedefs(resolveTypedefs), m_header(header), createType(false), createTypedef(false),
-      inClass(0), isStatic(false), isVirtual(false), isPureVirtual(false), 
+      inClass(0), isStatic(false), isVirtual(false), hasInitializer(false), 
       currentTypeRef(0), inMethod(false), inParameter(false)
 {
     nc = new NameCompiler(m_session, this);
@@ -234,7 +234,7 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
         // const & volatile modifiers
         currentMethod.setIsConst(cv.first);
         if (isVirtual) currentMethod.setFlag(Method::Virtual);
-        if (isPureVirtual) currentMethod.setFlag(Method::PureVirtual);
+        if (hasInitializer) currentMethod.setFlag(Method::PureVirtual);
         if (isStatic) currentMethod.setFlag(Method::Static);
         klass.top()->appendMethod(currentMethod);
         return;
@@ -274,9 +274,9 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
     // this declaration is a parameter
     if (inParameter) {
         if (inClass)
-            currentMethod.appendParameter(Parameter(declName, currentTypeRef));
+            currentMethod.appendParameter(Parameter(declName, currentTypeRef, hasInitializer));
         else
-            currentFunction.appendParameter(Parameter(declName, currentTypeRef));
+            currentFunction.appendParameter(Parameter(declName, currentTypeRef, hasInitializer));
     }
 }
 
@@ -357,18 +357,17 @@ void GeneratorVisitor::visitSimpleDeclaration(SimpleDeclarationAST* node)
             if (it->element && m_session->token_stream->kind(it->element) == Token_virtual) {
                 // found virtual token
                 isVirtual = true;
-                
-                // look for initializers - if we find one, the method is pure virtual
-                if (node->init_declarators) {
-                    const ListNode<InitDeclaratorAST*> *it = node->init_declarators->toFront(), *end = it;
-                    do {
-                        if (it->element && it->element->initializer) {
-                            isPureVirtual = true;
-                            break;
-                        }
-                        it = it->next;
-                    } while (end != it);
-                }
+                break;
+            }
+            it = it->next;
+        } while (end != it);
+    }
+    // look for initializers - if we find one, the method is pure virtual
+    if (node->init_declarators) {
+        const ListNode<InitDeclaratorAST*> *it = node->init_declarators->toFront(), *end = it;
+        do {
+            if (it->element && it->element->initializer) {
+                hasInitializer = true;
                 break;
             }
             it = it->next;
@@ -387,7 +386,7 @@ void GeneratorVisitor::visitSimpleDeclaration(SimpleDeclarationAST* node)
     DefaultVisitor::visitSimpleDeclaration(node);
     if (popKlass)
         klass.pop();
-    isStatic = isVirtual = isPureVirtual = false;
+    isStatic = isVirtual = hasInitializer = false;
 }
 
 void GeneratorVisitor::visitSimpleTypeSpecifier(SimpleTypeSpecifierAST* node)
