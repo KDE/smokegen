@@ -221,6 +221,9 @@ void writeSmokeData()
     
     QHash<QVector<int>, int> parameterList;
     QHash<const Method*, int> parameterIndices;
+    
+    QMap<QString, int> methodNames;
+    
     currentIdx = 1;
     for (QMap<QString, int>::const_iterator iter = classIndex.constBegin(); iter != classIndex.constEnd(); iter++) {
         Class* klass = &classes[iter.key()];
@@ -229,6 +232,11 @@ void writeSmokeData()
         foreach (const Method& meth, klass->methods()) {
             if (meth.access() == Access_private)
                 continue;
+            
+            methodNames[meth.name()] = 1;
+            QString mungedName = ::mungedName(meth);
+            methodNames[mungedName] = 1;
+            
             if (!meth.parameters().count()) {
                 parameterIndices[&meth] = 0;
                 continue;
@@ -256,6 +264,15 @@ void writeSmokeData()
         }
     }
     
+    out << "};\n\n";
+    
+    out << "// Raw list of all methods, using munged names\n";
+    out << "static const char *" << module << "_methodNames[] {\n";
+    i = 1;
+    for (QMap<QString, int>::iterator it = methodNames.begin(); it != methodNames.end(); it++, i++) {
+        it.value() = i;
+        out << "    " << it.key() << ",\t//" << i << "\n";
+    }
     out << "};\n\n";
     smokedata.close();
 }

@@ -34,6 +34,7 @@ class QString;
 class QStringList;
 
 class Class;
+class Method;
 class Type;
 
 extern QMap<QString, int> classIndex;
@@ -62,5 +63,7 @@ bool hasClassVirtualDestructor(const Class* klass);
 
 void addDefaultConstructor(Class* klass);
 void addCopyConstructor(Class* klass);
+
+QString mungedName(const Method&);
 
 #endif

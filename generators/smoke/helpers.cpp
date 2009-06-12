@@ -204,3 +204,24 @@ void addCopyConstructor(Class* klass)
     meth.appendParameter(Parameter("copy", Type::registerType(paramType)));
     klass->appendMethod(meth);
 }
+
+QString mungedName(const Method& meth) {
+    QString ret = meth.name();
+    foreach (const Parameter& param, meth.parameters()) {
+        const Type* type = param.type();
+        if (type->pointerDepth() > 1 || type->name() == "void") {
+            // reference to array or hash
+            ret += "?";
+        } else if (type->isIntegral()|| type->getEnum()) {
+            // plain scalar
+            ret += "$";
+        } else if (type->getClass()) {
+            // object
+            ret += "#";
+        } else {
+            // unknown
+            ret += "?";
+        }
+    }
+    return ret;
+}
