@@ -274,5 +274,56 @@ void writeSmokeData()
         out << "    " << it.key() << ",\t//" << i << "\n";
     }
     out << "};\n\n";
+    
+    out << "// (classId, name (index in methodNames), argumentList index, number of args, method flags, "
+        << "return type (index in types), xcall() index)\n";
+    out << "static Smoke::Method " << module << "_methods[] = {\n";
+    
+    i = 0;
+    for (QMap<QString, int>::const_iterator iter = classIndex.constBegin(); iter != classIndex.constEnd(); iter++) {
+        Class* klass = &classes[iter.key()];
+        if (externalClasses.contains(klass))
+            continue;
+        int xcall_index = 1;
+        foreach (const Method& meth, klass->methods()) {
+            if (meth.access() == Access_private)
+                continue;
+            out << "    {" << iter.value() << ", " << methodNames[meth.name()] << ", ";
+            int numArgs = meth.parameters().count();
+            if (numArgs) {
+                // FIXME: doesn't work
+                out << parameterIndices[&meth] << ", " << numArgs << ", ";
+            } else {
+                out << "0, 0, ";
+            }
+            QString flags = "0";
+            if (meth.isConst())
+                flags += "|Smoke::mf_const";
+            if (meth.flags() & Method::Static)
+                flags += "|Smoke::mf_static";
+            if (meth.isConstructor())
+                flags += "|Smoke::mf_ctor";
+            if (meth.isDestructor())
+                flags += "|Smoke::mf_dtor";
+            if (meth.access() == Access_protected)
+                flags += "|Smoke::mf_protected";
+            if (meth.isConstructor() &&
+                meth.parameters().count() == 1 &&
+                meth.parameters()[0].type()->isConst() &&
+                meth.parameters()[0].type()->getClass() == klass)
+                flags += "|Smoke::mf_copyctor";
+            flags.replace("0|", "");
+            out << flags;
+            out << ", " << typeIndex[meth.type()];
+            out << ", " << xcall_index << "},";
+            // TODO: nicer comment
+            out << "\t//" << i << " " << klass->toString() << "::" << meth.toString();
+            out << "\n";
+            xcall_index++;
+            i++;
+        }
+    }
+    
+    out << "};\n\n";
     smokedata.close();
 }
