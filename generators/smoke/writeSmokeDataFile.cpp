@@ -27,6 +27,13 @@
 
 #include "globals.h"
 
+uint qHash(const QVector<int> intList)
+{
+    const char *byteArray = (const char*) intList.constData();
+    int length = sizeof(int) * intList.count();
+    return qHash(QByteArray::fromRawData(byteArray, length));
+}
+
 void writeSmokeData()
 {
     QFile smokedata(outputDir.filePath("smokedata.cpp"));
@@ -207,6 +214,48 @@ void writeSmokeData()
         typeIndex[t] = i;
         out << "    { \"" << it.key() << "\", " << classIdx << ", " << flags << " },\t//" << i++ << "\n";
     }
+    out << "};\n\n";
+    
+    out << "static Smoke::Index " << module << "_argumentList[] = {\n";
+    out << "    0,\t//0  (void)\n";
+    
+    QHash<QVector<int>, int> parameterList;
+    QHash<const Method*, int> parameterIndices;
+    currentIdx = 1;
+    for (QMap<QString, int>::const_iterator iter = classIndex.constBegin(); iter != classIndex.constEnd(); iter++) {
+        Class* klass = &classes[iter.key()];
+        if (externalClasses.contains(klass))
+            continue;
+        foreach (const Method& meth, klass->methods()) {
+            if (meth.access() == Access_private)
+                continue;
+            if (!meth.parameters().count()) {
+                parameterIndices[&meth] = 0;
+                continue;
+            }
+            QVector<int> indices(meth.parameters().count());
+            QStringList comment;
+            for (int i = 0; i < indices.size(); i++) {
+                Type* t = meth.parameters()[i].type();
+                indices[i] = typeIndex[t];
+                comment << t->toString();
+            }
+            int idx = 0;
+            if ((idx = parameterList.value(indices, -1) == -1)) {
+                idx = currentIdx;
+                parameterList[indices] = idx;
+                out << "    ";
+                for (int i = 0; i < indices.count(); i++) {
+                    if (i > 0) out << ", ";
+                    out << indices[i];
+                }
+                out << ", 0,\t//" << idx << "  " << comment.join(", ") << "\n";
+                currentIdx += indices.count() + 1;
+            }
+            parameterIndices[&meth] = idx;
+        }
+    }
+    
     out << "};\n\n";
     smokedata.close();
 }
