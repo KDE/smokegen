@@ -63,13 +63,14 @@ void writeSmokeData()
     out << "}\n\n";
     
     // write out the inheritance list
-    QList<QList<int> > inheritanceList;
+    QHash<QString, int> inheritanceList;
     QHash<const Class*, int> inheritanceIndex;
     out << "// Group of Indexes (0 separated) used as super class lists.\n";
     out << "// Classes with super classes have an index into this array.\n";
     out << "static Smoke::Index " << module << "_inheritanceList[] = {\n";
     out << "    0,\t// 0: (no super class)\n";
-    inheritanceList << QList<int>();  // dummy item so the index is correct
+    
+    int currentIdx = 1;
     for (QMap<QString, int>::const_iterator iter = classIndex.constBegin(); iter != classIndex.constEnd(); iter++) {
         const Class& klass = classes[iter.key()];
         if (!klass.baseClasses().count())
@@ -82,16 +83,26 @@ void writeSmokeData()
             comment << className;
         }
         int idx = 0;
-        if ((idx = inheritanceList.indexOf(indices)) == -1) {
-            inheritanceList << indices;
-            idx = inheritanceList.count() - 1;
+        
+        // FIXME:
+        // Storing the index for a given list of parent classes with a string as a key
+        // is ugly. Can anyone come up with a hash algorithm for integer lists?
+        QString commentString = comment.join(", ");
+        if (!inheritanceList.contains(commentString)) {
+            idx = currentIdx;
+            inheritanceList[commentString] = idx;
             out << "    ";
             for (int i = 0; i < indices.count(); i++) {
                 if (i > 0) out << ", ";
                 out << indices[i];
+                currentIdx++;
             }
-            out << ", 0,\t// " << idx << ": " << comment.join(", ") << "\n";
+            currentIdx++;
+            out << ", 0,\t// " << idx << ": " << commentString << "\n";
+        } else {
+            idx = inheritanceList[commentString];
         }
+        
         // store the index into inheritanceList for the class
         inheritanceIndex[&klass] = idx;
     }
@@ -159,9 +170,10 @@ void writeSmokeData()
     for (QSet<Type*>::const_iterator it = usedTypes.constBegin(); it != usedTypes.constEnd(); it++) {
         sortedTypes.insert((*it)->toString(), *it);
     }
+    QHash<Type*, int> typeIndex;
     int i = 1;
     for (QMap<QString, Type*>::const_iterator it = sortedTypes.constBegin(); it != sortedTypes.constEnd(); it++) {
-        const Type* t = it.value();
+        Type* t = it.value();
         int classIdx = 0;
         QString flags = "0";
         if (t->getClass()) {
@@ -192,6 +204,7 @@ void writeSmokeData()
         if (t->isConst())
             flags += "|Smoke::tf_const";
         flags.replace("0|", "");
+        typeIndex[t] = i;
         out << "    { \"" << it.key() << "\", " << classIdx << ", " << flags << " },\t//" << i++ << "\n";
     }
     out << "}\n\n";
