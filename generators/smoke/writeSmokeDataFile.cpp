@@ -106,7 +106,7 @@ void writeSmokeData()
         // store the index into inheritanceList for the class
         inheritanceIndex[&klass] = idx;
     }
-    out << "}\n\n";
+    out << "};\n\n";
     
     // xenum functions
     out << "// These are the xenum functions for manipulating enum pointers\n";
@@ -160,7 +160,7 @@ void writeSmokeData()
             out << " },\t//" << iter.value() << "\n";
         }
     }
-    out << "}\n\n";
+    out << "};\n\n";
     
     out << "// List of all types needed by the methods (arguments and return values)\n"
         << "// Name, class ID if arg is a class, and TypeId\n";
@@ -207,6 +207,6 @@ void writeSmokeData()
         typeIndex[t] = i;
         out << "    { \"" << it.key() << "\", " << classIdx << ", " << flags << " },\t//" << i++ << "\n";
     }
-    out << "}\n\n";
+    out << "};\n\n";
     smokedata.close();
 }
