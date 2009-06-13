@@ -262,6 +262,19 @@ void writeSmokeData()
             }
             parameterIndices[&meth] = idx;
         }
+        foreach (BasicTypeDeclaration* decl, klass->children()) {
+            const Enum* e = 0;
+            if ((e = dynamic_cast<Enum*>(decl))) {
+                foreach (const EnumMember& member, e->members())
+                    methodNames[member.first] = 1;
+            }
+        }
+    }
+    for (QHash<QString, Enum>::const_iterator it = ::enums.constBegin(); it != ::enums.constEnd(); it++) {
+        if (!it.value().parent()) {
+            foreach (const EnumMember& member, it.value().members())
+                methodNames[member.first] = 1;
+        }
     }
     
     out << "};\n\n";
@@ -329,6 +342,22 @@ void writeSmokeData()
             out << "\n";
             xcall_index++;
             i++;
+        }
+        foreach (BasicTypeDeclaration* decl, klass->children()) {
+            const Enum* e = 0;
+            if ((e = dynamic_cast<Enum*>(decl))) {
+                foreach (const EnumMember& member, e->members()) {
+                    out << "    {" << iter.value() << ", " << methodNames[member.first]
+                        << ", 0, 0, Smoke::mf_static|Smoke::mf_enum, " << typeIndex[&types[e->toString()]]
+                        << ", " << xcall_index << "},";
+                    
+                    // comment
+                    out << "\t//" << i << " " << klass->toString() << "::" << member.first;
+                    out << "\n";
+                    xcall_index++;
+                    i++;
+                }
+            }
         }
     }
     

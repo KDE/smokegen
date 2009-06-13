@@ -74,6 +74,13 @@ void preparse(const QList<QString>& keys)
                 continue;
             usedTypes << f.type();
         }
+        foreach (BasicTypeDeclaration* decl, klass.children()) {
+            Enum* e = 0;
+            if ((e = dynamic_cast<Enum*>(decl))) {
+                Type *t = Type::registerType(Type(e));
+                usedTypes << t;
+            }
+        }
     }
 }
 
