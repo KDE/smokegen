@@ -172,6 +172,11 @@ void GeneratorVisitor::visitClassSpecifier(ClassSpecifierAST* node)
     if (!klass.isEmpty()) {
         klass.top()->setFileName(m_header);
         klass.top()->setIsForwardDecl(false);
+        if (klass.count() > 1) {
+            // get the element before the last element, which is the parent
+            Class* parent = klass[klass.count() - 2];
+            parent->appendChild(klass.top());
+        }
     }
     DefaultVisitor::visitClassSpecifier(node);
     access.pop();
@@ -201,8 +206,11 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
         Typedef tdef = Typedef(currentTypeRef, declName, nspace.join("::"), parent);
         tdef.setFileName(m_header);
         QString name = tdef.toString();
-        if (!typedefs.contains(name))
-            typedefs[name] = tdef;
+        if (!typedefs.contains(name)) {
+            QHash<QString, Typedef>::iterator it = typedefs.insert(name, tdef);
+            if (parent)
+                parent->appendChild(&it.value());
+        }
         createTypedef = false;
         return;
     }
@@ -283,10 +291,13 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
 void GeneratorVisitor::visitEnumSpecifier(EnumSpecifierAST* node)
 {
     nc->run(node->name);
-    currentEnum = Enum(nc->name(), nspace.join("::"), klass.isEmpty() ? 0 : klass.top());
+    Class* parent = klass.isEmpty() ? 0 : klass.top();
+    currentEnum = Enum(nc->name(), nspace.join("::"), parent);
     currentEnum.setFileName(m_header);
     visitNodes(this, node->enumerators);
-    enums[currentEnum.toString()] = currentEnum;
+    QHash<QString, Enum>::iterator it = enums.insert(currentEnum.toString(), currentEnum);
+    if (parent)
+        parent->appendChild(&it.value());
 }
 
 void GeneratorVisitor::visitEnumerator(EnumeratorAST* node)

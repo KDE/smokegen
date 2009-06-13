@@ -112,12 +112,16 @@ public:
     const QList<BaseClassSpecifier>& baseClasses() const { return m_bases; }
     void appendBaseClass(const BaseClassSpecifier& baseClass) { m_bases.append(baseClass); }
     
+    const QList<BasicTypeDeclaration*>& children() const { return m_children; }
+    void appendChild(BasicTypeDeclaration* child) { m_children.append(child); }
+    
 private:
     Kind m_kind;
     bool m_forward;
     QList<Method> m_methods;
     QList<Field> m_fields;
     QList<BaseClassSpecifier> m_bases;
+    QList<BasicTypeDeclaration*> m_children;
 };
 
 class Typedef : public BasicTypeDeclaration
