@@ -249,7 +249,7 @@ void writeSmokeData()
                 comment << t->toString();
             }
             int idx = 0;
-            if ((idx = parameterList.value(indices, -1) == -1)) {
+            if ((idx = parameterList.value(indices, -1)) == -1) {
                 idx = currentIdx;
                 parameterList[indices] = idx;
                 out << "    ";
@@ -291,7 +291,6 @@ void writeSmokeData()
             out << "    {" << iter.value() << ", " << methodNames[meth.name()] << ", ";
             int numArgs = meth.parameters().count();
             if (numArgs) {
-                // FIXME: doesn't work
                 out << parameterIndices[&meth] << ", " << numArgs << ", ";
             } else {
                 out << "0, 0, ";
@@ -316,8 +315,17 @@ void writeSmokeData()
             out << flags;
             out << ", " << typeIndex[meth.type()];
             out << ", " << xcall_index << "},";
-            // TODO: nicer comment
-            out << "\t//" << i << " " << klass->toString() << "::" << meth.toString();
+            
+            // comment
+            out << "\t//" << i << " " << klass->toString() << "::";
+            out << meth.name() << '(';
+            for (int j = 0; j < meth.parameters().count(); j++) {
+                if (j > 0) out << ", ";
+                out << meth.parameters()[j].toString();
+            }
+            out << ')';
+            if (meth.isConst())
+                out << " const";
             out << "\n";
             xcall_index++;
             i++;
