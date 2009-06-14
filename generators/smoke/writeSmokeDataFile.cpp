@@ -289,7 +289,7 @@ void writeSmokeData()
     i = 1;
     for (QMap<QString, int>::iterator it = methodNames.begin(); it != methodNames.end(); it++, i++) {
         it.value() = i;
-        out << "    " << it.key() << ",\t//" << i << "\n";
+        out << "    \"" << it.key() << "\",\t//" << i << "\n";
     }
     out << "};\n\n";
     
