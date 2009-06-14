@@ -21,6 +21,10 @@
 
 #include "memorypool.h"
 
+/**
+ * @brief An intrusive list of AST nodes.
+ * @note ListNodes inside AST nodes are NOT guarantied to start from the beginning, call toFront.
+ */
 template <typename Tp>
 struct ListNode
 {
