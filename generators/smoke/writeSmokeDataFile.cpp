@@ -222,7 +222,10 @@ void writeSmokeData()
     QHash<QVector<int>, int> parameterList;
     QHash<const Method*, int> parameterIndices;
     
+    // munged name => index
     QMap<QString, int> methodNames;
+    // class => list of munged names with possible methods
+    QHash<const Class*, QMap<QString, QList<const Method*> > > classMungedNames;
     
     currentIdx = 1;
     for (QMap<QString, int>::const_iterator iter = classIndex.constBegin(); iter != classIndex.constEnd(); iter++) {
@@ -236,6 +239,8 @@ void writeSmokeData()
             methodNames[meth.name()] = 1;
             QString mungedName = ::mungedName(meth);
             methodNames[mungedName] = 1;
+            QMap<QString, QList<const Method*> >& map = classMungedNames[klass];
+            map[mungedName].append(&meth);
             
             if (!meth.parameters().count()) {
                 parameterIndices[&meth] = 0;
@@ -292,6 +297,7 @@ void writeSmokeData()
         << "return type (index in types), xcall() index)\n";
     out << "static Smoke::Method " << module << "_methods[] = {\n";
     
+    QHash<const Method*, int> methodIdx;
     i = 0;
     for (QMap<QString, int>::const_iterator iter = classIndex.constBegin(); iter != classIndex.constEnd(); iter++) {
         Class* klass = &classes[iter.key()];
@@ -339,10 +345,14 @@ void writeSmokeData()
             out << ')';
             if (meth.isConst())
                 out << " const";
+            if (meth.flags() & Method::PureVirtual)
+                out << " [pure virtual]";
             out << "\n";
+            methodIdx[&meth] = i;
             xcall_index++;
             i++;
         }
+        // enums
         foreach (BasicTypeDeclaration* decl, klass->children()) {
             const Enum* e = 0;
             if ((e = dynamic_cast<Enum*>(decl))) {
@@ -362,5 +372,75 @@ void writeSmokeData()
     }
     
     out << "};\n\n";
+
+    out << "static Smoke::Index " << module << "_ambiguousMethodList[] = {\n";
+    out << "    0,\n";
+    
+    QHash<const Class*, QHash<QString, int> > ambigiousIds;
+    i = 1;
+    // ambigious method list
+    for (QHash<const Class*, QMap<QString, QList<const Method*> > >::const_iterator iter = classMungedNames.constBegin();
+         iter != classMungedNames.constEnd(); iter++)
+    {
+        const Class* klass = iter.key();
+        const QMap<QString, QList<const Method*> >& map = iter.value();
+        
+        for (QMap<QString, QList<const Method*> >::const_iterator munged_it = map.constBegin();
+             munged_it != map.constEnd(); munged_it++)
+        {
+            if (munged_it.value().size() < 2)
+                continue;
+            foreach (const Method* meth, munged_it.value()) {
+                out << "    " << methodIdx[meth] << ',';
+                
+                // comment
+                out << "  // " << klass->toString() << "::" << meth->name() << '(';
+                for (int j = 0; j < meth->parameters().count(); j++) {
+                    if (j > 0) out << ", ";
+                    out << meth->parameters()[j].type()->toString();
+                }
+                out << ')';
+                if (meth->isConst()) out << " const";
+                out << "\n";
+            }
+            out << "    0,\n";
+            ambigiousIds[klass][munged_it.key()] = i;
+            i += munged_it.value().size() + 1;
+        }
+    }
+
+    out << "};\n\n";
+
+    out << "// Class ID, munged name ID (index into methodNames), method def (see methods) if >0 or number of overloads if <0\n";
+    out << "static Smoke::MethodMap " << module << "_methodMaps[] = {\n";
+    out << "    {0, 0, 0},\t//0 (no method)\n";
+
+    for (QMap<QString, int>::const_iterator iter = classIndex.constBegin(); iter != classIndex.constEnd(); iter++) {
+        Class* klass = &classes[iter.key()];
+        if (externalClasses.contains(klass))
+            continue;
+        
+        QMap<QString, QList<const Method*> >& map = classMungedNames[klass];
+        for (QMap<QString, QList<const Method*> >::const_iterator munged_it = map.constBegin(); munged_it != map.constEnd(); munged_it++) {
+            
+            // class index, munged name index
+            out << "    {" << classIndex[iter.key()] << ", " << methodNames[munged_it.key()] << ", ";
+            
+            // if there's only one matching method for this class and the munged name, insert the index into methodss
+            if (munged_it.value().size() == 1) {
+                out << methodIdx[munged_it.value().first()];
+            } else {
+                // negative index into ambigious methods list
+                out << '-' << ambigiousIds[klass][munged_it.key()];
+            }
+            out << "},";
+            // comment
+            out << "\t// " << klass->toString() << "::" << munged_it.key();
+            out << "\n";
+        }
+    }
+
+    out << "};\n\n";
+
     smokedata.close();
 }

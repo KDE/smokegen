@@ -216,7 +216,7 @@ QString mungedName(const Method& meth) {
     QString ret = meth.name();
     foreach (const Parameter& param, meth.parameters()) {
         const Type* type = param.type();
-        if (type->pointerDepth() > 1 || type->name() == "void") {
+        if (type->pointerDepth() > 1) {
             // reference to array or hash
             ret += "?";
         } else if (type->isIntegral()|| type->getEnum()) {
