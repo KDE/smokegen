@@ -28,7 +28,7 @@
 GeneratorVisitor::GeneratorVisitor(ParseSession *session, bool resolveTypedefs, const QString& header) 
     : m_session(session), m_resolveTypedefs(resolveTypedefs), m_header(header), createType(false), createTypedef(false),
       inClass(0), isStatic(false), isVirtual(false), hasInitializer(false), 
-      currentTypeRef(0), inMethod(false), inParameter(false)
+      currentTypeRef(0), inMethod(false)
 {
     nc = new NameCompiler(m_session, this);
     tc = new TypeCompiler(m_session, this);
@@ -278,14 +278,6 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
         }
         return;
     }
-    
-    // this declaration is a parameter
-    if (inParameter) {
-        if (inClass)
-            currentMethod.appendParameter(Parameter(declName, currentTypeRef, hasInitializer));
-        else
-            currentFunction.appendParameter(Parameter(declName, currentTypeRef, hasInitializer));
-    }
 }
 
 void GeneratorVisitor::visitEnumSpecifier(EnumSpecifierAST* node)
@@ -331,11 +323,24 @@ void GeneratorVisitor::visitNamespace(NamespaceAST* node)
 
 void GeneratorVisitor::visitParameterDeclaration(ParameterDeclarationAST* node)
 {
-    if (inParameter)
-        return;
-    inParameter = true;
-    DefaultVisitor::visitParameterDeclaration(node);
-    inParameter = false;
+    tc->run(node->type_specifier);
+    QString name;
+    if (node->declarator) {
+        tc->run(node->declarator);
+        if (currentType.isFunctionPointer() && node->declarator->sub_declarator)
+            nc->run(node->declarator->sub_declarator->id);
+        else
+            nc->run(node->declarator->id);
+        name = nc->name();
+    }
+    currentType = tc->type();
+    currentTypeRef = Type::registerType(currentType);
+    if (!hasInitializer)
+        hasInitializer = node->expression;
+    if (inClass)
+        currentMethod.appendParameter(Parameter(name, currentTypeRef, hasInitializer));
+    else
+        currentFunction.appendParameter(Parameter(name, currentTypeRef, hasInitializer));
 }
 
 void GeneratorVisitor::visitSimpleDeclaration(SimpleDeclarationAST* node)

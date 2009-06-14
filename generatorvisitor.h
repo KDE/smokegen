@@ -81,7 +81,6 @@ private:
     Type* currentTypeRef;
     
     bool inMethod;
-    bool inParameter;
     Method currentMethod;
     
     Function currentFunction;
