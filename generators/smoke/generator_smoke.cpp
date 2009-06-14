@@ -35,6 +35,7 @@ QStringList classList;
 
 int parts = 20;
 QString module = "qt";
+QStringList parentModules;
 
 QMap<QString, int> classIndex;
 QSet<Class*> externalClasses;

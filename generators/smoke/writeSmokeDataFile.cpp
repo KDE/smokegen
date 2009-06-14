@@ -299,6 +299,7 @@ void writeSmokeData()
     
     QHash<const Method*, int> methodIdx;
     i = 0;
+    int methodCount = 0;
     for (QMap<QString, int>::const_iterator iter = classIndex.constBegin(); iter != classIndex.constEnd(); iter++) {
         Class* klass = &classes[iter.key()];
         if (externalClasses.contains(klass))
@@ -351,6 +352,7 @@ void writeSmokeData()
             methodIdx[&meth] = i;
             xcall_index++;
             i++;
+            methodCount++;
         }
         // enums
         foreach (BasicTypeDeclaration* decl, klass->children()) {
@@ -366,6 +368,7 @@ void writeSmokeData()
                     out << "\n";
                     xcall_index++;
                     i++;
+                    methodCount++;
                 }
             }
         }
@@ -411,6 +414,7 @@ void writeSmokeData()
 
     out << "};\n\n";
 
+    int methodMapCount = 1;
     out << "// Class ID, munged name ID (index into methodNames), method def (see methods) if >0 or number of overloads if <0\n";
     out << "static Smoke::MethodMap " << module << "_methodMaps[] = {\n";
     out << "    {0, 0, 0},\t//0 (no method)\n";
@@ -437,10 +441,34 @@ void writeSmokeData()
             // comment
             out << "\t// " << klass->toString() << "::" << munged_it.key();
             out << "\n";
+            methodMapCount++;
         }
     }
 
     out << "};\n\n";
+
+    if (parentModules.isEmpty()) {
+        out << "std::map<std::string, Smoke*> Smoke::classMap;\n\n";
+    }
+
+    out << "static bool initialized = false;\n";
+    out << "Smoke *" << module << "_Smoke = 0;\n\n";
+    out << "// Create the Smoke instance encapsulating all the above.\n";
+    out << "void init_" << module << "_Smoke() {\n";
+    out << "    if (initialized) return;\n";
+    out << "    " << module << "_Smoke = new Smoke(\n";
+    out << "        \"" << module << "\",\n";
+    out << "        " << module << "_classes, " << classIndex.count() << ",\n";
+    out << "        " << module << "_methods, " << methodCount << ",\n";
+    out << "        " << module << "_methodMaps, " << methodMapCount << ",\n";
+    out << "        " << module << "_methodNames, " << methodNames.count() + 1 << ",\n";
+    out << "        " << module << "_types, " << typeIndex.count() << ",\n";
+    out << "        " << module << "_inheritanceList,\n";
+    out << "        " << module << "_argumentList,\n";
+    out << "        " << module << "_ambiguousMethodList,\n";
+    out << "        " << module << "_cast );\n";
+    out << "    initialized = true;\n";
+    out << "}\n";
 
     smokedata.close();
 }

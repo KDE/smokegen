@@ -44,6 +44,7 @@ extern QStringList classList;
 
 extern int parts;
 extern QString module;
+extern QStringList parentModules;
 
 extern QSet<Class*> externalClasses;
 extern QSet<Type*> usedTypes;
