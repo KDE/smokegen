@@ -34,30 +34,68 @@ uint qHash(const QVector<int> intList)
     return qHash(QByteArray::fromRawData(byteArray, length));
 }
 
-void writeSmokeData()
+SmokeDataFile::SmokeDataFile()
 {
-    QFile smokedata(outputDir.filePath("smokedata.cpp"));
+    for (QHash<QString, Class>::const_iterator iter = ::classes.constBegin(); iter != ::classes.constEnd(); iter++) {
+        if (Options::classList.contains(iter.key()) && !iter.value().isForwardDecl()) {
+            classIndex[iter.key()] = 1;
+        }
+    }
+    
+    includedClasses = classIndex.keys();
+    Util::preparse(&usedTypes, includedClasses);  // collect all used types, add c'tors.. etc.
+    
+    // if a class is used somewhere but not listed in the class list, mark it external
+    for (QHash<QString, Class>::iterator iter = ::classes.begin(); iter != ::classes.end(); iter++) {
+        if (isClassUsed(&iter.value())) {
+            classIndex[iter.key()] = 1;
+            if (!classes.contains(iter.key()) || iter.value().isForwardDecl())
+                externalClasses << &iter.value();
+            else    
+                includedClasses << iter.key();
+        }
+    }
+    
+    // build class index here because the list needs to be sorted
+    int i = 1;
+    for (QMap<QString, int>::iterator iter = classIndex.begin(); iter != classIndex.end(); iter++) {
+        iter.value() = i++;
+    }
+}
+
+bool SmokeDataFile::isClassUsed(const Class* klass)
+{
+    for (QSet<Type*>::const_iterator it = usedTypes.constBegin(); it != usedTypes.constEnd(); it++) {
+        if ((*it)->getClass() == klass)
+            return true;
+    }
+    return false;
+}
+
+void SmokeDataFile::write()
+{
+    QFile smokedata(Options::outputDir.filePath("smokedata.cpp"));
     smokedata.open(QFile::ReadWrite | QFile::Truncate);
     QTextStream out(&smokedata);
-    foreach (const QFileInfo& file, headerList)
+    foreach (const QFileInfo& file, Options::headerList)
         out << "#include <" << file.fileName() << ">\n";
     out << "\n#include <smoke.h>\n";
-    out << "#include <" << module << "_smoke.h>\n\n";
+    out << "#include <" << Options::module << "_smoke.h>\n\n";
     
-    // write out module_cast() function
-    out << "static void *" << module << "_cast(void *xptr, Smoke::Index from, Smoke::Index to) {\n";
+    // write out Options::module_cast() function
+    out << "static void *" << Options::module << "_cast(void *xptr, Smoke::Index from, Smoke::Index to) {\n";
     out << "  switch(from) {\n";
     for (QMap<QString, int>::const_iterator iter = classIndex.constBegin(); iter != classIndex.constEnd(); iter++) {
         out << "    case " << iter.value() << ":   //" << iter.key() << "\n";
         out << "      switch(to) {\n";
         const Class& klass = classes[iter.key()];
-        foreach (const Class* base, superClassList(&klass)) {
+        foreach (const Class* base, Util::superClassList(&klass)) {
             QString className = base->toString();
             out << QString("        case %1: return (void*)(%2*)(%3*)xptr;\n")
                 .arg(classIndex[className]).arg(className).arg(klass.toString());
         }
         out << QString("        case %1: return (void*)(%2*)xptr;\n").arg(iter.value()).arg(klass.toString());
-        foreach (const Class* desc, descendantsList(&klass)) {
+        foreach (const Class* desc, Util::descendantsList(&klass)) {
             QString className = desc->toString();
             out << QString("        case %1: return (void*)(%2*)(%3*)xptr;\n")
                 .arg(classIndex[className]).arg(className).arg(klass.toString());
@@ -74,7 +112,7 @@ void writeSmokeData()
     QHash<const Class*, int> inheritanceIndex;
     out << "// Group of Indexes (0 separated) used as super class lists.\n";
     out << "// Classes with super classes have an index into this array.\n";
-    out << "static Smoke::Index " << module << "_inheritanceList[] = {\n";
+    out << "static Smoke::Index " << Options::module << "_inheritanceList[] = {\n";
     out << "    0,\t// 0: (no super class)\n";
     
     int currentIdx = 1;
@@ -143,7 +181,7 @@ void writeSmokeData()
     // classes table
     out << "\n// List of all classes\n";
     out << "// Name, external, index into inheritanceList, method dispatcher, enum dispatcher, class flags\n";
-    out << "static Smoke::Class " << module << "_classes[] = {\n";
+    out << "static Smoke::Class " << Options::module << "_classes[] = {\n";
     out << "    { 0L, false, 0, 0, 0, 0 },\t// 0 (no class)\n";
     for (QMap<QString, int>::const_iterator iter = classIndex.constBegin(); iter != classIndex.constEnd(); iter++) {
         Class* klass = &classes[iter.key()];
@@ -155,9 +193,9 @@ void writeSmokeData()
                 << inheritanceIndex.value(klass, 0) << ", xcall_" << smokeClassName << ", "
                 << (enumClassesHandled.contains(iter.key()) ? QString("xenum_").append(smokeClassName) : "0") << ", ";
             QString flags = "0";
-            if (canClassBeInstanciated(klass)) flags += "|cf_constructor";
-            if (canClassBeCopied(klass)) flags += "|cf_deepcopy";
-            if (hasClassVirtualDestructor(klass)) flags += "|cf_virtual";
+            if (Util::canClassBeInstanciated(klass)) flags += "|cf_constructor";
+            if (Util::canClassBeCopied(klass)) flags += "|cf_deepcopy";
+            if (Util::hasClassVirtualDestructor(klass)) flags += "|cf_virtual";
             flags.replace("0|", ""); // beautify
             out << flags;
             out << " },\t//" << iter.value() << "\n";
@@ -167,7 +205,7 @@ void writeSmokeData()
     
     out << "// List of all types needed by the methods (arguments and return values)\n"
         << "// Name, class ID if arg is a class, and TypeId\n";
-    out << "static Smoke::Type " << module << "_types[] = {\n";
+    out << "static Smoke::Type " << Options::module << "_types[] = {\n";
     out << "    { 0, 0, 0 },\t//0 (no type)\n";
     QMap<QString, Type*> sortedTypes;
     for (QSet<Type*>::const_iterator it = usedTypes.constBegin(); it != usedTypes.constEnd(); it++) {
@@ -212,7 +250,7 @@ void writeSmokeData()
     }
     out << "};\n\n";
     
-    out << "static Smoke::Index " << module << "_argumentList[] = {\n";
+    out << "static Smoke::Index " << Options::module << "_argumentList[] = {\n";
     out << "    0,\t//0  (void)\n";
     
     QHash<QVector<int>, int> parameterList;
@@ -233,7 +271,7 @@ void writeSmokeData()
                 continue;
             
             methodNames[meth.name()] = 1;
-            QString mungedName = ::mungedName(meth);
+            QString mungedName = Util::mungedName(meth);
             methodNames[mungedName] = 1;
             QMap<QString, QList<const Method*> >& map = classMungedNames[klass];
             map[mungedName].append(&meth);
@@ -281,7 +319,7 @@ void writeSmokeData()
     out << "};\n\n";
     
     out << "// Raw list of all methods, using munged names\n";
-    out << "static const char *" << module << "_methodNames[] {\n";
+    out << "static const char *" << Options::module << "_methodNames[] {\n";
     i = 1;
     for (QMap<QString, int>::iterator it = methodNames.begin(); it != methodNames.end(); it++, i++) {
         it.value() = i;
@@ -291,7 +329,7 @@ void writeSmokeData()
     
     out << "// (classId, name (index in methodNames), argumentList index, number of args, method flags, "
         << "return type (index in types), xcall() index)\n";
-    out << "static Smoke::Method " << module << "_methods[] = {\n";
+    out << "static Smoke::Method " << Options::module << "_methods[] = {\n";
     
     QHash<const Method*, int> methodIdx;
     i = 0;
@@ -372,7 +410,7 @@ void writeSmokeData()
     
     out << "};\n\n";
 
-    out << "static Smoke::Index " << module << "_ambiguousMethodList[] = {\n";
+    out << "static Smoke::Index " << Options::module << "_ambiguousMethodList[] = {\n";
     out << "    0,\n";
     
     QHash<const Class*, QHash<QString, int> > ambigiousIds;
@@ -412,7 +450,7 @@ void writeSmokeData()
 
     int methodMapCount = 1;
     out << "// Class ID, munged name ID (index into methodNames), method def (see methods) if >0 or number of overloads if <0\n";
-    out << "static Smoke::MethodMap " << module << "_methodMaps[] = {\n";
+    out << "static Smoke::MethodMap " << Options::module << "_methodMaps[] = {\n";
     out << "    {0, 0, 0},\t//0 (no method)\n";
 
     for (QMap<QString, int>::const_iterator iter = classIndex.constBegin(); iter != classIndex.constEnd(); iter++) {
@@ -443,26 +481,26 @@ void writeSmokeData()
 
     out << "};\n\n";
 
-    if (parentModules.isEmpty()) {
+    if (Options::parentModules.isEmpty()) {
         out << "std::map<std::string, Smoke*> Smoke::classMap;\n\n";
     }
 
     out << "static bool initialized = false;\n";
-    out << "Smoke *" << module << "_Smoke = 0;\n\n";
+    out << "Smoke *" << Options::module << "_Smoke = 0;\n\n";
     out << "// Create the Smoke instance encapsulating all the above.\n";
-    out << "void init_" << module << "_Smoke() {\n";
+    out << "void init_" << Options::module << "_Smoke() {\n";
     out << "    if (initialized) return;\n";
-    out << "    " << module << "_Smoke = new Smoke(\n";
-    out << "        \"" << module << "\",\n";
-    out << "        " << module << "_classes, " << classIndex.count() << ",\n";
-    out << "        " << module << "_methods, " << methodCount << ",\n";
-    out << "        " << module << "_methodMaps, " << methodMapCount << ",\n";
-    out << "        " << module << "_methodNames, " << methodNames.count() + 1 << ",\n";
-    out << "        " << module << "_types, " << typeIndex.count() << ",\n";
-    out << "        " << module << "_inheritanceList,\n";
-    out << "        " << module << "_argumentList,\n";
-    out << "        " << module << "_ambiguousMethodList,\n";
-    out << "        " << module << "_cast );\n";
+    out << "    " << Options::module << "_Smoke = new Smoke(\n";
+    out << "        \"" << Options::module << "\",\n";
+    out << "        " << Options::module << "_classes, " << classIndex.count() << ",\n";
+    out << "        " << Options::module << "_methods, " << methodCount << ",\n";
+    out << "        " << Options::module << "_methodMaps, " << methodMapCount << ",\n";
+    out << "        " << Options::module << "_methodNames, " << methodNames.count() + 1 << ",\n";
+    out << "        " << Options::module << "_types, " << typeIndex.count() << ",\n";
+    out << "        " << Options::module << "_inheritanceList,\n";
+    out << "        " << Options::module << "_argumentList,\n";
+    out << "        " << Options::module << "_ambiguousMethodList,\n";
+    out << "        " << Options::module << "_cast );\n";
     out << "    initialized = true;\n";
     out << "}\n";
 

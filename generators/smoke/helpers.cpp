@@ -24,7 +24,7 @@
 
 #include "globals.h"
 
-QList<const Class*> superClassList(const Class* klass)
+QList<const Class*> Util::superClassList(const Class* klass)
 {
     static QHash<const Class*, QList<const Class*> > superClassCache;
 
@@ -40,7 +40,7 @@ QList<const Class*> superClassList(const Class* klass)
     return ret;
 }
 
-QList<const Class*> descendantsList(const Class* klass)
+QList<const Class*> Util::descendantsList(const Class* klass)
 {
     static QHash<const Class*, QList<const Class*> > descendantsClassCache;
 
@@ -56,7 +56,7 @@ QList<const Class*> descendantsList(const Class* klass)
     return ret;
 }
 
-void preparse(const QList<QString>& keys)
+void Util::preparse(QSet<Type*> *usedTypes, const QList<QString>& keys)
 {
     foreach (const QString& key, keys) {
         Class& klass = classes[key];
@@ -65,35 +65,26 @@ void preparse(const QList<QString>& keys)
         foreach (const Method& m, klass.methods()) {
             if (m.access() == Access_private)
                 continue;
-            usedTypes << m.type();
+            (*usedTypes) << m.type();
             foreach (const Parameter& param, m.parameters())
-                usedTypes << param.type();
+                (*usedTypes) << param.type();
         }
         foreach (const Field& f, klass.fields()) {
             if (f.access() == Access_private)
                 continue;
-            usedTypes << f.type();
+            (*usedTypes) << f.type();
         }
         foreach (BasicTypeDeclaration* decl, klass.children()) {
             Enum* e = 0;
             if ((e = dynamic_cast<Enum*>(decl))) {
                 Type *t = Type::registerType(Type(e));
-                usedTypes << t;
+                (*usedTypes) << t;
             }
         }
     }
 }
 
-bool isClassUsed(const Class* klass)
-{
-    for (QSet<Type*>::const_iterator it = usedTypes.constBegin(); it != usedTypes.constEnd(); it++) {
-        if ((*it)->getClass() == klass)
-            return true;
-    }
-    return false;
-}
-
-bool canClassBeInstanciated(const Class* klass)
+bool Util::canClassBeInstanciated(const Class* klass)
 {
     static QHash<const Class*, bool> cache;
     if (cache.contains(klass))
@@ -118,7 +109,7 @@ bool canClassBeInstanciated(const Class* klass)
     return ret;
 }
 
-bool canClassBeCopied(const Class* klass)
+bool Util::canClassBeCopied(const Class* klass)
 {
     static QHash<const Class*, bool> cache;
     if (cache.contains(klass))
@@ -152,7 +143,7 @@ bool canClassBeCopied(const Class* klass)
     return ret;
 }
 
-bool hasClassVirtualDestructor(const Class* klass)
+bool Util::hasClassVirtualDestructor(const Class* klass)
 {
     static QHash<const Class*, bool> cache;
     if (cache.contains(klass))
@@ -170,7 +161,7 @@ bool hasClassVirtualDestructor(const Class* klass)
     return virtualDtorFound;
 }
 
-void addDefaultConstructor(Class* klass)
+void Util::addDefaultConstructor(Class* klass)
 {
     foreach (const Method& meth, klass->methods()) {
         // if the class already has a constructor or if it has pure virtuals, there's nothing to do for us
@@ -185,7 +176,7 @@ void addDefaultConstructor(Class* klass)
     klass->appendMethod(meth);
 }
 
-void addCopyConstructor(Class* klass)
+void Util::addCopyConstructor(Class* klass)
 {
     foreach (const Method& meth, klass->methods()) {
         if (meth.isConstructor() && meth.parameters().count() == 1) {
@@ -212,7 +203,7 @@ void addCopyConstructor(Class* klass)
     klass->appendMethod(meth);
 }
 
-QString mungedName(const Method& meth) {
+QString Util::mungedName(const Method& meth) {
     QString ret = meth.name();
     foreach (const Parameter& param, meth.parameters()) {
         const Type* type = param.type();
@@ -231,4 +222,54 @@ QString mungedName(const Method& meth) {
         }
     }
     return ret;
+}
+
+QString Util::stackItemField(const Type* type)
+{
+    if ((type->pointerDepth() > 0 || !type->isIntegral()) && !type->getEnum())
+        return "s_class";
+    if (type->getEnum())
+        return "s_enum";
+    
+    QString typeName = type->name();
+    typeName.replace("unsigned ", "u");
+    typeName.replace("signed ", "");
+    return "s_" + typeName;
+}
+
+QString Util::assignmentString(const Type* type, const QString& var)
+{
+    if (type->pointerDepth() > 0) {
+        return "(void*)" + var;
+    } else if (type->isIntegral()) {
+        return var;
+    } else if (type->isRef()) {
+        return "(void*)&" + var;
+    } else if (type->getEnum()) {
+        return var;
+    } else {
+        QString ret = "(void*)new ";
+        if (Class* retClass = type->getClass())
+            ret += retClass->toString();
+        else if (Typedef* retTdef = type->getTypedef())
+            ret += retTdef->toString(); 
+        else
+            ret += type->name();
+        ret += "(xret)";
+        return ret;
+    }
+    return QString();
+}
+
+QList<const Method*> Util::collectVirtualMethods(const Class* klass)
+{
+    QList<const Method*> methods;
+    foreach (const Method& meth, klass->methods()) {
+        if ((meth.flags() & Method::Virtual || meth.flags() & Method::PureVirtual) && !meth.isDestructor())
+            methods << &meth;
+    }
+    foreach (const Class::BaseClassSpecifier& baseClass, klass->baseClasses()) {
+        methods.append(collectVirtualMethods(baseClass.baseClass));
+    }
+    return methods;
 }

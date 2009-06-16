@@ -29,52 +29,24 @@
 
 #include "globals.h"
 
-QDir outputDir;
-QList<QFileInfo> headerList;
-QStringList classList;
+QDir Options::outputDir;
+QList<QFileInfo> Options::headerList;
+QStringList Options::classList;
 
-int parts = 20;
-QString module = "qt";
-QStringList parentModules;
-
-QMap<QString, int> classIndex;
-QSet<Class*> externalClasses;
-QSet<Type*> usedTypes;
+int Options::parts = 20;
+QString Options::module = "qt";
+QStringList Options::parentModules;
 
 extern "C" Q_DECL_EXPORT
 void generate(const QDir& outputDir, const QList<QFileInfo>& headerList, const QStringList& classes)
 {
     qDebug() << "Generating SMOKE sources...";
-    ::outputDir = outputDir;
-    ::headerList = headerList;
-    classList = classes;
+    Options::outputDir = outputDir;
+    Options::headerList = headerList;
+    Options::classList = classes;
     
-    for (QHash<QString, Class>::const_iterator iter = ::classes.constBegin(); iter != ::classes.constEnd(); iter++) {
-        if (classList.contains(iter.key()) && !iter.value().isForwardDecl()) {
-            classIndex[iter.key()] = 1;
-        }
-    }
-    
-    QStringList wantedClasses = classIndex.keys();
-    preparse(wantedClasses);  // collect all used types, add c'tors.. etc.
-    
-    // if a class is used somewhere but not listed in the class list, mark it external
-    for (QHash<QString, Class>::iterator iter = ::classes.begin(); iter != ::classes.end(); iter++) {
-        if (isClassUsed(&iter.value())) {
-            classIndex[iter.key()] = 1;
-            if (!classes.contains(iter.key()) || iter.value().isForwardDecl())
-                externalClasses << &iter.value();
-            else    
-                wantedClasses << iter.key();
-        }
-    }
-    
-    // build class index here because the list needs to be sorted
-    int i = 1;
-    for (QMap<QString, int>::iterator iter = classIndex.begin(); iter != classIndex.end(); iter++) {
-        iter.value() = i++;
-    }
-    
-    writeSmokeData();
-    writeClassFiles(wantedClasses);
+    SmokeDataFile smokeData;
+    smokeData.write();
+    SmokeClassFiles classFiles(&smokeData);
+    classFiles.write();
 }

@@ -20,6 +20,11 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
+#include <QMap>
+#include <QSet>
+#include <QString>
+#include <QStringList>
+
 template<class Key, class Value>
 class QMap;
 
@@ -32,39 +37,69 @@ class QDir;
 class QFileInfo;
 class QString;
 class QStringList;
+class QTextStream;
 
 class Class;
 class Method;
 class Type;
 
-extern QMap<QString, int> classIndex;
-extern QDir outputDir;
-extern QList<QFileInfo> headerList;
-extern QStringList classList;
+struct Options
+{
+    static QDir outputDir;
+    static int parts;
+    static QString module;
+    static QStringList parentModules;
+    static QList<QFileInfo> headerList;
+    static QStringList classList;
+};
 
-extern int parts;
-extern QString module;
-extern QStringList parentModules;
+struct SmokeDataFile
+{
+    SmokeDataFile();
 
-extern QSet<Class*> externalClasses;
-extern QSet<Type*> usedTypes;
+    void write();
+    bool isClassUsed(const Class* klass);
 
-void writeClassFiles(const QList<QString>& keys);
-void writeSmokeData();
+    QMap<QString, int> classIndex;
+    QSet<Class*> externalClasses;
+    QSet<Type*> usedTypes;
+    QStringList includedClasses;
+};
 
-QList<const Class*> superClassList(const Class* klass);
-QList<const Class*> descendantsList(const Class* klass);
+struct SmokeClassFiles
+{
+    SmokeClassFiles(SmokeDataFile *data);
+    void write();
+    void write(const QList<QString>& keys);
 
-void preparse(const QList<QString>& keys);
-bool isClassUsed(const Class* klass);
+private:
+    void generateMethod(QTextStream& out, const QString& className, const QString& smokeClassName, const Method& meth, int index);
+    void generateVirtualMethod(QTextStream& out, const QString& className, const Method& meth);
+    
+    void writeClass(QTextStream& out, const Class* klass, const QString& className);
+    
+    SmokeDataFile *m_smokeData;
+};
+    
+struct Util
+{
+    static QList<const Class*> superClassList(const Class* klass);
+    static QList<const Class*> descendantsList(const Class* klass);
 
-bool canClassBeInstanciated(const Class* klass);
-bool canClassBeCopied(const Class* klass);
-bool hasClassVirtualDestructor(const Class* klass);
+    static void preparse(QSet<Type*> *usedTypes, const QList<QString>& keys);
 
-void addDefaultConstructor(Class* klass);
-void addCopyConstructor(Class* klass);
+    static bool canClassBeInstanciated(const Class* klass);
+    static bool canClassBeCopied(const Class* klass);
+    static bool hasClassVirtualDestructor(const Class* klass);
 
-QString mungedName(const Method&);
+    static void addDefaultConstructor(Class* klass);
+    static void addCopyConstructor(Class* klass);
+
+    static QString mungedName(const Method&);
+    
+    static QString stackItemField(const Type* type);
+    static QString assignmentString(const Type* type, const QString& var);
+    static QList<const Method*> collectVirtualMethods(const Class* klass);
+};
 
 #endif
