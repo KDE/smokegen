@@ -49,7 +49,7 @@ SmokeDataFile::SmokeDataFile()
     for (QHash<QString, Class>::iterator iter = ::classes.begin(); iter != ::classes.end(); iter++) {
         if (isClassUsed(&iter.value())) {
             classIndex[iter.key()] = 1;
-            if (!classes.contains(iter.key()) || iter.value().isForwardDecl())
+            if (!Options::classList.contains(iter.key()) || iter.value().isForwardDecl())
                 externalClasses << &iter.value();
             else    
                 includedClasses << iter.key();
