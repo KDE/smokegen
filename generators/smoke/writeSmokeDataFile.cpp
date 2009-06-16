@@ -70,7 +70,7 @@ void writeSmokeData()
     out << "}\n\n";
     
     // write out the inheritance list
-    QHash<QString, int> inheritanceList;
+    QHash<QVector<int>, int> inheritanceList;
     QHash<const Class*, int> inheritanceIndex;
     out << "// Group of Indexes (0 separated) used as super class lists.\n";
     out << "// Classes with super classes have an index into this array.\n";
@@ -82,7 +82,7 @@ void writeSmokeData()
         const Class& klass = classes[iter.key()];
         if (!klass.baseClasses().count())
             continue;
-        QList<int> indices;
+        QVector<int> indices;
         QStringList comment;
         foreach (const Class::BaseClassSpecifier& base, klass.baseClasses()) {
             QString className = base.baseClass->toString();
@@ -91,13 +91,9 @@ void writeSmokeData()
         }
         int idx = 0;
         
-        // FIXME:
-        // Storing the index for a given list of parent classes with a string as a key
-        // is ugly. Can anyone come up with a hash algorithm for integer lists?
-        QString commentString = comment.join(", ");
-        if (!inheritanceList.contains(commentString)) {
+        if (!inheritanceList.contains(indices)) {
             idx = currentIdx;
-            inheritanceList[commentString] = idx;
+            inheritanceList[indices] = idx;
             out << "    ";
             for (int i = 0; i < indices.count(); i++) {
                 if (i > 0) out << ", ";
@@ -105,9 +101,9 @@ void writeSmokeData()
                 currentIdx++;
             }
             currentIdx++;
-            out << ", 0,\t// " << idx << ": " << commentString << "\n";
+            out << ", 0,\t// " << idx << ": " << comment.join(", ") << "\n";
         } else {
-            idx = inheritanceList[commentString];
+            idx = inheritanceList[indices];
         }
         
         // store the index into inheritanceList for the class
