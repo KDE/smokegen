@@ -175,7 +175,7 @@ void SmokeDataFile::write()
         if (externalClasses.contains(&klass))
             continue;
         QString smokeClassName = QString(klass.toString()).replace("::", "__");
-        out << "xcall_" << smokeClassName << "(Smoke::Index, void*, Smoke::Stack);\n";
+        out << "void xcall_" << smokeClassName << "(Smoke::Index, void*, Smoke::Stack);\n";
     }
     
     // classes table
@@ -193,9 +193,9 @@ void SmokeDataFile::write()
                 << inheritanceIndex.value(klass, 0) << ", xcall_" << smokeClassName << ", "
                 << (enumClassesHandled.contains(iter.key()) ? QString("xenum_").append(smokeClassName) : "0") << ", ";
             QString flags = "0";
-            if (Util::canClassBeInstanciated(klass)) flags += "|cf_constructor";
-            if (Util::canClassBeCopied(klass)) flags += "|cf_deepcopy";
-            if (Util::hasClassVirtualDestructor(klass)) flags += "|cf_virtual";
+            if (Util::canClassBeInstanciated(klass)) flags += "|Smoke::cf_constructor";
+            if (Util::canClassBeCopied(klass)) flags += "|Smoke::cf_deepcopy";
+            if (Util::hasClassVirtualDestructor(klass)) flags += "|Smoke::cf_virtual";
             flags.replace("0|", ""); // beautify
             out << flags;
             out << " },\t//" << iter.value() << "\n";
@@ -485,10 +485,19 @@ void SmokeDataFile::write()
         out << "std::map<std::string, Smoke*> Smoke::classMap;\n\n";
     }
 
+    for (int j = 0; j < Options::parentModules.count(); j++) {
+        out << "void init_" << Options::parentModules[j] << "_Smoke();\n";
+        if (j == Options::parentModules.count() - 1)
+            out << "\n";
+    }
+
     out << "static bool initialized = false;\n";
     out << "Smoke *" << Options::module << "_Smoke = 0;\n\n";
     out << "// Create the Smoke instance encapsulating all the above.\n";
     out << "void init_" << Options::module << "_Smoke() {\n";
+    foreach (const QString& str, Options::parentModules) {
+        out << "    init_" << str << "_Smoke();\n";
+    }
     out << "    if (initialized) return;\n";
     out << "    " << Options::module << "_Smoke = new Smoke(\n";
     out << "        \"" << Options::module << "\",\n";
