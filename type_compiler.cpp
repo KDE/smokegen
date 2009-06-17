@@ -100,7 +100,28 @@ void TypeCompiler::visitEnumSpecifier(EnumSpecifierAST *node)
 
 void TypeCompiler::visitElaboratedTypeSpecifier(ElaboratedTypeSpecifierAST *node)
 {
-  visit(node->name);
+    visit(node->name);
+    BasicTypeDeclaration* type = m_visitor->resolveType(m_type.join("::"));
+    Class* klass;
+    Typedef* tdef;
+    Enum* e;
+    if ((klass = dynamic_cast<Class*>(type))) {
+        m_realType = Type(klass, isConstant(), isVolatile());
+    } else if ((tdef = dynamic_cast<Typedef*>(type))) {
+        if (m_visitor->resolveTypdefs())
+            m_realType = tdef->resolve();
+        else
+            m_realType = Type(tdef);
+        if (isConstant()) m_realType.setIsConst(true);
+        if (isVolatile()) m_realType.setIsVolatile(true);
+    } else if ((e = dynamic_cast<Enum*>(type))) {
+        m_realType = Type(e, isConstant(), isVolatile());
+    } else {
+        m_realType = Type(m_type.join("::"), isConstant(), isVolatile());
+    }
+
+    if (m_realType.templateArguments().isEmpty())
+        m_realType.setTemplateArguments(m_templateArgs);
 }
 
 void TypeCompiler::visitParameterDeclaration(ParameterDeclarationAST* node)
@@ -171,7 +192,8 @@ void TypeCompiler::visitSimpleTypeSpecifier(SimpleTypeSpecifierAST *node)
         m_realType = Type(m_type.join("::"), isConstant(), isVolatile());
     }
     
-    m_realType.setTemplateArguments(m_templateArgs);
+    if (m_realType.templateArguments().isEmpty())
+        m_realType.setTemplateArguments(m_templateArgs);
   }
 }
 

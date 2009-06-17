@@ -255,7 +255,7 @@ QString Util::assignmentString(const Type* type, const QString& var)
             ret += retTdef->toString(); 
         else
             ret += type->name();
-        ret += "(xret)";
+        ret += '(' + var + ')';
         return ret;
     }
     return QString();

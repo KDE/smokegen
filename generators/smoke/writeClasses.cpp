@@ -130,6 +130,13 @@ void SmokeClassFiles::generateMethod(QTextStream& out, const QString& className,
     }
 }
 
+void SmokeClassFiles::generateEnumMemberCall(QTextStream& out, const QString& className, const QString& member, int index)
+{
+    out << "    static void x_" << index << "(Smoke::Stack x) {\n"
+        << "        x[0].s_enum = (long)" << className << "::" << member << ";\n"
+        << "    }\n";
+}
+
 void SmokeClassFiles::generateVirtualMethod(QTextStream& out, const QString& className, const Method& meth)
 {
     QString x_params, x_list;
@@ -184,11 +191,18 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
     out << "        // set the smoke binding\n";
     out << "        _binding = (SmokeBinding*)x[1].s_class;\n";
     out << "    }\n";
-    for(int i = 0; i < klass->methods().count(); i++) {
-        const Method& meth = klass->methods()[i];
+    int xcall_index = 1;
+    foreach (const Method& meth, klass->methods()) {
         if (meth.access() == Access_private)
             continue;
-        generateMethod(out, className, smokeClassName, meth, i);
+        generateMethod(out, className, smokeClassName, meth, xcall_index++);
+    }
+    const Enum* e = 0;
+    foreach (const BasicTypeDeclaration* decl, klass->children()) {
+        if (!(e = dynamic_cast<const Enum*>(decl)))
+            continue;
+        foreach (const EnumMember& member, e->members())
+            generateEnumMemberCall(out, className, member.first, xcall_index++);
     }
     foreach (const Method* meth, Util::collectVirtualMethods(klass)) {
         generateVirtualMethod(out, className, *meth);
