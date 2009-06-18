@@ -74,11 +74,11 @@ struct SmokeClassFiles
     void write(const QList<QString>& keys);
 
 private:
-    void generateMethod(QTextStream& out, const QString& className, const QString& smokeClassName, const Method& meth, int index);
+    void generateMethod(QTextStream& out, const QString& className, const QString& smokeClassName, const Method& meth, int index, QSet<QString>& includes);
     void generateEnumMemberCall(QTextStream& out, const QString& className, const QString& member, int index);
-    void generateVirtualMethod(QTextStream& out, const QString& className, const Method& meth);
+    void generateVirtualMethod(QTextStream& out, const QString& className, const Method& meth, QSet<QString>& includes);
     
-    void writeClass(QTextStream& out, const Class* klass, const QString& className);
+    void writeClass(QTextStream& out, const Class* klass, const QString& className, QSet<QString>& includes);
     
     SmokeDataFile *m_smokeData;
 };

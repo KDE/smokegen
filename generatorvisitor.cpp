@@ -228,6 +228,8 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
         } else if (isDestructor) {
             // destructors don't have a return type.. so return void
             returnType = const_cast<Type*>(Type::Void);
+        } else if (nc->isCastOperator()) {
+            returnType = Type::registerType(nc->castType());
         }
         currentMethod = Method(klass.top(), declName, returnType, access.top());
         currentMethod.setIsConstructor(isConstructor);

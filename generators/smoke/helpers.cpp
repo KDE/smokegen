@@ -234,6 +234,8 @@ QString Util::stackItemField(const Type* type)
     QString typeName = type->name();
     typeName.replace("unsigned ", "u");
     typeName.replace("signed ", "");
+    typeName.replace("long long", "long");
+    typeName.replace("long double", "double");
     return "s_" + typeName;
 }
 
@@ -254,7 +256,7 @@ QString Util::assignmentString(const Type* type, const QString& var)
         else if (Typedef* retTdef = type->getTypedef())
             ret += retTdef->toString(); 
         else
-            ret += type->name();
+            ret += type->toString();
         ret += '(' + var + ')';
         return ret;
     }

@@ -40,6 +40,8 @@ public:
   QString name() const { return m_name.join("::"); }
   const QStringList& qualifiedName() const { return m_name; }
   const QList<Type>& templateArguments() const { return m_templateArgs; }
+  bool isCastOperator() const { return m_castType.isValid(); }
+  const Type& castType() const { return m_castType; }
 
   /**
    * When the name contains one type-specifier, this should contain that specifier after the run.
@@ -60,6 +62,7 @@ private:
   QString m_currentIdentifier;
   QList<Type> m_templateArgs;
   GeneratorVisitor* m_visitor;
+  Type m_castType;
 };
 
 //Extracts a type-identifier from a template argument

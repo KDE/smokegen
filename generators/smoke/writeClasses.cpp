@@ -54,7 +54,7 @@ void SmokeClassFiles::write(const QList<QString>& keys)
         foreach (const QString& str, keys.mid(count * i, count2)) {
             const Class* klass = &classes[str];
             includes.insert(klass->fileName());
-            writeClass(classOut, klass, str);
+            writeClass(classOut, klass, str, includes);
         }
         
         // create the file
@@ -71,6 +71,8 @@ void SmokeClassFiles::write(const QList<QString>& keys)
         QList<QString> sortedIncludes = includes.toList();
         qSort(sortedIncludes.begin(), sortedIncludes.end());
         foreach (const QString& str, sortedIncludes) {
+            if (str.isEmpty())
+                continue;
             fileOut << "#include <" << str << ">\n";
         }
 
@@ -81,7 +83,8 @@ void SmokeClassFiles::write(const QList<QString>& keys)
     }
 }
 
-void SmokeClassFiles::generateMethod(QTextStream& out, const QString& className, const QString& smokeClassName, const Method& meth, int index)
+void SmokeClassFiles::generateMethod(QTextStream& out, const QString& className, const QString& smokeClassName,
+                                     const Method& meth, int index, QSet<QString>& includes)
 {
     out << "    ";
     if (meth.flags() & Method::Static)
@@ -92,6 +95,9 @@ void SmokeClassFiles::generateMethod(QTextStream& out, const QString& className,
     if (meth.isConstructor()) {
         out << smokeClassName << "* xret = new " << smokeClassName << "(";
     } else {
+        if (meth.type()->getClass())
+            includes.insert(meth.type()->getClass()->fileName());
+        
         if (meth.type() != Type::Void)
             out << meth.type()->toString() << " xret = ";
         if (!(meth.flags() & Method::Static))
@@ -100,6 +106,10 @@ void SmokeClassFiles::generateMethod(QTextStream& out, const QString& className,
     }
     for (int j = 0; j < meth.parameters().count(); j++) {
         const Parameter& param = meth.parameters()[j];
+        
+        if (param.type()->getClass())
+            includes.insert(param.type()->getClass()->fileName());
+        
         if (j > 0) out << ",";
         QString field = Util::stackItemField(param.type());
         QString typeName = param.type()->toString();
@@ -137,14 +147,21 @@ void SmokeClassFiles::generateEnumMemberCall(QTextStream& out, const QString& cl
         << "    }\n";
 }
 
-void SmokeClassFiles::generateVirtualMethod(QTextStream& out, const QString& className, const Method& meth)
+void SmokeClassFiles::generateVirtualMethod(QTextStream& out, const QString& className, const Method& meth, QSet<QString>& includes)
 {
     QString x_params, x_list;
     QString type = meth.type()->toString();
+    if (meth.type()->getClass())
+        includes.insert(meth.type()->getClass()->fileName());
+    
     out << "    virtual " << type << " " << meth.name() << "(";
     for (int i = 0; i < meth.parameters().count(); i++) {
         if (i > 0) { out << ", "; x_list.append(", "); }
         const Parameter& param = meth.parameters()[i];
+        
+        if (param.type()->getClass())
+            includes.insert(param.type()->getClass()->fileName());
+        
         out << param.type()->toString() << " x" << i + 1;
         x_params += QString("        x[%1].%2 = %3;\n")
             .arg(QString::number(i + 1)).arg(Util::stackItemField(param.type()))
@@ -154,7 +171,7 @@ void SmokeClassFiles::generateVirtualMethod(QTextStream& out, const QString& cla
     out << ") {\n";
     out << QString("        Smoke::StackItem x[%1];\n").arg(meth.parameters().count() + 1);
     out << x_params;
-    out << QString("        if (this->_binding->callMethod(%1, (void*)this, x)) ").arg(m_smokeData->classIndex[className]);
+    out << QString("        if (this->_binding->callMethod(%1, (void*)this, x)) ").arg(m_smokeData->methodIdx[&meth]);
     if (meth.type() == Type::Void) {
         out << "return;\n";
     } else {
@@ -180,7 +197,7 @@ void SmokeClassFiles::generateVirtualMethod(QTextStream& out, const QString& cla
     out << "    }\n";
 }
 
-void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QString& className)
+void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QString& className, QSet<QString>& includes)
 {
     const QString smokeClassName = "x_" + QString(className).replace("::", "__");
     
@@ -195,7 +212,7 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
     foreach (const Method& meth, klass->methods()) {
         if (meth.access() == Access_private)
             continue;
-        generateMethod(out, className, smokeClassName, meth, xcall_index++);
+        generateMethod(out, className, smokeClassName, meth, xcall_index++, includes);
     }
     const Enum* e = 0;
     foreach (const BasicTypeDeclaration* decl, klass->children()) {
@@ -209,10 +226,10 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
         QString methString = meth->toString();
         if (virtMeths.contains(methString))
             continue;
-        generateVirtualMethod(out, className, *meth);
+        generateVirtualMethod(out, className, *meth, includes);
         virtMeths.insert(methString);
     }
     // destructor
     out << "    ~" << smokeClassName << QString("() { this->_binding->deleted(%1, (void*)this); }\n").arg(m_smokeData->classIndex[className]);
-    out << "}\n\n";
+    out << "};\n\n";
 }

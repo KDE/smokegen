@@ -118,6 +118,7 @@ NameCompiler::NameCompiler(ParseSession* session, GeneratorVisitor* visitor)
 void NameCompiler::internal_run(AST *node)
 {
   m_name.clear();
+  m_castType = Type();
   visit(node);
 }
 
@@ -145,6 +146,7 @@ void NameCompiler::visitUnqualifiedName(UnqualifiedNameAST *node)
         TypeCompiler tc(m_session, m_visitor);
         tc.run(op_id->type_specifier);
         tc.run(op_id->ptr_ops);
+        m_castType = tc.type();
         tmp += " " + tc.type().toString();
       }
 
