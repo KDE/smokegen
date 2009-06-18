@@ -86,7 +86,7 @@ void SmokeClassFiles::generateMethod(QTextStream& out, const QString& className,
     out << "    ";
     if (meth.flags() & Method::Static)
         out << "static ";
-    out << QString("void x_%1(Smoke::Stack x) {\n").arg(index + 1);
+    out << QString("void x_%1(Smoke::Stack x) {\n").arg(index);
     out << "        // " << meth.toString() << "\n";
     out << "        ";
     if (meth.isConstructor()) {
@@ -204,8 +204,13 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
         foreach (const EnumMember& member, e->members())
             generateEnumMemberCall(out, className, member.first, xcall_index++);
     }
+    QSet<QString> virtMeths;
     foreach (const Method* meth, Util::collectVirtualMethods(klass)) {
+        QString methString = meth->toString();
+        if (virtMeths.contains(methString))
+            continue;
         generateVirtualMethod(out, className, *meth);
+        virtMeths.insert(methString);
     }
     // destructor
     out << "    ~" << smokeClassName << QString("() { this->_binding->deleted(%1, (void*)this); }\n").arg(m_smokeData->classIndex[className]);

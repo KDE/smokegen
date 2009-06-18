@@ -61,6 +61,7 @@ struct SmokeDataFile
     bool isClassUsed(const Class* klass);
 
     QMap<QString, int> classIndex;
+    QHash<const Method*, int> methodIdx;
     QSet<Class*> externalClasses;
     QSet<Type*> usedTypes;
     QStringList includedClasses;

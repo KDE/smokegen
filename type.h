@@ -215,7 +215,7 @@ public:
     Type* type() const { return m_type; }
 
     void setIsDefault(bool isDefault) { m_default = isDefault; }
-    bool isDefault() { return m_default; }
+    bool isDefault() const { return m_default; }
 
     QString toString() const;
 

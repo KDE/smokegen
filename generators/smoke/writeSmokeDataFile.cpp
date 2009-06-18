@@ -320,6 +320,7 @@ void SmokeDataFile::write()
     
     out << "// Raw list of all methods, using munged names\n";
     out << "static const char *" << Options::module << "_methodNames[] {\n";
+    out << "    \"\",\t//0\n";
     i = 1;
     for (QMap<QString, int>::iterator it = methodNames.begin(); it != methodNames.end(); it++, i++) {
         it.value() = i;
@@ -331,7 +332,6 @@ void SmokeDataFile::write()
         << "return type (index in types), xcall() index)\n";
     out << "static Smoke::Method " << Options::module << "_methods[] = {\n";
     
-    QHash<const Method*, int> methodIdx;
     i = 0;
     int methodCount = 0;
     for (QMap<QString, int>::const_iterator iter = classIndex.constBegin(); iter != classIndex.constEnd(); iter++) {

@@ -341,6 +341,7 @@ void GeneratorVisitor::visitParameterDeclaration(ParameterDeclarationAST* node)
         currentMethod.appendParameter(Parameter(name, currentTypeRef, hasInitializer));
     else
         currentFunction.appendParameter(Parameter(name, currentTypeRef, hasInitializer));
+    hasInitializer = false;
 }
 
 void GeneratorVisitor::visitSimpleDeclaration(SimpleDeclarationAST* node)
