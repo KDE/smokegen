@@ -62,6 +62,7 @@ void Util::preparse(QSet<Type*> *usedTypes, const QList<QString>& keys)
         Class& klass = classes[key];
         addCopyConstructor(&klass);
         addDefaultConstructor(&klass);
+        addDestructor(&klass);
         foreach (const Method& m, klass.methods()) {
             if (m.access() == Access_private)
                 continue;
@@ -161,6 +162,26 @@ bool Util::hasClassVirtualDestructor(const Class* klass)
     return virtualDtorFound;
 }
 
+bool Util::hasClassPublicDestructor(const Class* klass)
+{
+    static QHash<const Class*, bool> cache;
+    if (cache.contains(klass))
+        return cache[klass];
+
+    bool publicDtorFound = true;
+    foreach (const Method& meth, klass->methods()) {
+        if (meth.isDestructor()) {
+            if (meth.access() != Access_public)
+                publicDtorFound = false;
+            // a class has only one destructor, so break here
+            break;
+        }
+    }
+    
+    cache[klass] = publicDtorFound;
+    return publicDtorFound;
+}
+
 void Util::addDefaultConstructor(Class* klass)
 {
     foreach (const Method& meth, klass->methods()) {
@@ -200,6 +221,19 @@ void Util::addCopyConstructor(Class* klass)
     // parameter is a constant reference to another object of the same types
     Type paramType = Type(klass, true); paramType.setIsRef(true);
     meth.appendParameter(Parameter("copy", Type::registerType(paramType)));
+    klass->appendMethod(meth);
+}
+
+void Util::addDestructor(Class* klass)
+{
+    foreach (const Method& meth, klass->methods()) {
+        // we already have a destructor
+        if (meth.isDestructor())
+            return;
+    }
+    
+    Method meth = Method(klass, "~" + klass->name(), const_cast<Type*>(Type::Void));
+    meth.setIsDestructor(true);
     klass->appendMethod(meth);
 }
 

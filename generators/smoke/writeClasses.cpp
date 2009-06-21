@@ -287,10 +287,11 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
     
     // xcall_class function
     out << "void xcall_" << underscoreName << "(Smoke::Index xi, void *obj, Smoke::Stack args) {\n";
-    out << "    " << smokeClassName << "*xself = (" << smokeClassName << "*)obj;\n";
+    out << "    " << smokeClassName << " *xself = (" << smokeClassName << "*)obj;\n";
     out << "    switch(xi) {\n";
     out << switchCode;
-    out << "        case " << xcall_index << ": delete (" << className << "*)xself;\tbreak;\n";
+    if (Util::hasClassPublicDestructor(klass))
+        out << "        case " << xcall_index << ": delete (" << className << "*)xself;\tbreak;\n";
     out << "    }\n";
     out << "}\n";
 }

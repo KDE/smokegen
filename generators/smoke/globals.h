@@ -94,9 +94,11 @@ struct Util
     static bool canClassBeInstanciated(const Class* klass);
     static bool canClassBeCopied(const Class* klass);
     static bool hasClassVirtualDestructor(const Class* klass);
+    static bool hasClassPublicDestructor(const Class* klass);
 
     static void addDefaultConstructor(Class* klass);
     static void addCopyConstructor(Class* klass);
+    static void addDestructor(Class* klass);
 
     static QString mungedName(const Method&);
     
