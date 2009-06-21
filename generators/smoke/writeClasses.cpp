@@ -168,7 +168,10 @@ void SmokeClassFiles::generateVirtualMethod(QTextStream& out, const QString& cla
             .arg(Util::assignmentString(param.type(), "x" + QString::number(i + 1)));
         x_list += "x" + QString::number(i + 1);
     }
-    out << ") {\n";
+    out << ") ";
+    if (meth.isConst())
+        out << "const ";
+    out << "{\n";
     out << QString("        Smoke::StackItem x[%1];\n").arg(meth.parameters().count() + 1);
     out << x_params;
     out << QString("        if (this->_binding->callMethod(%1, (void*)this, x)) ").arg(m_smokeData->methodIdx[&meth]);
@@ -208,19 +211,30 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
     out << "        // set the smoke binding\n";
     out << "        _binding = (SmokeBinding*)x[1].s_class;\n";
     out << "    }\n";
+    
     int xcall_index = 1;
+    
+    QString switchCode;
+    QTextStream switchOut(&switchCode);
+    switchOut << "        case 0: xself->x_0(args);\tbreak;\n";
+    
     foreach (const Method& meth, klass->methods()) {
-        if (meth.access() == Access_private)
+        if (meth.access() == Access_private || meth.isDestructor())
             continue;
+        switchOut << "        case " << xcall_index << ": " << (meth.flags() & Method::Static ? smokeClassName + "::" : "xself->") << "x_"
+                  << xcall_index << "(args);\tbreak;\n";
         generateMethod(out, className, smokeClassName, meth, xcall_index++, includes);
     }
+    
     const Enum* e = 0;
     foreach (const BasicTypeDeclaration* decl, klass->children()) {
         if (!(e = dynamic_cast<const Enum*>(decl)))
             continue;
+        switchOut << "        case " << xcall_index << ": " << smokeClassName <<  "::x_" << xcall_index << "(args);\tbreak;\n";
         foreach (const EnumMember& member, e->members())
             generateEnumMemberCall(out, className, member.first, xcall_index++);
     }
+    
     QSet<QString> virtMeths;
     foreach (const Method* meth, Util::collectVirtualMethods(klass)) {
         QString methString = meth->toString();
@@ -229,7 +243,17 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
         generateVirtualMethod(out, className, *meth, includes);
         virtMeths.insert(methString);
     }
+    
     // destructor
     out << "    ~" << smokeClassName << QString("() { this->_binding->deleted(%1, (void*)this); }\n").arg(m_smokeData->classIndex[className]);
-    out << "};\n\n";
+    out << "};\n";
+    
+    // xcall_class function
+    out << "void xcall_" << QString(className).replace("::", "__") << "(Smoke::Index xi, void *obj, Smoke::Stack args) {\n";
+    out << "    " << smokeClassName << "*xself = (" << smokeClassName << "*)obj;\n";
+    out << "    switch(xi) {\n";
+    out << switchCode;
+    out << "        case " << xcall_index << ": delete (" << className << "*)xself;\tbreak;\n";
+    out << "    }\n";
+    out << "}\n";
 }
