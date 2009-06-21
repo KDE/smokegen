@@ -174,29 +174,47 @@ void SmokeClassFiles::generateVirtualMethod(QTextStream& out, const QString& cla
     out << "{\n";
     out << QString("        Smoke::StackItem x[%1];\n").arg(meth.parameters().count() + 1);
     out << x_params;
-    out << QString("        if (this->_binding->callMethod(%1, (void*)this, x)) ").arg(m_smokeData->methodIdx[&meth]);
-    if (meth.type() == Type::Void) {
-        out << "return;\n";
-    } else {
-        QString field = Util::stackItemField(meth.type());
-        if (meth.type()->pointerDepth() == 0 && field == "s_class") {
-            QString tmpType = type;
-            if (meth.type()->isRef()) tmpType.replace('&', "");
-            tmpType.append('*');
-            out << "{\n";
-            out << "            " << tmpType << " xptr = (" << tmpType << ")x[0].s_class;\n";
-            out << "            " << type << " xret(*xptr);\n";
-            out << "            delete xptr;\n";
-            out << "            return xret;\n";
-            out << "        }\n";
-        } else {
-            out << QString("return (%1)x[0].%2;\n").arg(type, Util::stackItemField(meth.type()));
+    if (meth.flags() & Method::PureVirtual) {
+        out << QString("        this->_binding->callMethod(%1, (void*)this, x, true /*pure virtual*/);\n").arg(m_smokeData->methodIdx[&meth]);
+        if (meth.type() != Type::Void) {
+            QString field = Util::stackItemField(meth.type());
+            if (meth.type()->pointerDepth() == 0 && field == "s_class") {
+                QString tmpType = type;
+                if (meth.type()->isRef()) tmpType.replace('&', "");
+                tmpType.append('*');
+                out << "        " << tmpType << " xptr = (" << tmpType << ")x[0].s_class;\n";
+                out << "        " << type << " xret(*xptr);\n";
+                out << "        delete xptr;\n";
+                out << "        return xret;\n";
+            } else {
+                out << QString("        return (%1)x[0].%2;\n").arg(type, Util::stackItemField(meth.type()));
+            }
         }
+    } else {
+        out << QString("        if (this->_binding->callMethod(%1, (void*)this, x)) ").arg(m_smokeData->methodIdx[&meth]);
+        if (meth.type() == Type::Void) {
+            out << "return;\n";
+        } else {
+            QString field = Util::stackItemField(meth.type());
+            if (meth.type()->pointerDepth() == 0 && field == "s_class") {
+                QString tmpType = type;
+                if (meth.type()->isRef()) tmpType.replace('&', "");
+                tmpType.append('*');
+                out << "{\n";
+                out << "            " << tmpType << " xptr = (" << tmpType << ")x[0].s_class;\n";
+                out << "            " << type << " xret(*xptr);\n";
+                out << "            delete xptr;\n";
+                out << "            return xret;\n";
+                out << "        }\n";
+            } else {
+                out << QString("return (%1)x[0].%2;\n").arg(type, Util::stackItemField(meth.type()));
+            }
+        }
+        out << "        ";
+        if (meth.type() != Type::Void)
+            out << "return ";
+        out << QString("this->%1::%2(%3);\n").arg(className).arg(meth.name()).arg(x_list);
     }
-    out << "        ";
-    if (meth.type() != Type::Void)
-        out << "return ";
-    out << QString("this->%1::%2(%3);\n").arg(className).arg(meth.name()).arg(x_list);
     out << "    }\n";
 }
 
@@ -239,6 +257,7 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
         if (!(e = dynamic_cast<const Enum*>(decl)))
             continue;
         
+        // xenum_operation method code
         QString enumString = e->toString();
         enumOut << "        case " << m_smokeData->typeIndex[&types[enumString]] << ": //" << enumString << '\n';
         enumOut << "            switch(xop) {\n";
@@ -256,6 +275,7 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
         enumOut << "                    break;\n";
         enumOut << "            }\n";
         enumOut << "            break;\n";
+        
         foreach (const EnumMember& member, e->members()) {
             switchOut << "        case " << xcall_index << ": " << smokeClassName <<  "::x_" << xcall_index << "(args);\tbreak;\n";
             generateEnumMemberCall(out, className, member.first, xcall_index++);
