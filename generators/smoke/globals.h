@@ -62,6 +62,7 @@ struct SmokeDataFile
 
     QMap<QString, int> classIndex;
     QHash<const Method*, int> methodIdx;
+    QHash<Type*, int> typeIndex;
     QSet<Class*> externalClasses;
     QSet<Type*> usedTypes;
     QStringList includedClasses;

@@ -211,7 +211,7 @@ void SmokeDataFile::write()
     for (QSet<Type*>::const_iterator it = usedTypes.constBegin(); it != usedTypes.constEnd(); it++) {
         sortedTypes.insert((*it)->toString(), *it);
     }
-    QHash<Type*, int> typeIndex;
+    
     int i = 1;
     for (QMap<QString, Type*>::const_iterator it = sortedTypes.constBegin(); it != sortedTypes.constEnd(); it++) {
         Type* t = it.value();

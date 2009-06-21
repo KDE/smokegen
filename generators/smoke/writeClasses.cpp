@@ -202,7 +202,8 @@ void SmokeClassFiles::generateVirtualMethod(QTextStream& out, const QString& cla
 
 void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QString& className, QSet<QString>& includes)
 {
-    const QString smokeClassName = "x_" + QString(className).replace("::", "__");
+    const QString underscoreName = QString(className).replace("::", "__");
+    const QString smokeClassName = "x_" + underscoreName;
     
     out << QString("class %1 : public %2 {\n").arg(smokeClassName).arg(className);
     out << "    SmokeBinding* _binding;\n";
@@ -226,13 +227,34 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
         generateMethod(out, className, smokeClassName, meth, xcall_index++, includes);
     }
     
+    QString enumCode;
+    QTextStream enumOut(&enumCode);
     const Enum* e = 0;
     foreach (const BasicTypeDeclaration* decl, klass->children()) {
         if (!(e = dynamic_cast<const Enum*>(decl)))
             continue;
-        switchOut << "        case " << xcall_index << ": " << smokeClassName <<  "::x_" << xcall_index << "(args);\tbreak;\n";
-        foreach (const EnumMember& member, e->members())
+        
+        QString enumString = e->toString();
+        enumOut << "        case " << m_smokeData->typeIndex[&types[enumString]] << ": //" << enumString << '\n';
+        enumOut << "            switch(xop) {\n";
+        enumOut << "                case Smoke::EnumNew:\n";
+        enumOut << "                    xdata = (void*)new " << enumString << ";\n";
+        enumOut << "                    break;\n";
+        enumOut << "                case Smoke::EnumDelete:\n";
+        enumOut << "                    delete (" << enumString << "*)xdata;\n";
+        enumOut << "                    break;\n";
+        enumOut << "                case Smoke::EnumFromLong:\n";
+        enumOut << "                    *(" << enumString << "*)xdata = (" << enumString << ")xvalue;\n";
+        enumOut << "                    break;\n";
+        enumOut << "                case Smoke::EnumToLong:\n";
+        enumOut << "                    xvalue = (long)*(" << enumString << "*)xdata;\n";
+        enumOut << "                    break;\n";
+        enumOut << "            }\n";
+        enumOut << "            break;\n";
+        foreach (const EnumMember& member, e->members()) {
+            switchOut << "        case " << xcall_index << ": " << smokeClassName <<  "::x_" << xcall_index << "(args);\tbreak;\n";
             generateEnumMemberCall(out, className, member.first, xcall_index++);
+        }
     }
     
     QSet<QString> virtMeths;
@@ -244,12 +266,27 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
         virtMeths.insert(methString);
     }
     
+    // this class contains enums, write out an xenum_operation method
+    if (e) {
+        out << "    static void xenum_operation(Smoke::EnumOperation xop, Smoke::Index xtype, void *&xdata, long &xvalue) {\n";
+        out << "        switch(xtype) {\n";
+        out << enumCode;
+        out << "        }\n";
+        out << "    }\n";
+    }
+    
     // destructor
-    out << "    ~" << smokeClassName << QString("() { this->_binding->deleted(%1, (void*)this); }\n").arg(m_smokeData->classIndex[className]);
+    out << "    ~" << smokeClassName << QString("() { this->_binding->deleted(%1, (void*)this); }\n").arg(m_smokeData->classIndex[className]);    
     out << "};\n";
     
+    if (e) {
+        out << "void xenum_" << underscoreName << "(Smoke::EnumOperation xop, Smoke::Index xtype, void *&xdata, long &xvalue) {\n";
+        out << "    " << smokeClassName << "::xenum_operation(xop, xtype, xdata, xvalue);\n";
+        out << "}\n";
+    }
+    
     // xcall_class function
-    out << "void xcall_" << QString(className).replace("::", "__") << "(Smoke::Index xi, void *obj, Smoke::Stack args) {\n";
+    out << "void xcall_" << underscoreName << "(Smoke::Index xi, void *obj, Smoke::Stack args) {\n";
     out << "    " << smokeClassName << "*xself = (" << smokeClassName << "*)obj;\n";
     out << "    switch(xi) {\n";
     out << switchCode;
