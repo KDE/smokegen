@@ -204,20 +204,25 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
 {
     const QString underscoreName = QString(className).replace("::", "__");
     const QString smokeClassName = "x_" + underscoreName;
-    
-    out << QString("class %1 : public %2 {\n").arg(smokeClassName).arg(className);
-    out << "    SmokeBinding* _binding;\n";
-    out << "public:\n";
-    out << "    void x_0(Smoke::Stack x) {\n";
-    out << "        // set the smoke binding\n";
-    out << "        _binding = (SmokeBinding*)x[1].s_class;\n";
-    out << "    }\n";
-    
-    int xcall_index = 1;
-    
+
     QString switchCode;
     QTextStream switchOut(&switchCode);
-    switchOut << "        case 0: xself->x_0(args);\tbreak;\n";
+
+    out << QString("class %1 : public %2 {\n").arg(smokeClassName).arg(className);
+    if (Util::canClassBeInstanciated(klass)) {
+        out << "    SmokeBinding* _binding;\n";
+        out << "public:\n";
+        out << "    void x_0(Smoke::Stack x) {\n";
+        out << "        // set the smoke binding\n";
+        out << "        _binding = (SmokeBinding*)x[1].s_class;\n";
+        out << "    }\n";
+        
+        switchOut << "        case 0: xself->x_0(args);\tbreak;\n";
+    } else {
+        out << "public:\n";
+    }
+    
+    int xcall_index = 1;
     
     foreach (const Method& meth, klass->methods()) {
         if (meth.access() == Access_private || meth.isDestructor())
@@ -257,13 +262,16 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
         }
     }
     
-    QSet<QString> virtMeths;
-    foreach (const Method* meth, Util::collectVirtualMethods(klass)) {
-        QString methString = meth->toString();
-        if (virtMeths.contains(methString))
-            continue;
-        generateVirtualMethod(out, className, *meth, includes);
-        virtMeths.insert(methString);
+    // virtual method callbacks for classes that can't be instanciated aren't useful
+    if (Util::canClassBeInstanciated(klass)) {
+        QSet<QString> virtMeths;
+        foreach (const Method* meth, Util::collectVirtualMethods(klass)) {
+            QString methString = meth->toString();
+            if (virtMeths.contains(methString))
+                continue;
+            generateVirtualMethod(out, className, *meth, includes);
+            virtMeths.insert(methString);
+        }
     }
     
     // this class contains enums, write out an xenum_operation method
@@ -276,7 +284,9 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
     }
     
     // destructor
-    out << "    ~" << smokeClassName << QString("() { this->_binding->deleted(%1, (void*)this); }\n").arg(m_smokeData->classIndex[className]);    
+    // if the class can't be instanciated, a callback when it's deleted is unnecessary
+    if (Util::canClassBeInstanciated(klass))
+        out << "    ~" << smokeClassName << QString("() { this->_binding->deleted(%1, (void*)this); }\n").arg(m_smokeData->classIndex[className]);    
     out << "};\n";
     
     if (e) {
