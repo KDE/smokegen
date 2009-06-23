@@ -36,12 +36,12 @@
 #include "generatorvisitor.h"
 #include "type.h"
 
-typedef void (*GenerateFn)(const QDir& outputDir, const QList<QFileInfo>& headerList, const QStringList& classes);
+typedef int (*GenerateFn)(const QDir& outputDir, const QList<QFileInfo>& headerList, const QStringList& classes);
 
-void showUsage()
+static void showUsage()
 {
     std::cout << 
-    "Usage: smokegenerator [options] <header files>" << std::endl <<
+    "Usage: generator [options] -- <header files>" << std::endl <<
     "Possible command line options are:" << std::endl <<
     "    -I <include dir>" << std::endl <<
     "    -c <path to file containing a list of classes>" << std::endl <<
@@ -68,6 +68,7 @@ int main(int argc, char **argv)
     QDir output;
     QString generator;
     bool resolveTypdefs = false;
+    bool addHeaders = false;
 
     for (int i = 1; i < args.count(); i++) {
         if ((args[i] == "-I" || args[i] == "-c" || args[i] == "-d" || args[i] == "-o") && i + 1 >= args.count()) {
@@ -84,12 +85,14 @@ int main(int argc, char **argv)
             output = QDir(args[++i]);
         } else if (args[i] == "-g") {
             generator = args[++i];
-        } else if (args[i] == "-h") {
+        } else if ((args[i] == "-h" || args[i] == "--help") && argc == 2) {
             showUsage();
             return EXIT_SUCCESS;
         } else if (args[i] == "-t") {
             resolveTypdefs = true;
-        } else {
+        } else if (args[i] == "--") {
+            addHeaders = true;
+        } else if (addHeaders) {
             headerList << QFileInfo(args[i]);
         }
     }
@@ -157,5 +160,5 @@ int main(int argc, char **argv)
         visitor.visit(ast);
     }
     
-    generate(output, headerList, classes);
+    return generate(output, headerList, classes);
 }

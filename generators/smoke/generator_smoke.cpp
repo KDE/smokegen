@@ -25,6 +25,8 @@
 #include <QString>
 #include <QtDebug>
 
+#include <iostream>
+
 #include <type.h>
 
 #include "globals.h"
@@ -37,16 +39,50 @@ int Options::parts = 20;
 QString Options::module = "qt";
 QStringList Options::parentModules;
 
-extern "C" Q_DECL_EXPORT
-void generate(const QDir& outputDir, const QList<QFileInfo>& headerList, const QStringList& classes)
+static void showUsage()
 {
-    qDebug() << "Generating SMOKE sources...";
+    std::cout <<
+    "Usage: generator -g smoke [smoke generator options] [other generator options] -- <headers>" << std::endl <<
+    "    -m <module name> (default: 'qt')" << std::endl <<
+    "    -p <parts> (default: 20)" << std::endl <<
+    "    -pm <comma-seperated list of parent modules>" << std::endl;
+}
+
+extern "C" Q_DECL_EXPORT
+int generate(const QDir& outputDir, const QList<QFileInfo>& headerList, const QStringList& classes)
+{
     Options::outputDir = outputDir;
     Options::headerList = headerList;
     Options::classList = classes;
+    
+    const QStringList& args = QCoreApplication::arguments();
+    for (int i = 0; i < args.count(); i++) {
+        if ((args[i] == "-m" || args[i] == "-p" || args[i] == "-pm") && i + 1 >= args.count()) {
+            qCritical() << "generator_smoke: not enough parameters for option" << args[i];
+            return EXIT_FAILURE;
+        } else if (args[i] == "-m") {
+            Options::module = args[++i];
+        } else if (args[i] == "-p") {
+            bool ok = false;
+            Options::parts = args[++i].toInt(&ok);
+            if (!ok) {
+                qCritical() << "generator_smoke: couldn't parse argument for option" << args[i - 1];
+                return EXIT_FAILURE;
+            }
+        } else if (args[i] == "-pm") {
+            Options::parentModules = args[++i].split(',');
+        } else if (args[i] == "-h" || args[i] == "--help") {
+            showUsage();
+            return EXIT_SUCCESS;
+        }
+    }
+    
+    qDebug() << "Generating SMOKE sources...";
     
     SmokeDataFile smokeData;
     smokeData.write();
     SmokeClassFiles classFiles(&smokeData);
     classFiles.write();
+    
+    return EXIT_SUCCESS;
 }
