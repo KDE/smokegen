@@ -63,7 +63,7 @@ QString Parameter::toString() const
     return m_type->toString();
 }
 
-QString Method::toString(bool withAccess) const
+QString Method::toString(bool withAccess, bool withInitializer) const
 {
     QString ret = Member::toString(withAccess);
     ret += "(";
@@ -73,7 +73,7 @@ QString Method::toString(bool withAccess) const
     }
     ret += ")";
     if (m_isConst) ret += " const";
-    if (m_flags & Member::PureVirtual) ret += " = 0";
+    if ((m_flags & Member::PureVirtual) && withInitializer) ret += " = 0";
     return ret;
 }
 

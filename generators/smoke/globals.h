@@ -105,6 +105,7 @@ struct Util
     static QString stackItemField(const Type* type);
     static QString assignmentString(const Type* type, const QString& var);
     static QList<const Method*> collectVirtualMethods(const Class* klass);
+    static const Method* isVirtualOverriden(const Method& meth, const Class* klass);
 };
 
 #endif

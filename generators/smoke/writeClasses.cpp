@@ -285,12 +285,39 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
     // virtual method callbacks for classes that can't be instanciated aren't useful
     if (Util::canClassBeInstanciated(klass)) {
         QSet<QString> virtMeths;
+        QList<const Method*> pureVirtuals;
         foreach (const Method* meth, Util::collectVirtualMethods(klass)) {
+            if (meth->flags() & Method::PureVirtual) {
+                // add the method to another list to check later if it's overriden
+                pureVirtuals << meth;
+                continue;
+            }
+            
             QString methString = meth->toString();
             if (virtMeths.contains(methString))
                 continue;
             generateVirtualMethod(out, className, *meth, includes);
             virtMeths.insert(methString);
+        }
+        foreach (const Method* meth, pureVirtuals) {
+            QString methString = meth->toString(false, false);
+            // Check if the pure virtual was overriden somewhere - then we shouldn't generate a callback with the pure virtual flag set
+            // (as it isn't, anymore).
+            // If the overriding method was declared virtual, too, we find it in virtMeths. Then it's already generated and we can continue.
+            // If it hasn't, we have to go looking for it. If we find it, generate a normal virtual method for it.
+            if (virtMeths.contains(methString))
+                continue;
+            const Method* m = 0;
+            if ((m = Util::isVirtualOverriden(*meth, klass))) {
+                Method virt = *m;
+                virt.setFlag(Method::Virtual);
+                generateVirtualMethod(out, className, virt, includes);
+                virtMeths.insert(methString);
+            } else {
+                // we didn't find any overriding method - generate a pure virtual one
+                generateVirtualMethod(out, className, *meth, includes);
+                virtMeths.insert(methString);
+            }
         }
     }
     

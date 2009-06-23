@@ -246,7 +246,7 @@ public:
     void setIsConst(bool isConst) { m_isConst = isConst; }
     bool isConst() const { return m_isConst; }
 
-    virtual QString toString(bool withAccess = false) const;
+    virtual QString toString(bool withAccess = false, bool withInitializer = true) const;
 
 protected:
     ParameterList m_params;

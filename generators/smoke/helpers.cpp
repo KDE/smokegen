@@ -309,3 +309,52 @@ QList<const Method*> Util::collectVirtualMethods(const Class* klass)
     }
     return methods;
 }
+
+// don't make this public - it's just a utility function for the next method and probably not what you would expect it to be
+static bool operator==(const Method& rhs, const Method& lhs)
+{
+    // these have to be equal for methods to be the same
+    bool ok = (rhs.name() == lhs.name() && rhs.isConst() == lhs.isConst() &&
+               rhs.parameters().count() == lhs.parameters().count() && rhs.type() == lhs.type());
+    if (!ok)
+        return false;
+    
+    // now check the parameter types for equality
+    for (int i = 0; i < rhs.parameters().count(); i++) {
+        if (rhs.parameters()[i].type() != lhs.parameters()[i].type())
+            return false;
+    }
+    
+    return true;
+}
+
+// checks if method meth is overriden in class klass or any of its superclasses
+const Method* Util::isVirtualOverriden(const Method& meth, const Class* klass)
+{
+    // is the method virtual at all?
+    if (!(meth.flags() & Method::Virtual) && !(meth.flags() & Method::PureVirtual))
+        return 0;
+    
+    // if the method is defined in klass, it can't be overriden there or in any parent class
+    if (meth.getClass() == klass)
+        return 0;
+    
+    foreach (const Method& m, klass->methods()) {
+        if (!(m.flags() & Method::Static) && m == meth)
+            // the method m overrides meth
+            return &m;
+    }
+    
+    foreach (const Class::BaseClassSpecifier& base, klass->baseClasses()) {
+        // we reached the class in which meth was defined and we still didn't find any overrides => return
+        if (base.baseClass == meth.getClass())
+            return 0;
+        
+        // recurse into the base classes
+        const Method* m = 0;
+        if ((m = isVirtualOverriden(meth, base.baseClass)))
+            return m;
+    }
+    
+    return 0;
+}
