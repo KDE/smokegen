@@ -185,12 +185,15 @@ void GeneratorVisitor::visitClassSpecifier(ClassSpecifierAST* node)
 
 void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
 {
+    // TODO: get rid of this and add a proper typdef
+    bool typeCreated = false;
     if (createType) {
         // run it again on the list of pointer operators to add them to the type
         tc->run(node);
         currentType = tc->type();
         currentTypeRef = Type::registerType(currentType);
         createType = false;
+        typeCreated = true;
     }
     
     if (currentType.isFunctionPointer() && node->sub_declarator)
@@ -200,6 +203,8 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
     const QString declName = nc->name();
     
     if (createTypedef) {
+        if (!typeCreated)
+            return;
         // we've just created the type that the typedef points to
         // so we just need to get the new name and store it
         Class* parent = klass.isEmpty() ? 0 : klass.top();
