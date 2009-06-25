@@ -402,7 +402,9 @@ void GeneratorVisitor::visitSimpleDeclaration(SimpleDeclarationAST* node)
         do {
             if (it->element && m_session->token_stream->kind(it->element) == Token_static) {
                 isStatic = true;
-                break;
+            } else if (it->element && m_session->token_stream->kind(it->element) == Token_friend) {
+                // we're not interested who's the friend of whom ;)
+                return;
             }
             it = it->next;
         } while (end != it);

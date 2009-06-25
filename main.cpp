@@ -139,11 +139,12 @@ int main(int argc, char **argv)
         file.open(QIODevice::ReadOnly);
         while (!file.atEnd()) {
             QByteArray array = file.readLine();
-            if (!array.isEmpty()) defines << array.trimmed();
+            if (!array.isEmpty())
+                defines << array.trimmed();
         }
         file.close();
     }
-        
+    
     foreach (QFileInfo file, headerList) {
         qDebug() << "parsing" << file.absoluteFilePath();
         // this has already been parsed because it was included by some header

@@ -260,7 +260,7 @@ QString Util::mungedName(const Method& meth) {
 
 QString Util::stackItemField(const Type* type)
 {
-    if ((type->pointerDepth() > 0 || type->isRef() || !type->isIntegral()) && !type->getEnum())
+    if ((type->pointerDepth() > 0 || type->isRef() || type->isFunctionPointer() || !type->isIntegral()) && !type->getEnum())
         return "s_class";
     if (type->getEnum())
         return "s_enum";
@@ -277,10 +277,10 @@ QString Util::assignmentString(const Type* type, const QString& var)
 {
     if (type->pointerDepth() > 0) {
         return "(void*)" + var;
-    } else if (type->isIntegral()) {
-        return var;
     } else if (type->isRef()) {
         return "(void*)&" + var;
+    } else if (type->isIntegral()) {
+        return var;
     } else if (type->getEnum()) {
         return var;
     } else {

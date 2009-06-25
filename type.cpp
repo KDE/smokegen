@@ -138,6 +138,12 @@ QString Type::toString() const
         }
         ret += " >";
     }
+    for (int i = 0; i < m_pointerDepth; i++) {
+        ret += "*";
+        if (isConstPointer(i)) ret += " const ";
+    }
+    ret = ret.trimmed();
+    if (m_isRef) ret += "&";
     if (m_isFunctionPointer) {
         ret += "(*)(";
         for (int i = 0; i < m_params.count(); i++) {
@@ -146,11 +152,5 @@ QString Type::toString() const
         }
         ret += ')';
     }
-    for (int i = 0; i < m_pointerDepth; i++) {
-        ret += "*";
-        if (isConstPointer(i)) ret += " const ";
-    }
-    ret = ret.trimmed();
-    if (m_isRef) ret += "&";
     return ret;
 }

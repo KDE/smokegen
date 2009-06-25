@@ -114,7 +114,7 @@ void SmokeClassFiles::generateMethod(QTextStream& out, const QString& className,
         
         QString field = Util::stackItemField(param.type());
         QString typeName = param.type()->toString();
-        if (field == "s_class" && (param.type()->pointerDepth() == 0 || param.type()->isRef())) {
+        if (field == "s_class" && (param.type()->pointerDepth() == 0 || param.type()->isRef()) && !param.type()->isFunctionPointer()) {
             // references and classes are passed in s_class
             typeName.append('*');
             out << '*';
