@@ -111,14 +111,16 @@ void SmokeClassFiles::generateMethod(QTextStream& out, const QString& className,
             includes.insert(param.type()->getClass()->fileName());
         
         if (j > 0) out << ",";
+        
         QString field = Util::stackItemField(param.type());
         QString typeName = param.type()->toString();
-        if (field == "s_class" && param.type()->pointerDepth() == 0) {
-            // strip the reference symbol.. we can't have pointers to references
-            if (param.type()->isRef()) typeName.replace('&', "");
+        if (field == "s_class" && (param.type()->pointerDepth() == 0 || param.type()->isRef())) {
+            // references and classes are passed in s_class
             typeName.append('*');
             out << '*';
         }
+        // casting to a reference doesn't make sense in this case
+        if (param.type()->isRef()) typeName.replace('&', "");
         out << "(" << typeName << ")" << "x[" << j + 1 << "]." << field;
     }
     out << ");\n";
