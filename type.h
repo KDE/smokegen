@@ -51,6 +51,7 @@ class Class;
 class BasicTypeDeclaration
 {
 public:
+    BasicTypeDeclaration() : m_access(Access_public) {}
     virtual ~BasicTypeDeclaration() {}
     virtual bool isValid() const { return !m_name.isEmpty(); }
     
@@ -62,6 +63,9 @@ public:
 
     void setParent(Class* parent) { m_parent = parent; }
     Class* parent() const { return m_parent; }
+
+    void setAccess(Access access) { m_access = access; }
+    Access access() const { return m_access; }
 
     void setFileName(const QString& fileName) { m_file = fileName; }
     QString fileName() const { return m_file; }
@@ -76,6 +80,7 @@ protected:
     QString m_nspace;
     Class* m_parent;
     QString m_file;
+    Access m_access;
 };
 
 class Class : public BasicTypeDeclaration

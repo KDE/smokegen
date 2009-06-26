@@ -61,9 +61,6 @@ QPair<bool, bool> GeneratorVisitor::parseCv(const ListNode<std::size_t> *cv)
     return ret;
 }
 
-// TODO: this might have to be improved for cases like 'Typedef::Nested foo'
-BasicTypeDeclaration* GeneratorVisitor::resolveType(const QString & name)
-{
 #define returnOnExistence(name) \
         if (classes.contains(name)) { \
             return &classes[name]; \
@@ -73,10 +70,29 @@ BasicTypeDeclaration* GeneratorVisitor::resolveType(const QString & name)
             return &enums[name]; \
         }
 
+BasicTypeDeclaration* GeneratorVisitor::resolveTypeInSuperClasses(const Class* klass, const QString& name)
+{
+    foreach (const Class::BaseClassSpecifier& bclass, klass->baseClasses()) {
+        returnOnExistence(bclass.baseClass->toString() + "::" + name);
+        if (!bclass.baseClass->baseClasses().count())
+            continue;
+        BasicTypeDeclaration* decl = resolveTypeInSuperClasses(bclass.baseClass, name);
+        if (decl)
+            return decl;
+    }
+    return 0;
+}
+
+// TODO: this might have to be improved for cases like 'Typedef::Nested foo'
+BasicTypeDeclaration* GeneratorVisitor::resolveType(const QString & name)
+{
     // check for nested classes
     for (int i = klass.count() - 1; i >= 0; i--) {
         QString _name = klass[i]->toString() + "::" + name;
         returnOnExistence(_name);
+        BasicTypeDeclaration* decl = resolveTypeInSuperClasses(klass[i], name);
+        if (decl)
+            return decl;
     }
     
     // check for 'using type;'
@@ -116,8 +132,9 @@ BasicTypeDeclaration* GeneratorVisitor::resolveType(const QString & name)
     }
 
     return 0;
-#undef returnOnExistence
 }
+
+#undef returnOnExistence
 
 void GeneratorVisitor::visitAccessSpecifier(AccessSpecifierAST* node)
 {
@@ -164,6 +181,7 @@ void GeneratorVisitor::visitBaseSpecifier(BaseSpecifierAST* node)
 
 void GeneratorVisitor::visitClassSpecifier(ClassSpecifierAST* node)
 {
+    Access a = (access.isEmpty() ? Access_public : access.top());
     if (kind == Class::Kind_Class)
         access.push(Access_private);
     else
@@ -172,6 +190,7 @@ void GeneratorVisitor::visitClassSpecifier(ClassSpecifierAST* node)
     if (!klass.isEmpty()) {
         klass.top()->setFileName(m_header);
         klass.top()->setIsForwardDecl(false);
+        klass.top()->setAccess(a);
         if (klass.count() > 1) {
             // get the element before the last element, which is the parent
             Class* parent = klass[klass.count() - 2];
@@ -292,6 +311,8 @@ void GeneratorVisitor::visitEnumSpecifier(EnumSpecifierAST* node)
     nc->run(node->name);
     Class* parent = klass.isEmpty() ? 0 : klass.top();
     currentEnum = Enum(nc->name(), nspace.join("::"), parent);
+    Access a = (access.isEmpty() ? Access_public : access.top());
+    currentEnum.setAccess(a);
     currentEnum.setFileName(m_header);
     visitNodes(this, node->enumerators);
     QHash<QString, Enum>::iterator it = enums.insert(currentEnum.toString(), currentEnum);

@@ -258,6 +258,10 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
     foreach (const BasicTypeDeclaration* decl, klass->children()) {
         if (!(e = dynamic_cast<const Enum*>(decl)))
             continue;
+        if (e->access() == Access_private) {
+            e = 0;
+            continue;
+        }
         
         // xenum_operation method code
         QString enumString = e->toString();

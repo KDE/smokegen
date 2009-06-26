@@ -304,6 +304,8 @@ void SmokeDataFile::write()
         foreach (BasicTypeDeclaration* decl, klass->children()) {
             const Enum* e = 0;
             if ((e = dynamic_cast<Enum*>(decl))) {
+                if (e->access() == Access_private)
+                    continue;
                 foreach (const EnumMember& member, e->members())
                     methodNames[member.first] = 1;
             }
@@ -392,6 +394,8 @@ void SmokeDataFile::write()
         foreach (BasicTypeDeclaration* decl, klass->children()) {
             const Enum* e = 0;
             if ((e = dynamic_cast<Enum*>(decl))) {
+                if (e->access() == Access_private)
+                    continue;
                 foreach (const EnumMember& member, e->members()) {
                     out << "    {" << iter.value() << ", " << methodNames[member.first]
                         << ", 0, 0, Smoke::mf_static|Smoke::mf_enum, " << typeIndex[&types[e->toString()]]
