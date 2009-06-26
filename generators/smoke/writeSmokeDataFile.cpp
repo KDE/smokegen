@@ -51,7 +51,7 @@ SmokeDataFile::SmokeDataFile()
             classIndex[iter.key()] = 1;
             if (!Options::classList.contains(iter.key()) || iter.value().isForwardDecl())
                 externalClasses << &iter.value();
-            else    
+            else if (!includedClasses.contains(iter.key()))
                 includedClasses << iter.key();
         }
     }
@@ -153,14 +153,14 @@ void SmokeDataFile::write()
     out << "// These are the xenum functions for manipulating enum pointers\n";
     QSet<QString> enumClassesHandled;
     for (QHash<QString, Enum>::const_iterator it = enums.constBegin(); it != enums.constEnd(); it++) {
-        if (it.value().parent() && !externalClasses.contains(it.value().parent())) {
+        if (it.value().parent() && !externalClasses.contains(it.value().parent()) && it.value().access() != Access_private) {
             QString smokeClassName = it.value().parent()->toString();
             if (enumClassesHandled.contains(smokeClassName))
                 continue;
             enumClassesHandled << smokeClassName;
             smokeClassName.replace("::", "__");
             out << "void xenum_" << smokeClassName << "(Smoke::EnumOperation, Smoke::Index, void*&, long&);\n";
-        } else if (!it.value().parent()) {
+        } else if (!it.value().parent() && it.value().access() != Access_private) {
             if (enumClassesHandled.contains("QGlobalSpace"))
                 continue;
             out << "void xenum_QGlobalSpace(Smoke::EnumOperation, Smoke::Index, void*&, long&);\n";

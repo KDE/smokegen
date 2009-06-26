@@ -275,7 +275,7 @@ QString Util::stackItemField(const Type* type)
 
 QString Util::assignmentString(const Type* type, const QString& var)
 {
-    if (type->pointerDepth() > 0) {
+    if (type->pointerDepth() > 0 || type->isFunctionPointer()) {
         return "(void*)" + var;
     } else if (type->isRef()) {
         return "(void*)&" + var;

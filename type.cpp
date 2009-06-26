@@ -124,7 +124,7 @@ QString Function::toString() const
     return ret;
 }
 
-QString Type::toString() const
+QString Type::toString(const QString& fnPtrName) const
 {
     QString ret;
     if (m_isVolatile) ret += "volatile ";
@@ -145,10 +145,10 @@ QString Type::toString() const
     ret = ret.trimmed();
     if (m_isRef) ret += "&";
     if (m_isFunctionPointer) {
-        ret += "(*)(";
+        ret += "(*" + fnPtrName + ")(";
         for (int i = 0; i < m_params.count(); i++) {
             if (i > 0) ret += ',';
-            ret += m_params[i].toString();
+            ret += m_params[i].type()->toString();
         }
         ret += ')';
     }

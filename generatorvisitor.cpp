@@ -363,13 +363,11 @@ void GeneratorVisitor::visitParameterDeclaration(ParameterDeclarationAST* node)
     }
     currentType = tc->type();
     currentTypeRef = Type::registerType(currentType);
-    if (!hasInitializer)
-        hasInitializer = node->expression;
+    bool defaultParameter = node->expression;
     if (inClass)
-        currentMethod.appendParameter(Parameter(name, currentTypeRef, hasInitializer));
+        currentMethod.appendParameter(Parameter(name, currentTypeRef, defaultParameter));
     else
-        currentFunction.appendParameter(Parameter(name, currentTypeRef, hasInitializer));
-    hasInitializer = false;
+        currentFunction.appendParameter(Parameter(name, currentTypeRef, defaultParameter));
 }
 
 void GeneratorVisitor::visitSimpleDeclaration(SimpleDeclarationAST* node)
@@ -424,7 +422,7 @@ void GeneratorVisitor::visitSimpleDeclaration(SimpleDeclarationAST* node)
             if (it->element && m_session->token_stream->kind(it->element) == Token_static) {
                 isStatic = true;
             } else if (it->element && m_session->token_stream->kind(it->element) == Token_friend) {
-                // we're not interested who's the friend of whom ;)
+                // we're not interested in who's the friend of whom ;)
                 return;
             }
             it = it->next;

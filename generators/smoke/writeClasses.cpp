@@ -98,11 +98,17 @@ void SmokeClassFiles::generateMethod(QTextStream& out, const QString& className,
         if (meth.type()->getClass())
             includes.insert(meth.type()->getClass()->fileName());
         
-        if (meth.type() != Type::Void)
+        if (meth.type()->isFunctionPointer())
+            out << meth.type()->toString("xret") << " = ";
+        else if (meth.type() != Type::Void)
             out << meth.type()->toString() << " xret = ";
+        
         if (!(meth.flags() & Method::Static))
             out << "this->";
-        out << className << "::" << meth.name() << "(";
+        if (!(meth.flags() & Method::Virtual) && !(meth.flags() & Method::PureVirtual))
+            // dynamic dispatch for virtuals
+            out << className << "::";
+        out << meth.name() << "(";
     }
     for (int j = 0; j < meth.parameters().count(); j++) {
         const Parameter& param = meth.parameters()[j];
@@ -255,13 +261,13 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
     QString enumCode;
     QTextStream enumOut(&enumCode);
     const Enum* e = 0;
+    bool enumFound = false;
     foreach (const BasicTypeDeclaration* decl, klass->children()) {
         if (!(e = dynamic_cast<const Enum*>(decl)))
             continue;
-        if (e->access() == Access_private) {
-            e = 0;
+        if (e->access() == Access_private)
             continue;
-        }
+        enumFound = true;
         
         // xenum_operation method code
         QString enumString = e->toString();
@@ -290,16 +296,30 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
     
     // virtual method callbacks for classes that can't be instanciated aren't useful
     if (Util::canClassBeInstanciated(klass)) {
-        QSet<QString> virtMeths;
+        QSet<QString> virtMeths;    // virtual methods that already have been taken care of
         QList<const Method*> pureVirtuals;
-        foreach (const Method* meth, Util::collectVirtualMethods(klass)) {
+        foreach (const Method& meth, klass->methods()) {
+            // first, generate all virtual methods of this class. inherited ones come after that.
+            if (((meth.flags() & Method::Virtual) || (meth.flags() & Method::PureVirtual)) && !meth.isDestructor()) {
+                generateVirtualMethod(out, className, meth, includes);
+                virtMeths.insert(meth.toString(false, false));
+            }
+        }
+        
+        QList<const Method*> inheritedVirtuals;
+        foreach (const Class::BaseClassSpecifier& bspec, klass->baseClasses()) {
+            // now collect all virtual methods of the base classes
+            inheritedVirtuals.append(Util::collectVirtualMethods(bspec.baseClass));
+        }
+        
+        foreach (const Method* meth, inheritedVirtuals) {
             if (meth->flags() & Method::PureVirtual) {
-                // add the method to another list to check later if it's overriden
+                // postpone pure virtuals to see if they have been overridden
                 pureVirtuals << meth;
                 continue;
             }
             
-            QString methString = meth->toString();
+            QString methString = meth->toString(false, false);
             if (virtMeths.contains(methString))
                 continue;
             generateVirtualMethod(out, className, *meth, includes);
@@ -328,7 +348,7 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
     }
     
     // this class contains enums, write out an xenum_operation method
-    if (e) {
+    if (enumFound) {
         out << "    static void xenum_operation(Smoke::EnumOperation xop, Smoke::Index xtype, void *&xdata, long &xvalue) {\n";
         out << "        switch(xtype) {\n";
         out << enumCode;
@@ -342,7 +362,7 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
         out << "    ~" << smokeClassName << QString("() { this->_binding->deleted(%1, (void*)this); }\n").arg(m_smokeData->classIndex[className]);    
     out << "};\n";
     
-    if (e) {
+    if (enumFound) {
         out << "void xenum_" << underscoreName << "(Smoke::EnumOperation xop, Smoke::Index xtype, void *&xdata, long &xvalue) {\n";
         out << "    " << smokeClassName << "::xenum_operation(xop, xtype, xdata, xvalue);\n";
         out << "}\n";
