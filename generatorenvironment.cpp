@@ -26,7 +26,8 @@ GeneratorEnvironment::GeneratorEnvironment(rpp::pp * preprocessor) : rpp::Enviro
 
 void GeneratorEnvironment::setMacro(rpp::pp_macro* macro)
 {
-    if (macro->name.str() != "signals" && macro->name.str() != "slots")
+    QString macroName = macro->name.str();
+    if (macroName != "signals" && macroName != "slots")
         rpp::Environment::setMacro(macro);
     else
         delete macro;

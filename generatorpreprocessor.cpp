@@ -63,7 +63,14 @@ Preprocessor::Preprocessor(const QList<QDir>& includeDirs, const QStringList& de
     exportMacro->function_like = false;
     exportMacro->variadics = false;
     m_topBlock->setMacro(exportMacro);
-    
+
+    // ansidecl.h will define macros for keywords if we don't define __STDC__
+    exportMacro = new rpp::pp_macro;
+    exportMacro->name = IndexedString("__STDC__");
+    exportMacro->function_like = false;
+    exportMacro->variadics = false;
+    m_topBlock->setMacro(exportMacro);
+
     foreach (QString define, defines) {
         exportMacro = new rpp::pp_macro;
         exportMacro->name = IndexedString(define);
