@@ -369,6 +369,11 @@ void GeneratorVisitor::visitParameterDeclaration(ParameterDeclarationAST* node)
     }
     currentType = tc->type();
     currentTypeRef = Type::registerType(currentType);
+    
+    // foo(void) is the same as foo()
+    if (currentTypeRef == Type::Void)
+        return;
+    
     bool defaultParameter = node->expression;
     if (inClass)
         currentMethod.appendParameter(Parameter(name, currentTypeRef, defaultParameter));
