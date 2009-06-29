@@ -239,6 +239,10 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
         return;
     }
 
+    // we don't care about methods with ellipsis paramaters (i.e. 'foo(const char*, ...)') for now..
+    if (node->parameter_declaration_clause && node->parameter_declaration_clause->ellipsis)
+        return;
+
     // only run this if we're not in a method. only checking for parameter_declaration_clause
     // won't be enough because function pointer types also have that.
     if (node->parameter_declaration_clause && !inMethod && inClass) {
@@ -278,7 +282,7 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
     if (node->parameter_declaration_clause && !inMethod && !inClass && !currentTypeRef->isFunctionPointer()) {
         if (!declName.contains("::")) {
             Type* returnType = currentTypeRef;
-            currentFunction = Function(declName, returnType);
+            currentFunction = Function(declName, nspace.join("::"), returnType);
             currentFunction.setFileName(m_header);
             // build parameter list
             inMethod = true;
@@ -300,7 +304,7 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
     } else if (!inMethod && !inClass) {
         // global variable
         if (!globals.contains(declName)) {
-            GlobalVar var = GlobalVar(declName, currentTypeRef);
+            GlobalVar var = GlobalVar(declName, nspace.join("::"), currentTypeRef);
             var.setFileName(m_header);
             globals[var.name()] = var;
         }

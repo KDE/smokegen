@@ -271,12 +271,15 @@ public:
 class GlobalVar
 {
 public:
-    GlobalVar(const QString& name = QString(), Type* type = 0) : m_name(name), m_type(type) {}
+    GlobalVar(const QString& name = QString(), const QString nspace = QString(), Type* type = 0) : m_name(name), m_nspace(nspace), m_type(type) {}
 
     bool isValid() const { return (!m_name.isEmpty() && m_type); }
 
     void setName(const QString& name) { m_name = name; }
     QString name() const { return m_name; }
+
+    void setNameSpace(const QString& nspace) { m_nspace = nspace; }
+    QString nameSpace() const { return m_nspace; }
 
     void setType(Type* type) { m_type = type; }
     Type* type() const { return m_type; }
@@ -288,16 +291,16 @@ public:
 
 protected:
     QString m_name;
+    QString m_nspace;
     Type* m_type;
-    
     QString m_file;
 };
 
 class Function : public GlobalVar
 {
 public:
-    Function(const QString& name = QString(), Type* type = 0, ParameterList params = ParameterList())
-        : GlobalVar(name, type), m_params(params) {}
+    Function(const QString& name = QString(), const QString nspace = QString(), Type* type = 0, ParameterList params = ParameterList())
+        : GlobalVar(name, nspace, type), m_params(params) {}
 
     const ParameterList& parameters() const { return m_params; }
     void appendParameter(const Parameter& param) { m_params.append(param); }

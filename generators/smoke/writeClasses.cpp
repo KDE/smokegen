@@ -109,9 +109,13 @@ void SmokeClassFiles::generateMethod(QTextStream& out, const QString& className,
         
         if (!(meth.flags() & Method::Static))
             out << "this->";
-        if (!(meth.flags() & Method::Virtual) && !(meth.flags() & Method::PureVirtual) && !func)
+        if (!(meth.flags() & Method::Virtual) && !(meth.flags() & Method::PureVirtual) && !func) {
             // dynamic dispatch for virtuals
             out << className << "::";
+        } else if (func) {
+            if (!func->nameSpace().isEmpty())
+                out << func->nameSpace() << "::";
+        }
         out << meth.name() << "(";
     }
     for (int j = 0; j < meth.parameters().count(); j++) {
