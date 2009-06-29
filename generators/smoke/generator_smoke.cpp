@@ -77,6 +77,14 @@ int generate(const QDir& outputDir, const QList<QFileInfo>& headerList, const QS
         }
     }
     
+    // Fill the type map. It maps some long integral types to shorter forms as used in SMOKE.
+    Util::typeMap["long long"] = "long";
+    Util::typeMap["long long int"] = "long";
+    Util::typeMap["long int"] = "long";
+    Util::typeMap["short int"] = "short";
+    Util::typeMap["long double"] = "double";
+    Util::typeMap["wchar_t"] = "int";   // correct?
+    
     qDebug() << "Generating SMOKE sources...";
     
     SmokeDataFile smokeData;

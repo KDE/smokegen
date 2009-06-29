@@ -95,6 +95,10 @@ void SmokeClassFiles::generateMethod(QTextStream& out, const QString& className,
     if (meth.isConstructor()) {
         out << smokeClassName << "* xret = new " << smokeClassName << "(";
     } else {
+        const Function* func = Util::globalFunctionMap[&meth];
+        if (func)
+            includes.insert(func->fileName());
+        
         if (meth.type()->getClass())
             includes.insert(meth.type()->getClass()->fileName());
         
@@ -105,7 +109,7 @@ void SmokeClassFiles::generateMethod(QTextStream& out, const QString& className,
         
         if (!(meth.flags() & Method::Static))
             out << "this->";
-        if (!(meth.flags() & Method::Virtual) && !(meth.flags() & Method::PureVirtual))
+        if (!(meth.flags() & Method::Virtual) && !(meth.flags() & Method::PureVirtual) && !func)
             // dynamic dispatch for virtuals
             out << className << "::";
         out << meth.name() << "(";
@@ -151,7 +155,12 @@ void SmokeClassFiles::generateMethod(QTextStream& out, const QString& className,
 void SmokeClassFiles::generateEnumMemberCall(QTextStream& out, const QString& className, const QString& member, int index)
 {
     out << "    static void x_" << index << "(Smoke::Stack x) {\n"
-        << "        x[0].s_enum = (long)" << className << "::" << member << ";\n"
+        << "        x[0].s_enum = (long)";
+    
+    if (!className.isEmpty())
+        out  << className << "::";
+    
+    out << member << ";\n"
         << "    }\n";
 }
 
@@ -290,7 +299,10 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
         
         foreach (const EnumMember& member, e->members()) {
             switchOut << "        case " << xcall_index << ": " << smokeClassName <<  "::x_" << xcall_index << "(args);\tbreak;\n";
-            generateEnumMemberCall(out, className, member.first, xcall_index++);
+            if (e->parent())
+                generateEnumMemberCall(out, className, member.first, xcall_index++);
+            else
+                generateEnumMemberCall(out, e->nameSpace(), member.first, xcall_index++);
         }
     }
     

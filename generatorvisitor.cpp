@@ -279,6 +279,7 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
         if (!declName.contains("::")) {
             Type* returnType = currentTypeRef;
             currentFunction = Function(declName, returnType);
+            currentFunction.setFileName(m_header);
             // build parameter list
             inMethod = true;
             visit(node->parameter_declaration_clause);
@@ -300,6 +301,7 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
         // global variable
         if (!globals.contains(declName)) {
             GlobalVar var = GlobalVar(declName, currentTypeRef);
+            var.setFileName(m_header);
             globals[var.name()] = var;
         }
         return;

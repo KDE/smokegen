@@ -282,7 +282,7 @@ public:
     Type* type() const { return m_type; }
 
     void setFileName(const QString& fileName) { m_file = fileName; }
-    QString fileName() { return m_file; }
+    QString fileName() const { return m_file; }
 
     virtual QString toString() const;
 

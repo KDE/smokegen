@@ -44,6 +44,7 @@ SmokeDataFile::SmokeDataFile()
     
     includedClasses = classIndex.keys();
     Util::preparse(&usedTypes, includedClasses);  // collect all used types, add c'tors.. etc.
+    includedClasses << "QGlobalSpace";
     
     // if a class is used somewhere but not listed in the class list, mark it external
     for (QHash<QString, Class>::iterator iter = ::classes.begin(); iter != ::classes.end(); iter++) {
@@ -223,10 +224,19 @@ void SmokeDataFile::write()
         } else if (t->isIntegral() && t->name() != "void") {
             flags += "|Smoke::t_";
             QString typeName = t->name();
-            typeName.replace("unsigned ", "u");
+            
+            // replace the unsigned stuff, look the type up in Util::typeMap and if
+            // necessary, add a 'u' for unsigned types at the beginning again
+            bool _unsigned = false;
+            if (typeName.startsWith("unsigned ")) {
+                typeName.replace("unsigned ", "");
+                _unsigned = true;
+            }
             typeName.replace("signed ", "");
-            typeName.replace("long long", "long");
-            typeName.replace("long double", "double");
+            typeName = Util::typeMap.value(typeName, typeName);
+            if (_unsigned)
+                typeName.prepend('u');
+            
             flags += typeName;
         } else if (t->getEnum()) {
             flags += "|Smoke::t_enum";

@@ -40,6 +40,7 @@ class QStringList;
 class QTextStream;
 
 class Class;
+class Function;
 class Method;
 class Type;
 
@@ -86,6 +87,9 @@ private:
     
 struct Util
 {
+    static QHash<QString, QString> typeMap;
+    static QHash<const Method*, const Function*> globalFunctionMap;
+    
     static QList<const Class*> superClassList(const Class* klass);
     static QList<const Class*> descendantsList(const Class* klass);
 

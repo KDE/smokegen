@@ -24,6 +24,9 @@
 
 #include "globals.h"
 
+QHash<QString, QString> Util::typeMap;
+QHash<const Method*, const Function*> Util::globalFunctionMap;
+
 QList<const Class*> Util::superClassList(const Class* klass)
 {
     static QHash<const Class*, QList<const Class*> > superClassCache;
@@ -58,6 +61,32 @@ QList<const Class*> Util::descendantsList(const Class* klass)
 
 void Util::preparse(QSet<Type*> *usedTypes, const QList<QString>& keys)
 {
+    Class& globalSpace = classes["QGlobalSpace"];
+    globalSpace.setName("QGlobalSpace");
+    globalSpace.setKind(Class::Kind_Class);
+    
+    // add all functions as methods to a class called 'QGlobalSpace'
+    for (QHash<QString, Function>::const_iterator it = functions.constBegin(); it != functions.constEnd(); it++) {
+        const Function& fn = it.value();
+        Method meth = Method(&globalSpace, fn.name(), fn.type(), Access_public, fn.parameters());
+        meth.setFlag(Method::Static);
+        globalSpace.appendMethod(meth);
+        // map this method to the function, so we can later retrieve the header it was defined in
+        globalFunctionMap[&globalSpace.methods().last()] = &fn;
+        (*usedTypes) << meth.type();
+        foreach (const Parameter& param, meth.parameters())
+            (*usedTypes) << param.type();
+    }
+    
+    // all enums that don't have a parent are put under QGlobalSpace, too
+    for (QHash<QString, Enum>::iterator it = enums.begin(); it != enums.end(); it++) {
+        if (!it.value().parent()) {
+            Type *t = Type::registerType(Type(&it.value()));
+            (*usedTypes) << t;
+            globalSpace.appendChild(&it.value());
+        }
+    }
+    
     foreach (const QString& key, keys) {
         Class& klass = classes[key];
         addCopyConstructor(&klass);
@@ -266,10 +295,17 @@ QString Util::stackItemField(const Type* type)
         return "s_enum";
     
     QString typeName = type->name();
-    typeName.replace("unsigned ", "u");
+    // replace the unsigned stuff, look the type up in Util::typeMap and if
+    // necessary, add a 'u' for unsigned types at the beginning again
+    bool _unsigned = false;
+    if (typeName.startsWith("unsigned ")) {
+        typeName.replace("unsigned ", "");
+        _unsigned = true;
+    }
     typeName.replace("signed ", "");
-    typeName.replace("long long", "long");
-    typeName.replace("long double", "double");
+    typeName = Util::typeMap.value(typeName, typeName);
+    if (_unsigned)
+        typeName.prepend('u');
     return "s_" + typeName;
 }
 
