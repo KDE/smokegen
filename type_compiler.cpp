@@ -67,6 +67,9 @@ void TypeCompiler::run(const DeclaratorAST* declarator)
     if (declarator->ptr_ops)
         run(declarator->ptr_ops);
     
+    if (declarator->array_dimensions)
+        m_realType.setPointerDepth(m_realType.pointerDepth() + 1);
+    
     NameCompiler name_cc(m_session, m_visitor);
     name_cc.run(declarator->id);
     if (declarator->parameter_declaration_clause && declarator->sub_declarator && name_cc.qualifiedName().isEmpty()) {
