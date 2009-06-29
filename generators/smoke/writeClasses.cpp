@@ -278,7 +278,7 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
     foreach (const BasicTypeDeclaration* decl, klass->children()) {
         if (!(e = dynamic_cast<const Enum*>(decl)))
             continue;
-        if (e->access() == Access_private)
+        if (e->access() == Access_private || !e->isValid())
             continue;
         enumFound = true;
         
