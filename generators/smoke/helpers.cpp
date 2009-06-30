@@ -281,7 +281,7 @@ QString Util::mungedName(const Method& meth) {
         if (type->pointerDepth() > 1) {
             // reference to array or hash
             ret += "?";
-        } else if (type->isIntegral() || type->getEnum()) {
+        } else if (type->isIntegral() || type->getEnum() || Options::stringTypes.contains(type->name())) {
             // plain scalar
             ret += "$";
         } else if (type->getClass()) {

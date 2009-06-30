@@ -38,6 +38,7 @@ QStringList Options::classList;
 int Options::parts = 20;
 QString Options::module = "qt";
 QStringList Options::parentModules;
+QStringList Options::stringTypes;
 
 static void showUsage()
 {
@@ -46,6 +47,7 @@ static void showUsage()
     "    -m <module name> (default: 'qt')" << std::endl <<
     "    -p <parts> (default: 20)" << std::endl <<
     "    -pm <comma-seperated list of parent modules>" << std::endl;
+    "    -st <comma-seperated list of types storing strings>" << std::endl;
 }
 
 extern "C" Q_DECL_EXPORT
@@ -71,6 +73,8 @@ int generate(const QDir& outputDir, const QList<QFileInfo>& headerList, const QS
             }
         } else if (args[i] == "-pm") {
             Options::parentModules = args[++i].split(',');
+        } else if (args[i] == "-st") {
+            Options::stringTypes = args[++i].split(',');
         } else if (args[i] == "-h" || args[i] == "--help") {
             showUsage();
             return EXIT_SUCCESS;

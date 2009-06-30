@@ -50,6 +50,7 @@ struct Options
     static int parts;
     static QString module;
     static QStringList parentModules;
+    static QStringList stringTypes;
     static QList<QFileInfo> headerList;
     static QStringList classList;
 };
