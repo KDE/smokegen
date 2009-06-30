@@ -59,7 +59,7 @@ int generate(const QDir& outputDir, const QList<QFileInfo>& headerList, const QS
     
     const QStringList& args = QCoreApplication::arguments();
     for (int i = 0; i < args.count(); i++) {
-        if ((args[i] == "-m" || args[i] == "-p" || args[i] == "-pm") && i + 1 >= args.count()) {
+        if ((args[i] == "-m" || args[i] == "-p" || args[i] == "-pm" || args[i] == "-st") && i + 1 >= args.count()) {
             qCritical() << "generator_smoke: not enough parameters for option" << args[i];
             return EXIT_FAILURE;
         } else if (args[i] == "-m") {
