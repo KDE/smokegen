@@ -92,6 +92,7 @@ void SmokeClassFiles::generateMethod(QTextStream& out, const QString& className,
     out << QString("void x_%1(Smoke::Stack x) {\n").arg(index);
     out << "        // " << meth.toString() << "\n";
     out << "        ";
+    
     if (meth.isConstructor()) {
         out << smokeClassName << "* xret = new " << smokeClassName << "(";
     } else {
@@ -118,6 +119,7 @@ void SmokeClassFiles::generateMethod(QTextStream& out, const QString& className,
         }
         out << meth.name() << "(";
     }
+    
     for (int j = 0; j < meth.parameters().count(); j++) {
         const Parameter& param = meth.parameters()[j];
         
@@ -137,12 +139,22 @@ void SmokeClassFiles::generateMethod(QTextStream& out, const QString& className,
         if (param.type()->isRef()) typeName.replace('&', "");
         out << "(" << typeName << ")" << "x[" << j + 1 << "]." << field;
     }
+    
+    // if the method has any other default parameters, append them here as values, so 
+    QStringList defaultParams = Util::defaultParameterValues[&meth];
+    if (!defaultParams.isEmpty()) {
+        if (meth.parameters().count() > 0)
+            out << "," ;
+        out << defaultParams.join(",");
+    }
+    
     out << ");\n";
     if (meth.type() != Type::Void) {
         out << "        x[0]." << Util::stackItemField(meth.type()) << " = " << Util::assignmentString(meth.type(), "xret") << ";\n";
     } else {
         out << "        (void)x; // noop (for compiler warning)\n";
     }
+    
     out << "    }\n";
     if (meth.isConstructor()) {
         out << "    explicit " << smokeClassName << '(';

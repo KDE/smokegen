@@ -207,8 +207,8 @@ protected:
 class Parameter
 {
 public:
-    Parameter(const QString& name = QString(), Type* type = 0, bool isDefault = false)
-        : m_name(name), m_type(type), m_default(isDefault) {}
+    Parameter(const QString& name = QString(), Type* type = 0, const QString& defaultValue = QString())
+        : m_name(name), m_type(type), m_defaultValue(defaultValue) {}
     virtual ~Parameter() {}
 
     bool isValid() const { return m_type; }
@@ -219,15 +219,17 @@ public:
     void setType(Type* type) { m_type = type; }
     Type* type() const { return m_type; }
 
-    void setIsDefault(bool isDefault) { m_default = isDefault; }
-    bool isDefault() const { return m_default; }
+    bool isDefault() const { return !m_defaultValue.isEmpty(); }
+
+    QString defaultValue() const { return m_defaultValue; }
+    void setDefaultValue(const QString& value) { m_defaultValue = value; }
 
     QString toString() const;
 
 protected:
     QString m_name;
     Type* m_type;
-    bool m_default;
+    QString m_defaultValue;
 };
 
 typedef QList<Parameter> ParameterList;
@@ -241,6 +243,7 @@ public:
 
     const ParameterList& parameters() const { return m_params; }
     void appendParameter(const Parameter& param) { m_params.append(param); }
+    void setParameterList(const ParameterList& params) { m_params = params; }
 
     void setIsConstructor(bool isCtor) { m_isConstructor = isCtor; }
     bool isConstructor() const { return m_isConstructor; }

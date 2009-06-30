@@ -26,6 +26,7 @@
 
 QHash<QString, QString> Util::typeMap;
 QHash<const Method*, const Function*> Util::globalFunctionMap;
+QHash<const Method*, QStringList> Util::defaultParameterValues;
 
 QList<const Class*> Util::superClassList(const Class* klass)
 {
@@ -68,11 +69,17 @@ void Util::preparse(QSet<Type*> *usedTypes, const QList<QString>& keys)
     // add all functions as methods to a class called 'QGlobalSpace'
     for (QHash<QString, Function>::const_iterator it = functions.constBegin(); it != functions.constEnd(); it++) {
         const Function& fn = it.value();
+        
+        // gcc doesn't like this function... for whatever reason
+        if (fn.name() == "_IO_ftrylockfile")
+            continue;
+        
         Method meth = Method(&globalSpace, fn.name(), fn.type(), Access_public, fn.parameters());
         meth.setFlag(Method::Static);
         globalSpace.appendMethod(meth);
         // map this method to the function, so we can later retrieve the header it was defined in
         globalFunctionMap[&globalSpace.methods().last()] = &fn;
+        
         (*usedTypes) << meth.type();
         foreach (const Parameter& param, meth.parameters())
             (*usedTypes) << param.type();
@@ -95,6 +102,7 @@ void Util::preparse(QSet<Type*> *usedTypes, const QList<QString>& keys)
         foreach (const Method& m, klass.methods()) {
             if (m.access() == Access_private)
                 continue;
+            addOverloads(m);
             (*usedTypes) << m.type();
             foreach (const Parameter& param, m.parameters())
                 (*usedTypes) << param.type();
@@ -273,7 +281,7 @@ QString Util::mungedName(const Method& meth) {
         if (type->pointerDepth() > 1) {
             // reference to array or hash
             ret += "?";
-        } else if (type->isIntegral()|| type->getEnum()) {
+        } else if (type->isIntegral() || type->getEnum()) {
             // plain scalar
             ret += "$";
         } else if (type->getClass()) {
@@ -362,6 +370,35 @@ static bool operator==(const Method& rhs, const Method& lhs)
     }
     
     return true;
+}
+
+void Util::addOverloads(const Method& meth)
+{
+    ParameterList params;
+    Class* klass = meth.getClass();
+    
+    for (int i = 0; i < meth.parameters().count(); i++) {
+        const Parameter& param = meth.parameters()[i];
+        if (!param.isDefault()) {
+            params << param;
+            continue;
+        }
+        Method overload = meth;
+        overload.setParameterList(params);
+        klass->appendMethod(overload);
+        
+        QStringList remainingDefaultValues;
+        for (int j = i; j < meth.parameters().count(); j++) {
+            const Parameter defParam = meth.parameters()[j];
+            QString cast = "(";
+            cast += defParam.type()->toString() + ')';
+            cast += defParam.defaultValue();
+            remainingDefaultValues << cast;
+        }
+        defaultParameterValues[&klass->methods().last()] = remainingDefaultValues;
+        
+        params << param;
+    }
 }
 
 // checks if method meth is overriden in class klass or any of its superclasses

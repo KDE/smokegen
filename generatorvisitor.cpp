@@ -374,11 +374,16 @@ void GeneratorVisitor::visitParameterDeclaration(ParameterDeclarationAST* node)
     if (currentTypeRef == Type::Void)
         return;
     
-    bool defaultParameter = node->expression;
+    QString defaultValue;
+    if (node->expression) {
+        // this parameter has a default value
+        for (int i = node->expression->start_token; i < node->expression->end_token; i++)
+            defaultValue.append(token(i).symbolByteArray());
+    }
     if (inClass)
-        currentMethod.appendParameter(Parameter(name, currentTypeRef, defaultParameter));
+        currentMethod.appendParameter(Parameter(name, currentTypeRef, defaultValue));
     else
-        currentFunction.appendParameter(Parameter(name, currentTypeRef, defaultParameter));
+        currentFunction.appendParameter(Parameter(name, currentTypeRef, defaultValue));
 }
 
 void GeneratorVisitor::visitSimpleDeclaration(SimpleDeclarationAST* node)

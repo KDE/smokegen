@@ -89,6 +89,7 @@ struct Util
 {
     static QHash<QString, QString> typeMap;
     static QHash<const Method*, const Function*> globalFunctionMap;
+    static QHash<const Method*, QStringList> defaultParameterValues;
     
     static QList<const Class*> superClassList(const Class* klass);
     static QList<const Class*> descendantsList(const Class* klass);
@@ -103,6 +104,7 @@ struct Util
     static void addDefaultConstructor(Class* klass);
     static void addCopyConstructor(Class* klass);
     static void addDestructor(Class* klass);
+    static void addOverloads(const Method& meth);
 
     static QString mungedName(const Method&);
     
