@@ -429,6 +429,10 @@ void SmokeDataFile::write()
                 out << "|Smoke::mf_protected";
             out << ", " << typeIndex[destructor->type()] << ", " << xcall_index << " },\t//" << i << " " << klass->toString()
                 << "::" << destructor->name() << "()\n";
+            methodIdx[destructor] = i;
+            xcall_index++;
+            i++;
+            methodCount++;
         }
     }
     
