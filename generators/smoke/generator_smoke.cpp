@@ -46,7 +46,7 @@ static void showUsage()
     "Usage: generator -g smoke [smoke generator options] [other generator options] -- <headers>" << std::endl <<
     "    -m <module name> (default: 'qt')" << std::endl <<
     "    -p <parts> (default: 20)" << std::endl <<
-    "    -pm <comma-seperated list of parent modules>" << std::endl;
+    "    -pm <comma-seperated list of parent modules>" << std::endl <<
     "    -st <comma-seperated list of types storing strings>" << std::endl;
 }
 

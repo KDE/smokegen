@@ -348,12 +348,17 @@ void SmokeDataFile::write()
     int methodCount = 0;
     for (QMap<QString, int>::const_iterator iter = classIndex.constBegin(); iter != classIndex.constEnd(); iter++) {
         Class* klass = &classes[iter.key()];
+        const Method* destructor = 0;
         if (externalClasses.contains(klass))
             continue;
         int xcall_index = 1;
         foreach (const Method& meth, klass->methods()) {
             if (meth.access() == Access_private)
                 continue;
+            if (meth.isDestructor()) {
+                destructor = &meth;
+                continue;
+            }
             out << "    {" << iter.value() << ", " << methodNames[meth.name()] << ", ";
             int numArgs = meth.parameters().count();
             if (numArgs) {
@@ -368,8 +373,6 @@ void SmokeDataFile::write()
                 flags += "|Smoke::mf_static";
             if (meth.isConstructor())
                 flags += "|Smoke::mf_ctor";
-            if (meth.isDestructor())
-                flags += "|Smoke::mf_dtor";
             if (meth.access() == Access_protected)
                 flags += "|Smoke::mf_protected";
             if (meth.isConstructor() &&
@@ -419,6 +422,13 @@ void SmokeDataFile::write()
                     methodCount++;
                 }
             }
+        }
+        if (destructor) {
+            out << "    { " << iter.value() << ", " << methodNames[destructor->name()] << ", 0, 0, Smoke::mf_dtor";
+            if (destructor->access() == Access_private)
+                out << "|Smoke::mf_protected";
+            out << ", " << typeIndex[destructor->type()] << ", " << xcall_index << " },\t//" << i << " " << klass->toString()
+                << "::" << destructor->name() << "()\n";
         }
     }
     
