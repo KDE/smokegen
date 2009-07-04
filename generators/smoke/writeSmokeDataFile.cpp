@@ -216,12 +216,15 @@ void SmokeDataFile::write()
     int i = 1;
     for (QMap<QString, Type*>::const_iterator it = sortedTypes.constBegin(); it != sortedTypes.constEnd(); it++) {
         Type* t = it.value();
+        // don't include void as a type
+        if (t == Type::Void)
+            continue;
         int classIdx = 0;
         QString flags = "0";
-        if (t->getClass()) {
+        if (t->getClass() && !Options::stringTypes.contains(t->name())) {
             flags += "|Smoke::t_class";
             classIdx = classIndex.value(t->getClass()->toString(), 0);
-        } else if (t->isIntegral() && t->name() != "void") {
+        } else if (t->isIntegral() && t->name() != "void" && t->pointerDepth() == 0 && !t->isRef()) {
             flags += "|Smoke::t_";
             QString typeName = t->name();
             
