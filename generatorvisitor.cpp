@@ -332,9 +332,34 @@ void GeneratorVisitor::visitEnumerator(EnumeratorAST* node)
 //     DefaultVisitor::visitEnumerator(node);
 }
 
-void GeneratorVisitor::visitFunctionDefinition(FunctionDefinitionAST* )
+void GeneratorVisitor::visitFunctionDefinition(FunctionDefinitionAST* node)
 {
-    return;
+    visit(node->type_specifier);
+    if (node->function_specifiers) {
+        const ListNode<std::size_t> *it = node->function_specifiers->toFront(), *end = it;
+        do {
+            if (it->element && m_session->token_stream->kind(it->element) == Token_virtual) {
+                // found virtual token
+                isVirtual = true;
+                break;
+            }
+            it = it->next;
+        } while (end != it);
+    }
+    if (node->storage_specifiers) {
+        const ListNode<std::size_t> *it = node->storage_specifiers->toFront(), *end = it;
+        do {
+            if (it->element && m_session->token_stream->kind(it->element) == Token_static) {
+                isStatic = true;
+            } else if (it->element && m_session->token_stream->kind(it->element) == Token_friend) {
+                // we're not interested in who's the friend of whom ;)
+                return;
+            }
+            it = it->next;
+        } while (end != it);
+    }
+    visit(node->init_declarator);
+    isStatic = isVirtual = hasInitializer = false;
 }
 
 void GeneratorVisitor::visitInitializerClause(InitializerClauseAST *)
