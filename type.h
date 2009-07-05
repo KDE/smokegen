@@ -103,15 +103,17 @@ public:
     virtual ~Class() {}
     
     void setKind(Kind kind) { m_kind = kind; }
-    Kind kind() const { return m_kind; } const
+    Kind kind() const { return m_kind; }
     
     void setIsForwardDecl(bool forward) { m_forward = forward; }
     bool isForwardDecl() const { return m_forward; }
     
-    const QList<Method>& methods() const { return m_methods; } const
+    const QList<Method>& methods() const { return m_methods; }
+    QList<Method>& methodsRef() { return m_methods; }
     void appendMethod(const Method& method) { m_methods.append(method); }
     
-    const QList<Field>& fields() const { return m_fields; } const
+    const QList<Field>& fields() const { return m_fields; }
+    QList<Field>& fieldsRef() { return m_fields; }
     void appendField(const Field& field) {  m_fields.append(field); }
     
     const QList<BaseClassSpecifier>& baseClasses() const { return m_bases; }

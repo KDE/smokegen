@@ -136,7 +136,7 @@ void SmokeClassFiles::generateMethod(QTextStream& out, const QString& className,
             out << '*';
         }
         // casting to a reference doesn't make sense in this case
-        if (param.type()->isRef()) typeName.replace('&', "");
+        if (param.type()->isRef() && !param.type()->isFunctionPointer()) typeName.replace('&', "");
         out << "(" << typeName << ")" << "x[" << j + 1 << "]." << field;
     }
     

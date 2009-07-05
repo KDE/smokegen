@@ -102,6 +102,10 @@ void Util::preparse(QSet<Type*> *usedTypes, const QList<QString>& keys)
         foreach (const Method& m, klass.methods()) {
             if (m.access() == Access_private)
                 continue;
+            if (m.type()->getClass() && m.type()->getClass()->access() == Access_private) {
+                klass.methodsRef().removeOne(m);
+                continue;
+            }
             addOverloads(m);
             (*usedTypes) << m.type();
             foreach (const Parameter& param, m.parameters())
