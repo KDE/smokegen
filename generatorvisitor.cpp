@@ -181,7 +181,6 @@ void GeneratorVisitor::visitBaseSpecifier(BaseSpecifierAST* node)
 
 void GeneratorVisitor::visitClassSpecifier(ClassSpecifierAST* node)
 {
-    Access a = (access.isEmpty() ? Access_public : access.top());
     if (kind == Class::Kind_Class)
         access.push(Access_private);
     else
@@ -190,7 +189,6 @@ void GeneratorVisitor::visitClassSpecifier(ClassSpecifierAST* node)
     if (!klass.isEmpty()) {
         klass.top()->setFileName(m_header);
         klass.top()->setIsForwardDecl(false);
-        klass.top()->setAccess(a);
         if (klass.count() > 1) {
             // get the element before the last element, which is the parent
             Class* parent = klass[klass.count() - 2];
@@ -426,6 +424,8 @@ void GeneratorVisitor::visitSimpleDeclaration(SimpleDeclarationAST* node)
         // for nested classes
         Class* parent = klass.isEmpty() ? 0 : klass.top();
         Class _class = Class(tc->qualifiedName().last(), nspace.join("::"), parent, kind);
+        Access a = (access.isEmpty() ? Access_public : access.top());
+        _class.setAccess(a);
         QString name = _class.toString();
         // This class has already been parsed.
         if (classes.contains(name) && !classes[name].isForwardDecl())
@@ -464,6 +464,9 @@ void GeneratorVisitor::visitSimpleDeclaration(SimpleDeclarationAST* node)
                 isStatic = true;
             } else if (it->element && m_session->token_stream->kind(it->element) == Token_friend) {
                 // we're not interested in who's the friend of whom ;)
+                if (popKlass)
+                    klass.pop();
+                isStatic = isVirtual = hasInitializer = false;
                 return;
             }
             it = it->next;
