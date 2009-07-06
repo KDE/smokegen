@@ -71,7 +71,7 @@ void Util::preparse(QSet<Type*> *usedTypes, const QList<QString>& keys)
         const Function& fn = it.value();
         
         // gcc doesn't like this function... for whatever reason
-        if (fn.name() == "_IO_ftrylockfile")
+        if (fn.name() == "_IO_ftrylockfile" || fn.name().startsWith("__"))
             continue;
         
         Method meth = Method(&globalSpace, fn.name(), fn.type(), Access_public, fn.parameters());
@@ -96,9 +96,11 @@ void Util::preparse(QSet<Type*> *usedTypes, const QList<QString>& keys)
     
     foreach (const QString& key, keys) {
         Class& klass = classes[key];
-        addCopyConstructor(&klass);
-        addDefaultConstructor(&klass);
-        addDestructor(&klass);
+        if (!klass.isNameSpace()) {
+            addCopyConstructor(&klass);
+            addDefaultConstructor(&klass);
+            addDestructor(&klass);
+        }
         foreach (const Method& m, klass.methods()) {
             if (m.access() == Access_private)
                 continue;
@@ -106,6 +108,8 @@ void Util::preparse(QSet<Type*> *usedTypes, const QList<QString>& keys)
                 klass.methodsRef().removeOne(m);
                 continue;
             }
+            if (klass.isNameSpace())
+                const_cast<Method&>(m).setFlag(Method::Static);
             addOverloads(m);
             (*usedTypes) << m.type();
             foreach (const Parameter& param, m.parameters())
@@ -114,6 +118,8 @@ void Util::preparse(QSet<Type*> *usedTypes, const QList<QString>& keys)
         foreach (const Field& f, klass.fields()) {
             if (f.access() == Access_private)
                 continue;
+            if (klass.isNameSpace())
+                const_cast<Field&>(f).setFlag(Method::Static);
             (*usedTypes) << f.type();
         }
         foreach (BasicTypeDeclaration* decl, klass.children()) {
@@ -208,6 +214,11 @@ bool Util::hasClassPublicDestructor(const Class* klass)
     static QHash<const Class*, bool> cache;
     if (cache.contains(klass))
         return cache[klass];
+
+    if (klass->isNameSpace()) {
+        cache[klass] = false;
+        return false;
+    }
 
     bool publicDtorFound = true;
     foreach (const Method& meth, klass->methods()) {

@@ -99,7 +99,7 @@ public:
     };
     
     Class(const QString& name = QString(), const QString nspace = QString(), Class* parent = 0, Kind kind = Kind_Class, bool isForward = true)
-          : BasicTypeDeclaration(name, nspace, parent), m_kind(kind), m_forward(isForward) {}
+          : BasicTypeDeclaration(name, nspace, parent), m_kind(kind), m_forward(isForward), m_isNamespace(false) {}
     virtual ~Class() {}
     
     void setKind(Kind kind) { m_kind = kind; }
@@ -107,6 +107,9 @@ public:
     
     void setIsForwardDecl(bool forward) { m_forward = forward; }
     bool isForwardDecl() const { return m_forward; }
+    
+    void setIsNameSpace(bool isNamespace) { m_isNamespace = isNamespace; }
+    bool isNameSpace() const { return m_isNamespace; }
     
     const QList<Method>& methods() const { return m_methods; }
     QList<Method>& methodsRef() { return m_methods; }
@@ -125,6 +128,7 @@ public:
 private:
     Kind m_kind;
     bool m_forward;
+    bool m_isNamespace;
     QList<Method> m_methods;
     QList<Field> m_fields;
     QList<BaseClassSpecifier> m_bases;
@@ -149,7 +153,7 @@ private:
     Type* m_type;
 };
 
-typedef QPair<QString, QString> EnumMember;
+class EnumMember;
 
 class Enum : public BasicTypeDeclaration
 {
@@ -175,14 +179,14 @@ public:
     };
     typedef QFlags<Flag> Flags;
 
-    Member(Class* klass = 0, const QString& name = QString(), Type* type = 0, Access access = Access_public)
-        : m_class(klass), m_name(name), m_type(type), m_access(access) {}
+    Member(BasicTypeDeclaration* typeDecl = 0, const QString& name = QString(), Type* type = 0, Access access = Access_public)
+        : m_typeDecl(typeDecl), m_name(name), m_type(type), m_access(access) {}
     virtual ~Member() {}
 
-    bool isValid() const { return (!m_name.isEmpty() && m_type && m_class); }
+    bool isValid() const { return (!m_name.isEmpty() && m_type && m_typeDecl); }
 
-    void setClass(Class* klass) { m_class = klass; }
-    Class* getClass() const { return m_class; }
+    void setDeclaringType(Class* klass) { m_typeDecl = klass; }
+    BasicTypeDeclaration* declaringType() const { return m_typeDecl; }
 
     void setName(const QString& name) { m_name = name; }
     QString name() const { return m_name; }
@@ -199,11 +203,26 @@ public:
     virtual QString toString(bool withAccess = false) const;
 
 protected:
-    Class* m_class;
+    BasicTypeDeclaration* m_typeDecl;
     QString m_name;
     Type* m_type;
     Access m_access;
     Flags m_flags;
+};
+
+class EnumMember : public Member
+{
+public:
+    EnumMember(Enum* e = 0, const QString& name = QString(), const QString& value = QString(), Type* type = 0)
+        : Member(e, name, type), m_value(value) {}
+
+    Enum* getEnum() const { return static_cast<Enum*>(m_typeDecl); }
+
+    void setValue(const QString& value) { m_value = value; }
+    QString value() const { return m_value; }
+
+protected:
+    QString m_value;
 };
 
 class Parameter
@@ -243,6 +262,8 @@ public:
         : Member(klass, name, type, access), m_params(params), m_isConstructor(false), m_isDestructor(false), m_isConst(false) {}
     virtual ~Method() {}
 
+    Class* getClass() const { return static_cast<Class*>(m_typeDecl); }
+
     const ParameterList& parameters() const { return m_params; }
     void appendParameter(const Parameter& param) { m_params.append(param); }
     void setParameterList(const ParameterList& params) { m_params = params; }
@@ -271,6 +292,8 @@ public:
     Field(Class* klass = 0, const QString& name = QString(), Type* type = 0, Access access = Access_public)
         : Member(klass, name, type, access) {}
     virtual ~Field() {}
+
+    Class* getClass() const { return static_cast<Class*>(m_typeDecl); }
 };
 
 class GlobalVar

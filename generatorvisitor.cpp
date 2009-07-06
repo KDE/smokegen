@@ -25,9 +25,9 @@
 
 #include <QtDebug>
 
-GeneratorVisitor::GeneratorVisitor(ParseSession *session, bool resolveTypedefs, const QString& header) 
-    : m_session(session), m_resolveTypedefs(resolveTypedefs), m_header(header), createType(false), createTypedef(false),
-      inClass(0), isStatic(false), isVirtual(false), hasInitializer(false), 
+GeneratorVisitor::GeneratorVisitor(ParseSession *session, bool resolveTypedefs, const QString& header, const QStringList& namespacesAsClasses) 
+    : m_session(session), m_resolveTypedefs(resolveTypedefs), m_header(header), m_namespacesAsHeaders(namespacesAsClasses),
+      createType(false), createTypedef(false), inClass(0), isStatic(false), isVirtual(false), hasInitializer(false),
       currentTypeRef(0), inMethod(false)
 {
     nc = new NameCompiler(m_session, this);
@@ -73,7 +73,8 @@ QPair<bool, bool> GeneratorVisitor::parseCv(const ListNode<std::size_t> *cv)
 BasicTypeDeclaration* GeneratorVisitor::resolveTypeInSuperClasses(const Class* klass, const QString& name)
 {
     foreach (const Class::BaseClassSpecifier& bclass, klass->baseClasses()) {
-        returnOnExistence(bclass.baseClass->toString() + "::" + name);
+        QString _name = bclass.baseClass->toString() + "::" + name;
+        returnOnExistence(_name);
         if (!bclass.baseClass->baseClasses().count())
             continue;
         BasicTypeDeclaration* decl = resolveTypeInSuperClasses(bclass.baseClass, name);
@@ -83,8 +84,14 @@ BasicTypeDeclaration* GeneratorVisitor::resolveTypeInSuperClasses(const Class* k
     return 0;
 }
 
-// TODO: this might have to be improved for cases like 'Typedef::Nested foo'
 BasicTypeDeclaration* GeneratorVisitor::resolveType(const QString & name)
+{
+    QString _name = name;
+    return resolveType(_name);
+}
+
+// TODO: this might have to be improved for cases like 'Typedef::Nested foo'
+BasicTypeDeclaration* GeneratorVisitor::resolveType(QString & name)
 {
     // check for nested classes
     for (int i = klass.count() - 1; i >= 0; i--) {
@@ -129,6 +136,16 @@ BasicTypeDeclaration* GeneratorVisitor::resolveType(const QString & name)
             QString cname = string + "::" + name;
             returnOnExistence(cname);
         }
+    }
+
+    QStringList parts = name.split("::");
+    if (parts.count() > 1) {
+        BasicTypeDeclaration* decl = resolveType(parts.takeFirst());
+        if (!decl)
+            return 0;
+        parts.prepend(decl->toString());
+        name = parts.join("::");
+        returnOnExistence(name);
     }
 
     return 0;
@@ -320,13 +337,14 @@ void GeneratorVisitor::visitEnumSpecifier(EnumSpecifierAST* node)
     currentEnum.setFileName(m_header);
     visitNodes(this, node->enumerators);
     QHash<QString, Enum>::iterator it = enums.insert(currentEnum.toString(), currentEnum);
+    currentEnumRef = &it.value();
     if (parent)
-        parent->appendChild(&it.value());
+        parent->appendChild(currentEnumRef);
 }
 
 void GeneratorVisitor::visitEnumerator(EnumeratorAST* node)
 {
-    currentEnum.appendMember(EnumMember(token(node->id).symbolString(), QString()));
+    currentEnum.appendMember(EnumMember(currentEnumRef, token(node->id).symbolString(), QString()));
 //     DefaultVisitor::visitEnumerator(node);
 }
 
@@ -368,14 +386,26 @@ void GeneratorVisitor::visitInitializerClause(InitializerClauseAST *)
 
 void GeneratorVisitor::visitNamespace(NamespaceAST* node)
 {
-    nspace.push_back(token(node->namespace_name).symbolString());
     usingTypes.push(QStringList());
     usingNamespaces.push(QStringList());
-    DefaultVisitor::visitNamespace(node);
+
+    QString name = token(node->namespace_name).symbolString();
+    if (m_namespacesAsHeaders.contains(name) && !classes.contains(name)) {
+        Class clazz = Class(name);
+        clazz.setIsForwardDecl(false);
+        clazz.setIsNameSpace(true);
+        QHash<QString, Class>::iterator iter = classes.insert(clazz.toString(), clazz);
+        klass.push(&iter.value());
+        DefaultVisitor::visitNamespace(node);
+        klass.pop();
+    } else {
+        nspace.push_back(name);
+        DefaultVisitor::visitNamespace(node);
+        nspace.pop_back();
+    }
     // using directives in that namespace aren't interesting anymore :)
     usingTypes.pop();
     usingNamespaces.pop();
-    nspace.pop_back();
 }
 
 void GeneratorVisitor::visitParameterDeclaration(ParameterDeclarationAST* node)

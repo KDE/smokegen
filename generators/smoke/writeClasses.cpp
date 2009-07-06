@@ -128,7 +128,10 @@ void SmokeClassFiles::generateMethod(QTextStream& out, const QString& className,
         
         if (j > 0) out << ",";
         
-        QString field = Util::stackItemField(param.type());
+        Type* type = param.type();
+        if (type->name().contains("QFlags"))
+            type = &types["unsigned int"];
+        QString field = Util::stackItemField(type);
         QString typeName = param.type()->toString();
         if (field == "s_class" && (param.type()->pointerDepth() == 0 || param.type()->isRef()) && !param.type()->isFunctionPointer()) {
             // references and classes are passed in s_class
@@ -141,8 +144,9 @@ void SmokeClassFiles::generateMethod(QTextStream& out, const QString& className,
     }
     
     // if the method has any other default parameters, append them here as values, so 
-    QStringList defaultParams = Util::defaultParameterValues[&meth];
-    if (!defaultParams.isEmpty()) {
+    
+    if (Util::defaultParameterValues.contains(&meth)) {
+        QStringList defaultParams = Util::defaultParameterValues[&meth];
         if (meth.parameters().count() > 0)
             out << "," ;
         out << defaultParams.join(",");
@@ -259,7 +263,10 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
     QString switchCode;
     QTextStream switchOut(&switchCode);
 
-    out << QString("class %1 : public %2 {\n").arg(smokeClassName).arg(className);
+    out << QString("class %1").arg(smokeClassName);
+    if (!klass->isNameSpace())
+        out << QString(" : public %1").arg(className);
+    out << " {\n";
     if (Util::canClassBeInstanciated(klass)) {
         out << "    SmokeBinding* _binding;\n";
         out << "public:\n";
@@ -316,9 +323,9 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
         foreach (const EnumMember& member, e->members()) {
             switchOut << "        case " << xcall_index << ": " << smokeClassName <<  "::x_" << xcall_index << "(args);\tbreak;\n";
             if (e->parent())
-                generateEnumMemberCall(out, className, member.first, xcall_index++);
+                generateEnumMemberCall(out, className, member.name(), xcall_index++);
             else
-                generateEnumMemberCall(out, e->nameSpace(), member.first, xcall_index++);
+                generateEnumMemberCall(out, e->nameSpace(), member.name(), xcall_index++);
         }
     }
     
@@ -327,6 +334,9 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
         QSet<QString> virtMeths;    // virtual methods that already have been taken care of
         QList<const Method*> pureVirtuals;
         foreach (const Method& meth, klass->methods()) {
+            // if there are default parameters, it's not the 'original' method.. skip it
+            if (Util::defaultParameterValues.contains(&meth))
+                continue;
             // first, generate all virtual methods of this class. inherited ones come after that.
             if (((meth.flags() & Method::Virtual) || (meth.flags() & Method::PureVirtual)) && !meth.isDestructor()) {
                 generateVirtualMethod(out, className, meth, includes);
@@ -341,6 +351,8 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
         }
         
         foreach (const Method* meth, inheritedVirtuals) {
+            if (Util::defaultParameterValues.contains(meth))
+                continue;
             if (meth->flags() & Method::PureVirtual) {
                 // postpone pure virtuals to see if they have been overridden
                 pureVirtuals << meth;
@@ -350,6 +362,12 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
             QString methString = meth->toString(false, false);
             if (virtMeths.contains(methString))
                 continue;
+            const Method *m = 0;
+            if ((m = Util::isVirtualOverriden(*meth, klass)) && m->access() == Access_private) {
+                // if the method was overriden and put under private access, skip it.
+                virtMeths.insert(methString);
+                continue;
+            }
             generateVirtualMethod(out, className, *meth, includes);
             virtMeths.insert(methString);
         }
@@ -363,9 +381,11 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
                 continue;
             const Method* m = 0;
             if ((m = Util::isVirtualOverriden(*meth, klass))) {
-                Method virt = *m;
-                virt.setFlag(Method::Virtual);
-                generateVirtualMethod(out, className, virt, includes);
+                if (m->access() != Access_private) {
+                    Method virt = *m;
+                    virt.setFlag(Method::Virtual);
+                    generateVirtualMethod(out, className, virt, includes);
+                }
                 virtMeths.insert(methString);
             } else {
                 // we didn't find any overriding method - generate a pure virtual one

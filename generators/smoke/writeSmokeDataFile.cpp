@@ -87,19 +87,25 @@ void SmokeDataFile::write()
     out << "static void *" << Options::module << "_cast(void *xptr, Smoke::Index from, Smoke::Index to) {\n";
     out << "  switch(from) {\n";
     for (QMap<QString, int>::const_iterator iter = classIndex.constBegin(); iter != classIndex.constEnd(); iter++) {
+        const Class& klass = classes[iter.key()];
+        if (klass.isNameSpace())
+            continue;
         out << "    case " << iter.value() << ":   //" << iter.key() << "\n";
         out << "      switch(to) {\n";
-        const Class& klass = classes[iter.key()];
         foreach (const Class* base, Util::superClassList(&klass)) {
             QString className = base->toString();
-            out << QString("        case %1: return (void*)(%2*)(%3*)xptr;\n")
-                .arg(classIndex[className]).arg(className).arg(klass.toString());
+            if (includedClasses.contains(className)) {
+                out << QString("        case %1: return (void*)(%2*)(%3*)xptr;\n")
+                    .arg(classIndex[className]).arg(className).arg(klass.toString());
+            }
         }
         out << QString("        case %1: return (void*)(%2*)xptr;\n").arg(iter.value()).arg(klass.toString());
         foreach (const Class* desc, Util::descendantsList(&klass)) {
             QString className = desc->toString();
-            out << QString("        case %1: return (void*)(%2*)(%3*)xptr;\n")
-                .arg(classIndex[className]).arg(className).arg(klass.toString());
+            if (includedClasses.contains(className)) {
+                out << QString("        case %1: return (void*)(%2*)(%3*)xptr;\n")
+                    .arg(classIndex[className]).arg(className).arg(klass.toString());
+            }
         }
         out << "        default: return xptr;\n";
         out << "      }\n";
@@ -271,14 +277,15 @@ void SmokeDataFile::write()
     
     // munged name => index
     QMap<QString, int> methodNames;
-    // class => list of munged names with possible methods
-    QHash<const Class*, QMap<QString, QList<const Method*> > > classMungedNames;
+    // class => list of munged names with possible methods or enum members
+    QHash<const Class*, QMap<QString, QList<const Member*> > > classMungedNames;
     
     currentIdx = 1;
     for (QMap<QString, int>::const_iterator iter = classIndex.constBegin(); iter != classIndex.constEnd(); iter++) {
         Class* klass = &classes[iter.key()];
         if (externalClasses.contains(klass))
             continue;
+        QMap<QString, QList<const Member*> >& map = classMungedNames[klass];
         foreach (const Method& meth, klass->methods()) {
             if (meth.access() == Access_private)
                 continue;
@@ -286,7 +293,6 @@ void SmokeDataFile::write()
             methodNames[meth.name()] = 1;
             QString mungedName = Util::mungedName(meth);
             methodNames[mungedName] = 1;
-            QMap<QString, QList<const Method*> >& map = classMungedNames[klass];
             map[mungedName].append(&meth);
             
             if (!meth.parameters().count()) {
@@ -319,15 +325,20 @@ void SmokeDataFile::write()
             if ((e = dynamic_cast<Enum*>(decl))) {
                 if (e->access() == Access_private)
                     continue;
-                foreach (const EnumMember& member, e->members())
-                    methodNames[member.first] = 1;
+                foreach (const EnumMember& member, e->members()) {
+                    methodNames[member.name()] = 1;
+                    map[member.name()].append(&member);
+                }
             }
         }
     }
+    QMap<QString, QList<const Member*> >& globalSpaceMungedNameMap = classMungedNames[&classes["QGlobalSpace"]];
     for (QHash<QString, Enum>::const_iterator it = ::enums.constBegin(); it != ::enums.constEnd(); it++) {
         if (!it.value().parent()) {
-            foreach (const EnumMember& member, it.value().members())
-                methodNames[member.first] = 1;
+            foreach (const EnumMember& member, it.value().members()) {
+                methodNames[member.name()] = 1;
+                globalSpaceMungedNameMap[member.name()].append(&member);
+            }
         }
     }
     
@@ -413,13 +424,14 @@ void SmokeDataFile::write()
                 if (e->access() == Access_private)
                     continue;
                 foreach (const EnumMember& member, e->members()) {
-                    out << "    {" << iter.value() << ", " << methodNames[member.first]
+                    out << "    {" << iter.value() << ", " << methodNames[member.name()]
                         << ", 0, 0, Smoke::mf_static|Smoke::mf_enum, " << typeIndex[&types[e->toString()]]
                         << ", " << xcall_index << "},";
                     
                     // comment
-                    out << "\t//" << i << " " << klass->toString() << "::" << member.first;
+                    out << "\t//" << i << " " << klass->toString() << "::" << member.name() << " (enum)";
                     out << "\n";
+                    methodIdx[&member] = i;
                     xcall_index++;
                     i++;
                     methodCount++;
@@ -447,28 +459,32 @@ void SmokeDataFile::write()
     QHash<const Class*, QHash<QString, int> > ambigiousIds;
     i = 1;
     // ambigious method list
-    for (QHash<const Class*, QMap<QString, QList<const Method*> > >::const_iterator iter = classMungedNames.constBegin();
+    for (QHash<const Class*, QMap<QString, QList<const Member*> > >::const_iterator iter = classMungedNames.constBegin();
          iter != classMungedNames.constEnd(); iter++)
     {
         const Class* klass = iter.key();
-        const QMap<QString, QList<const Method*> >& map = iter.value();
+        const QMap<QString, QList<const Member*> >& map = iter.value();
         
-        for (QMap<QString, QList<const Method*> >::const_iterator munged_it = map.constBegin();
+        for (QMap<QString, QList<const Member*> >::const_iterator munged_it = map.constBegin();
              munged_it != map.constEnd(); munged_it++)
         {
             if (munged_it.value().size() < 2)
                 continue;
-            foreach (const Method* meth, munged_it.value()) {
-                out << "    " << methodIdx[meth] << ',';
+            foreach (const Member* member, munged_it.value()) {
+                out << "    " << methodIdx[member] << ',';
                 
                 // comment
-                out << "  // " << klass->toString() << "::" << meth->name() << '(';
-                for (int j = 0; j < meth->parameters().count(); j++) {
-                    if (j > 0) out << ", ";
-                    out << meth->parameters()[j].type()->toString();
+                out << "  // " << klass->toString() << "::" << member->name();
+                const Method* meth = 0;
+                if ((meth = dynamic_cast<const Method*>(member))) {
+                    out << '(';
+                    for (int j = 0; j < meth->parameters().count(); j++) {
+                        if (j > 0) out << ", ";
+                        out << meth->parameters()[j].type()->toString();
+                    }
+                    out << ')';
+                    if (meth->isConst()) out << " const";
                 }
-                out << ')';
-                if (meth->isConst()) out << " const";
                 out << "\n";
             }
             out << "    0,\n";
@@ -489,8 +505,8 @@ void SmokeDataFile::write()
         if (externalClasses.contains(klass))
             continue;
         
-        QMap<QString, QList<const Method*> >& map = classMungedNames[klass];
-        for (QMap<QString, QList<const Method*> >::const_iterator munged_it = map.constBegin(); munged_it != map.constEnd(); munged_it++) {
+        QMap<QString, QList<const Member*> >& map = classMungedNames[klass];
+        for (QMap<QString, QList<const Member*> >::const_iterator munged_it = map.constBegin(); munged_it != map.constEnd(); munged_it++) {
             
             // class index, munged name index
             out << "    {" << classIndex[iter.key()] << ", " << methodNames[munged_it.key()] << ", ";

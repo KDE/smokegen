@@ -176,7 +176,8 @@ void TypeCompiler::visitSimpleTypeSpecifier(SimpleTypeSpecifierAST *node)
     m_realType = Type(m_type.join(" "), isConstant(), isVolatile());
     m_realType.setIsIntegral(true);
   } else {
-    BasicTypeDeclaration* type = m_visitor->resolveType(m_type.join("::"));
+    QString typeName = m_type.join("::");
+    BasicTypeDeclaration* type = m_visitor->resolveType(typeName);
     Class* klass;
     Typedef* tdef;
     Enum* e;
@@ -192,7 +193,7 @@ void TypeCompiler::visitSimpleTypeSpecifier(SimpleTypeSpecifierAST *node)
     } else if ((e = dynamic_cast<Enum*>(type))) {
         m_realType = Type(e, isConstant(), isVolatile());
     } else {
-        m_realType = Type(m_type.join("::"), isConstant(), isVolatile());
+        m_realType = Type(typeName, isConstant(), isVolatile());
     }
     
     if (m_realType.templateArguments().isEmpty())

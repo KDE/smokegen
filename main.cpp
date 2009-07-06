@@ -47,6 +47,7 @@ static void showUsage()
     "    -c <path to file containing a list of classes>" << std::endl <<
     "    -d <path to file containing #defines>" << std::endl <<
     "    -g <generator to use>" << std::endl <<
+    "    -n <comma-seperated list of namespaces that should be parsed as classes>" << std::endl <<
     "    -t resolve typedefs" << std::endl <<
     "    -o <output dir>" << std::endl <<
     "    -h shows this message" << std::endl;
@@ -67,11 +68,12 @@ int main(int argc, char **argv)
     QFileInfo classList, definesList;
     QDir output;
     QString generator;
+    QStringList namespacesAsClasses;
     bool resolveTypdefs = false;
     bool addHeaders = false;
 
     for (int i = 1; i < args.count(); i++) {
-        if ((args[i] == "-I" || args[i] == "-c" || args[i] == "-d" || args[i] == "-o") && i + 1 >= args.count()) {
+        if ((args[i] == "-I" || args[i] == "-c" || args[i] == "-d" || args[i] == "-o" || args[i] == "-n") && i + 1 >= args.count()) {
             qCritical() << "not enough parameters for option" << args[i];
             return EXIT_FAILURE;
         }
@@ -85,6 +87,8 @@ int main(int argc, char **argv)
             output = QDir(args[++i]);
         } else if (args[i] == "-g") {
             generator = args[++i];
+        } else if (args[i] == "-n") {
+            namespacesAsClasses = args[++i].split(",");
         } else if ((args[i] == "-h" || args[i] == "--help") && argc == 2) {
             showUsage();
             return EXIT_SUCCESS;
@@ -157,7 +161,7 @@ int main(int argc, char **argv)
         session.setContentsAndGenerateLocationTable(pp.preprocess());
         TranslationUnitAST* ast = parser.parse(&session);
         // TODO: improve 'header => class' association
-        GeneratorVisitor visitor(&session, resolveTypdefs, file.fileName());
+        GeneratorVisitor visitor(&session, resolveTypdefs, file.fileName(), namespacesAsClasses);
         visitor.visit(ast);
     }
     

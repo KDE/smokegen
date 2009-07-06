@@ -41,6 +41,7 @@ class QTextStream;
 
 class Class;
 class Function;
+class Member;
 class Method;
 class Type;
 
@@ -63,7 +64,7 @@ struct SmokeDataFile
     bool isClassUsed(const Class* klass);
 
     QMap<QString, int> classIndex;
-    QHash<const Method*, int> methodIdx;
+    QHash<const Member*, int> methodIdx;
     QHash<Type*, int> typeIndex;
     QSet<Class*> externalClasses;
     QSet<Type*> usedTypes;
