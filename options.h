@@ -30,9 +30,5 @@ struct ParserOptions
     static QList<QDir> includeDirs;
     static bool resolveTypedefs;
     static QStringList namespacesAsClasses;
-    
-    // if the name of a typedef is matched by one of the regexps, don't resolve it
-    static QList<QRegExp> dontResolveTypdefs;
-    // if the name of the type that the typedef points to is matched by one of the regexps, don't resolve the typedef
-    static QList<QRegExp> dontResolveTypdefTargets;
+    static bool qtMode;
 };

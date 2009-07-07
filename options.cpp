@@ -26,8 +26,6 @@
 QFileInfo ParserOptions::classList, ParserOptions::definesList;
 QList<QFileInfo>ParserOptions:: headerList;
 QList<QDir> ParserOptions::includeDirs;
-bool ParserOptions::resolveTypedefs;
+bool ParserOptions::resolveTypedefs = false;
 QStringList ParserOptions::namespacesAsClasses;
-
-QList<QRegExp> ParserOptions::dontResolveTypdefs;
-QList<QRegExp> ParserOptions::dontResolveTypdefTargets;
+bool ParserOptions::qtMode = false;

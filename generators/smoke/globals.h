@@ -55,6 +55,7 @@ struct Options
     static QStringList voidpTypes;
     static QList<QFileInfo> headerList;
     static QStringList classList;
+    static bool qtMode;
 };
 
 struct SmokeDataFile

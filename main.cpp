@@ -49,6 +49,7 @@ static void showUsage()
     "    -d <path to file containing #defines>" << std::endl <<
     "    -g <generator to use>" << std::endl <<
     "    -n <comma-seperated list of namespaces that should be parsed as classes>" << std::endl <<
+    "    -qt enables Qt-mode (special treatment of QFlags)" << std::endl <<
     "    -t resolve typedefs" << std::endl <<
     "    -o <output dir>" << std::endl <<
     "    --config <config file>" << std::endl <<
@@ -96,6 +97,8 @@ int main(int argc, char **argv)
             return EXIT_SUCCESS;
         } else if (args[i] == "-t") {
             ParserOptions::resolveTypedefs = true;
+        } else if (args[i] == "-qt") {
+            ParserOptions::qtMode = true;
         } else if (args[i] == "--") {
             addHeaders = true;
         } else if (addHeaders) {

@@ -40,6 +40,7 @@ QString Options::module = "qt";
 QStringList Options::parentModules;
 QStringList Options::scalarTypes;
 QStringList Options::voidpTypes;
+bool Options::qtMode = false;
 
 static void showUsage()
 {
@@ -81,6 +82,8 @@ int generate(const QDir& outputDir, const QList<QFileInfo>& headerList, const QS
             Options::scalarTypes = args[++i].split(',');
         } else if (args[i] == "-vt") {
             Options::voidpTypes = args[++i].split(',');
+        } else if (args[i] == "-qt") {
+            Options::qtMode = true;
         } else if (args[i] == "-h" || args[i] == "--help") {
             showUsage();
             return EXIT_SUCCESS;
