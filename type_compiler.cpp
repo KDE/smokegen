@@ -90,21 +90,10 @@ void TypeCompiler::run(const ListNode< PtrOperatorAST* > *ptr_ops)
     }
 }
 
-void TypeCompiler::visitClassSpecifier(ClassSpecifierAST *node)
+void TypeCompiler::setRealType()
 {
-  visit(node->name);
-}
-
-
-void TypeCompiler::visitEnumSpecifier(EnumSpecifierAST *node)
-{
-  visit(node->name);
-}
-
-void TypeCompiler::visitElaboratedTypeSpecifier(ElaboratedTypeSpecifierAST *node)
-{
-    visit(node->name);
-    BasicTypeDeclaration* type = m_visitor->resolveType(m_type.join("::"));
+    QString typeName = m_type.join("::");
+    BasicTypeDeclaration* type = m_visitor->resolveType(typeName);
     Class* klass;
     Typedef* tdef;
     Enum* e;
@@ -120,11 +109,48 @@ void TypeCompiler::visitElaboratedTypeSpecifier(ElaboratedTypeSpecifierAST *node
     } else if ((e = dynamic_cast<Enum*>(type))) {
         m_realType = Type(e, isConstant(), isVolatile());
     } else {
-        m_realType = Type(m_type.join("::"), isConstant(), isVolatile());
+        if (!m_templateArgs.isEmpty() && m_type.count() > 1) {
+            typeName = QString();
+            // only go to the one before the last - the rest will be added as template parameters to the type directly
+            for (int i = 0; i < m_type.count() - 1; i++) {
+                typeName += m_type[i];
+                
+                // do we have template parameters for this part?
+                if (m_templateArgs.contains(i)) {
+                    typeName += "< ";
+                    for (int j = 0; j < m_templateArgs[i].count(); j++) {
+                        if (j > 0) typeName += ", ";
+                        typeName += m_templateArgs[i][j].toString();
+                    }
+                    typeName += " >";
+                }
+                typeName += "::";
+            }
+            typeName += m_type.last();
+        }
+        m_realType = Type(typeName, isConstant(), isVolatile());
     }
+    
+    // only add template parameters if they belong to the last part of a qualified type
+    if (m_templateArgs.contains(m_type.count() - 1) && m_realType.templateArguments().isEmpty())
+        m_realType.setTemplateArguments(m_templateArgs[m_type.count() - 1]);
+}
 
-    if (m_realType.templateArguments().isEmpty())
-        m_realType.setTemplateArguments(m_templateArgs);
+void TypeCompiler::visitClassSpecifier(ClassSpecifierAST *node)
+{
+  visit(node->name);
+}
+
+
+void TypeCompiler::visitEnumSpecifier(EnumSpecifierAST *node)
+{
+  visit(node->name);
+}
+
+void TypeCompiler::visitElaboratedTypeSpecifier(ElaboratedTypeSpecifierAST *node)
+{
+    visit(node->name);
+    setRealType();
 }
 
 void TypeCompiler::visitParameterDeclaration(ParameterDeclarationAST* node)
@@ -176,28 +202,7 @@ void TypeCompiler::visitSimpleTypeSpecifier(SimpleTypeSpecifierAST *node)
     m_realType = Type(m_type.join(" "), isConstant(), isVolatile());
     m_realType.setIsIntegral(true);
   } else {
-    QString typeName = m_type.join("::");
-    BasicTypeDeclaration* type = m_visitor->resolveType(typeName);
-    Class* klass;
-    Typedef* tdef;
-    Enum* e;
-    if ((klass = dynamic_cast<Class*>(type))) {
-        m_realType = Type(klass, isConstant(), isVolatile());
-    } else if ((tdef = dynamic_cast<Typedef*>(type))) {
-        if (m_visitor->resolveTypdefs())
-            m_realType = tdef->resolve();
-        else
-            m_realType = Type(tdef);
-        if (isConstant()) m_realType.setIsConst(true);
-        if (isVolatile()) m_realType.setIsVolatile(true);
-    } else if ((e = dynamic_cast<Enum*>(type))) {
-        m_realType = Type(e, isConstant(), isVolatile());
-    } else {
-        m_realType = Type(typeName, isConstant(), isVolatile());
-    }
-    
-    if (m_realType.templateArguments().isEmpty())
-        m_realType.setTemplateArguments(m_templateArgs);
+    setRealType();
   }
 }
 

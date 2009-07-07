@@ -39,7 +39,9 @@ public:
 
   QString name() const { return m_name.join("::"); }
   const QStringList& qualifiedName() const { return m_name; }
-  const QList<Type>& templateArguments() const { return m_templateArgs; }
+  // the int specifies the position of the template arguments.
+  // in case of Foo<void*, int>::Bar it would be 0 => { void*, int }
+  QMap<int, QList<Type> > templateArguments() const { return m_templateArgs; }
   bool isCastOperator() const { return m_castType.isValid(); }
   const Type& castType() const { return m_castType; }
 
@@ -60,7 +62,7 @@ private:
   TypeSpecifierAST* m_typeSpecifier;
   QStringList m_name;
   QString m_currentIdentifier;
-  QList<Type> m_templateArgs;
+  QMap<int, QList<Type> > m_templateArgs;
   GeneratorVisitor* m_visitor;
   Type m_castType;
 };

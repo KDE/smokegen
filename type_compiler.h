@@ -52,6 +52,8 @@ public:
   void run(const ListNode<PtrOperatorAST*> *ptr_ops);
 
 protected:
+  void setRealType();
+  
   virtual void visitClassSpecifier(ClassSpecifierAST *node);
   virtual void visitEnumSpecifier(EnumSpecifierAST *node);
   virtual void visitElaboratedTypeSpecifier(ElaboratedTypeSpecifierAST *node);
@@ -70,7 +72,7 @@ private:
   Type m_realType;
   bool isRef;
   QVector<bool> pointerDepth;
-  QList<Type> m_templateArgs;
+  QMap<int, QList<Type> > m_templateArgs;
 };
 
 #endif // TYPE_COMPILER_H

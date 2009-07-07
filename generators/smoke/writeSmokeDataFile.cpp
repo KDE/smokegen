@@ -216,7 +216,7 @@ void SmokeDataFile::write()
     out << "    { 0, 0, 0 },\t//0 (no type)\n";
     QMap<QString, Type*> sortedTypes;
     for (QSet<Type*>::const_iterator it = usedTypes.constBegin(); it != usedTypes.constEnd(); it++) {
-        sortedTypes.insert((*it)->toString(), *it);
+        sortedTypes.insert((*it)->toString().replace("< ", "<").replace(" >", ">"), *it);
     }
     
     int i = 1;
@@ -227,7 +227,10 @@ void SmokeDataFile::write()
             continue;
         int classIdx = 0;
         QString flags = "0";
-        if (t->getClass() && !Options::stringTypes.contains(t->name())) {
+        if (Options::voidpTypes.contains(t->name())) {
+            // support some of the weird quirks the kalyptus code has
+            flags += "|Smoke::t_voidp";
+        } else if (t->getClass()) {
             flags += "|Smoke::t_class";
             classIdx = classIndex.value(t->getClass()->toString(), 0);
         } else if (t->isIntegral() && t->name() != "void" && t->pointerDepth() == 0 && !t->isRef()) {

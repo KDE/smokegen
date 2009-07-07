@@ -38,7 +38,8 @@ QStringList Options::classList;
 int Options::parts = 20;
 QString Options::module = "qt";
 QStringList Options::parentModules;
-QStringList Options::stringTypes;
+QStringList Options::scalarTypes;
+QStringList Options::voidpTypes;
 
 static void showUsage()
 {
@@ -47,7 +48,8 @@ static void showUsage()
     "    -m <module name> (default: 'qt')" << std::endl <<
     "    -p <parts> (default: 20)" << std::endl <<
     "    -pm <comma-seperated list of parent modules>" << std::endl <<
-    "    -st <comma-seperated list of types storing strings>" << std::endl;
+    "    -st <comma-seperated list of types that should be munged to scalars>" << std::endl <<
+    "    -vt <comma-seperated list of types that should be mapped to Smoke::t_voidp>" << std::endl;
 }
 
 extern "C" Q_DECL_EXPORT
@@ -59,7 +61,9 @@ int generate(const QDir& outputDir, const QList<QFileInfo>& headerList, const QS
     
     const QStringList& args = QCoreApplication::arguments();
     for (int i = 0; i < args.count(); i++) {
-        if ((args[i] == "-m" || args[i] == "-p" || args[i] == "-pm" || args[i] == "-st") && i + 1 >= args.count()) {
+        if ((args[i] == "-m" || args[i] == "-p" || args[i] == "-pm" ||
+             args[i] == "-st" || args[i] == "-vt") && i + 1 >= args.count())
+        {
             qCritical() << "generator_smoke: not enough parameters for option" << args[i];
             return EXIT_FAILURE;
         } else if (args[i] == "-m") {
@@ -74,7 +78,9 @@ int generate(const QDir& outputDir, const QList<QFileInfo>& headerList, const QS
         } else if (args[i] == "-pm") {
             Options::parentModules = args[++i].split(',');
         } else if (args[i] == "-st") {
-            Options::stringTypes = args[++i].split(',');
+            Options::scalarTypes = args[++i].split(',');
+        } else if (args[i] == "-vt") {
+            Options::voidpTypes = args[++i].split(',');
         } else if (args[i] == "-h" || args[i] == "--help") {
             showUsage();
             return EXIT_SUCCESS;

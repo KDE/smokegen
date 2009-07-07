@@ -176,7 +176,7 @@ void NameCompiler::visitTemplateArgument(TemplateArgumentAST *node)
 {
     TypeCompiler tc(m_session, m_visitor);
     tc.run(node->type_id->type_specifier, node->type_id->declarator ? node->type_id->declarator : 0);
-    m_templateArgs << tc.type();
+    m_templateArgs[m_name.count()] << tc.type();
 }
 
 /*const QualifiedIdentifier& NameCompiler::identifier() const

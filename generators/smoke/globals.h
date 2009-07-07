@@ -51,7 +51,8 @@ struct Options
     static int parts;
     static QString module;
     static QStringList parentModules;
-    static QStringList stringTypes;
+    static QStringList scalarTypes;
+    static QStringList voidpTypes;
     static QList<QFileInfo> headerList;
     static QStringList classList;
 };
@@ -102,6 +103,8 @@ struct Util
     static bool canClassBeCopied(const Class* klass);
     static bool hasClassVirtualDestructor(const Class* klass);
     static bool hasClassPublicDestructor(const Class* klass);
+
+    static bool derivesFromInvalid(const Class* klass);
 
     static void addDefaultConstructor(Class* klass);
     static void addCopyConstructor(Class* klass);

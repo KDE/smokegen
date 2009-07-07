@@ -293,10 +293,15 @@ QString Util::mungedName(const Method& meth) {
     QString ret = meth.name();
     foreach (const Parameter& param, meth.parameters()) {
         const Type* type = param.type();
-        if (type->pointerDepth() > 1) {
-            // reference to array or hash
+        if (type->pointerDepth() > 1 ||
+            (Options::voidpTypes.contains(type->name()) && !Options::scalarTypes.contains(type->name())) )
+        {
+            // QString and QStringList are both mapped to Smoke::t_voidp, but QString is a scalar as well
+            // TODO: fix this - neither QStringList nor QString should be mapped to Smoke::t_voidp or munged as ? or $
+            
+            // reference to array or hash or unknown
             ret += "?";
-        } else if (type->isIntegral() || type->getEnum() || Options::stringTypes.contains(type->name())) {
+        } else if (type->isIntegral() || type->getEnum() || Options::scalarTypes.contains(type->name())) {
             // plain scalar
             ret += "$";
         } else if (type->getClass()) {
