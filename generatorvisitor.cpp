@@ -249,6 +249,13 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
             QHash<QString, Typedef>::iterator it = typedefs.insert(name, tdef);
             if (parent)
                 parent->appendChild(&it.value());
+            
+            if (ParserOptions::qtMode && currentTypeRef->name() == "QFlags" &&
+                !currentTypeRef->templateArguments().isEmpty())
+            {
+                // in Qt-mode, store that this is a QFlags-typedef
+                flagTypes.insert(&it.value());
+            }
         }
         createTypedef = false;
         return;

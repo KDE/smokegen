@@ -20,6 +20,7 @@
 #include <QFileInfo>
 #include <QList>
 #include <QRegExp>
+#include <QSet>
 
 #include "options.h"
 
@@ -29,3 +30,5 @@ QList<QDir> ParserOptions::includeDirs;
 bool ParserOptions::resolveTypedefs = false;
 QStringList ParserOptions::namespacesAsClasses;
 bool ParserOptions::qtMode = false;
+
+QSet<const Typedef*> flagTypes;

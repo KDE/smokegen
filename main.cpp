@@ -52,7 +52,7 @@ static void showUsage()
     "    -qt enables Qt-mode (special treatment of QFlags)" << std::endl <<
     "    -t resolve typedefs" << std::endl <<
     "    -o <output dir>" << std::endl <<
-    "    --config <config file>" << std::endl <<
+    "    -config <config file>" << std::endl <<
     "    -h shows this message" << std::endl;
 }
 
@@ -80,7 +80,7 @@ int main(int argc, char **argv)
         }
         if (args[i] == "-I") {
             ParserOptions::includeDirs << QDir(args[++i]);
-        } else if (args[i] == "--config") {
+        } else if (args[i] == "-config") {
             configFile = QFileInfo(args[++i]);
         } else if (args[i] == "-c") {
             ParserOptions::classList = QFileInfo(args[++i]);

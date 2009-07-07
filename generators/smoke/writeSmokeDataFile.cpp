@@ -26,6 +26,7 @@
 #include <type.h>
 
 #include "globals.h"
+#include "../../options.h"
 
 uint qHash(const QVector<int> intList)
 {
@@ -254,6 +255,10 @@ void SmokeDataFile::write()
             flags += "|Smoke::t_enum";
             if (t->getEnum()->parent())
                 classIdx = classIndex.value(t->getEnum()->parent()->toString(), 0);
+        } else if (Options::qtMode && !t->isRef() && t->pointerDepth() == 0 && t->getTypedef() &&
+                   flagTypes.contains(t->getTypedef()))
+        {
+            flags += "|Smoke::t_uint";
         } else {
             flags += "|Smoke::t_voidp";
         }

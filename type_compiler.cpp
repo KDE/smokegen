@@ -101,10 +101,11 @@ void TypeCompiler::setRealType()
     if ((klass = dynamic_cast<Class*>(type))) {
         m_realType = Type(klass, isConstant(), isVolatile());
     } else if ((tdef = dynamic_cast<Typedef*>(type))) {
-        if (ParserOptions::resolveTypedefs)
-            m_realType = tdef->resolve();
-        else
+        if (!ParserOptions::resolveTypedefs || (ParserOptions::qtMode && flagTypes.contains(tdef)) ) {
             m_realType = Type(tdef);
+        } else {
+            m_realType = tdef->resolve();
+        }
         if (isConstant()) m_realType.setIsConst(true);
         if (isVolatile()) m_realType.setIsVolatile(true);
     } else if ((e = dynamic_cast<Enum*>(type))) {

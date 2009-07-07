@@ -23,6 +23,7 @@
 #include <type.h>
 
 #include "globals.h"
+#include "../../options.h"
 
 QHash<QString, QString> Util::typeMap;
 QHash<const Method*, const Function*> Util::globalFunctionMap;
@@ -301,7 +302,9 @@ QString Util::mungedName(const Method& meth) {
             
             // reference to array or hash or unknown
             ret += "?";
-        } else if (type->isIntegral() || type->getEnum() || Options::scalarTypes.contains(type->name())) {
+        } else if (type->isIntegral() || type->getEnum() || Options::scalarTypes.contains(type->name()) ||
+                   (Options::qtMode && !type->isRef() && type->getTypedef() && flagTypes.contains(type->getTypedef())) )
+        {
             // plain scalar
             ret += "$";
         } else if (type->getClass()) {
@@ -317,6 +320,12 @@ QString Util::mungedName(const Method& meth) {
 
 QString Util::stackItemField(const Type* type)
 {
+    if (Options::qtMode && !type->isRef() && type->pointerDepth() == 0 &&
+        type->getTypedef() && flagTypes.contains(type->getTypedef()))
+    {
+        return "s_uint";
+    }
+
     if (type->pointerDepth() > 0 || type->isRef() || type->isFunctionPointer() || (!type->isIntegral() && !type->getEnum()))
         return "s_class";
     if (type->getEnum())
@@ -347,6 +356,8 @@ QString Util::assignmentString(const Type* type, const QString& var)
         return var;
     } else if (type->getEnum()) {
         return var;
+    } else if (Options::qtMode && type->getTypedef() && flagTypes.contains(type->getTypedef())) {
+        return "(uint)" + var;
     } else {
         QString ret = "(void*)new ";
         if (Class* retClass = type->getClass())

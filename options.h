@@ -19,9 +19,13 @@
 class QDir;
 class QFileInfo;
 template<typename T>
+class QSet;
+template<typename T>
 class QList;
 class QRegExp;
 class QStringList;
+
+class Typedef;
 
 struct ParserOptions
 {
@@ -32,3 +36,5 @@ struct ParserOptions
     static QStringList namespacesAsClasses;
     static bool qtMode;
 };
+
+extern QSet<const Typedef*> flagTypes;

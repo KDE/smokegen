@@ -27,6 +27,7 @@
 #include <type.h>
 
 #include "globals.h"
+#include "../../options.h"
 
 SmokeClassFiles::SmokeClassFiles(SmokeDataFile *data)
     : m_smokeData(data)
@@ -128,10 +129,7 @@ void SmokeClassFiles::generateMethod(QTextStream& out, const QString& className,
         
         if (j > 0) out << ",";
         
-        Type* type = param.type();
-        if (type->name().contains("QFlags"))
-            type = &types["unsigned int"];
-        QString field = Util::stackItemField(type);
+        QString field = Util::stackItemField(param.type());
         QString typeName = param.type()->toString();
         if (field == "s_class" && (param.type()->pointerDepth() == 0 || param.type()->isRef()) && !param.type()->isFunctionPointer()) {
             // references and classes are passed in s_class
