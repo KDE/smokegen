@@ -20,6 +20,7 @@
 #include "type_compiler.h"
 #include "name_compiler.h"
 #include "generatorvisitor.h"
+#include "options.h"
 #include <lexer.h>
 #include <symbol.h>
 #include <tokens.h>
@@ -100,7 +101,7 @@ void TypeCompiler::setRealType()
     if ((klass = dynamic_cast<Class*>(type))) {
         m_realType = Type(klass, isConstant(), isVolatile());
     } else if ((tdef = dynamic_cast<Typedef*>(type))) {
-        if (m_visitor->resolveTypdefs())
+        if (ParserOptions::resolveTypedefs)
             m_realType = tdef->resolve();
         else
             m_realType = Type(tdef);

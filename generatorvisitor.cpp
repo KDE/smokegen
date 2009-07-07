@@ -22,13 +22,13 @@
 #include "type_compiler.h"
 
 #include "generatorvisitor.h"
+#include "options.h"
 
 #include <QtDebug>
 
-GeneratorVisitor::GeneratorVisitor(ParseSession *session, bool resolveTypedefs, const QString& header, const QStringList& namespacesAsClasses) 
-    : m_session(session), m_resolveTypedefs(resolveTypedefs), m_header(header), m_namespacesAsHeaders(namespacesAsClasses),
-      createType(false), createTypedef(false), inClass(0), isStatic(false), isVirtual(false), hasInitializer(false),
-      currentTypeRef(0), inMethod(false)
+GeneratorVisitor::GeneratorVisitor(ParseSession *session, const QString& header) 
+    : m_session(session), m_header(header), createType(false), createTypedef(false),
+      inClass(0), isStatic(false), isVirtual(false), hasInitializer(false), currentTypeRef(0), inMethod(false)
 {
     nc = new NameCompiler(m_session, this);
     tc = new TypeCompiler(m_session, this);
@@ -392,7 +392,7 @@ void GeneratorVisitor::visitNamespace(NamespaceAST* node)
     usingNamespaces.push(QStringList());
 
     QString name = token(node->namespace_name).symbolString();
-    if (m_namespacesAsHeaders.contains(name) && !classes.contains(name)) {
+    if (ParserOptions::namespacesAsClasses.contains(name) && !classes.contains(name)) {
         Class clazz = Class(name);
         clazz.setIsForwardDecl(false);
         clazz.setIsNameSpace(true);

@@ -12,6 +12,7 @@ set(generator_SRC
     generatorenvironment.cpp
     generatorvisitor.cpp
     generatorpreprocessor.cpp
+    options.cpp
     type_compiler.cpp
     name_compiler.cpp
 )

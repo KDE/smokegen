@@ -34,6 +34,7 @@
 
 #include "generatorpreprocessor.h"
 #include "generatorvisitor.h"
+#include "options.h"
 #include "type.h"
 
 typedef int (*GenerateFn)(const QDir& outputDir, const QList<QFileInfo>& headerList, const QStringList& classes);
@@ -50,6 +51,7 @@ static void showUsage()
     "    -n <comma-seperated list of namespaces that should be parsed as classes>" << std::endl <<
     "    -t resolve typedefs" << std::endl <<
     "    -o <output dir>" << std::endl <<
+    "    --config <config file>" << std::endl <<
     "    -h shows this message" << std::endl;
 }
 
@@ -63,41 +65,41 @@ int main(int argc, char **argv)
     QCoreApplication app(argc, argv);
     const QStringList& args = app.arguments();
 
-    QList<QDir> includeDirs;
-    QList<QFileInfo> headerList;
-    QFileInfo classList, definesList;
+    QFileInfo configFile;
     QDir output;
     QString generator;
-    QStringList namespacesAsClasses;
-    bool resolveTypdefs = false;
     bool addHeaders = false;
 
     for (int i = 1; i < args.count(); i++) {
-        if ((args[i] == "-I" || args[i] == "-c" || args[i] == "-d" || args[i] == "-o" || args[i] == "-n") && i + 1 >= args.count()) {
+        if ((args[i] == "-I" || args[i] == "-c" || args[i] == "-d" || args[i] == "-o"||
+             args[i] == "-n" || args[i] == "--config") && i + 1 >= args.count())
+        {
             qCritical() << "not enough parameters for option" << args[i];
             return EXIT_FAILURE;
         }
         if (args[i] == "-I") {
-            includeDirs << QDir(args[++i]);
+            ParserOptions::includeDirs << QDir(args[++i]);
+        } else if (args[i] == "--config") {
+            configFile = QFileInfo(args[++i]);
         } else if (args[i] == "-c") {
-            classList = QFileInfo(args[++i]);
+            ParserOptions::classList = QFileInfo(args[++i]);
         } else if (args[i] == "-d") {
-            definesList = QFileInfo(args[++i]);
+            ParserOptions::definesList = QFileInfo(args[++i]);
         } else if (args[i] == "-o") {
             output = QDir(args[++i]);
         } else if (args[i] == "-g") {
             generator = args[++i];
         } else if (args[i] == "-n") {
-            namespacesAsClasses = args[++i].split(",");
+            ParserOptions::namespacesAsClasses = args[++i].split(",");
         } else if ((args[i] == "-h" || args[i] == "--help") && argc == 2) {
             showUsage();
             return EXIT_SUCCESS;
         } else if (args[i] == "-t") {
-            resolveTypdefs = true;
+            ParserOptions::resolveTypedefs = true;
         } else if (args[i] == "--") {
             addHeaders = true;
         } else if (addHeaders) {
-            headerList << QFileInfo(args[i]);
+            ParserOptions::headerList << QFileInfo(args[i]);
         }
     }
     
@@ -106,10 +108,10 @@ int main(int argc, char **argv)
         QDir::current().mkpath(output.path());
     }
     
-    foreach (QDir dir, includeDirs) {
+    foreach (QDir dir, ParserOptions::includeDirs) {
         if (!dir.exists()) {
             qWarning() << "include directory" << dir.path() << "doesn't exist";
-            includeDirs.removeAll(dir);
+            ParserOptions::includeDirs.removeAll(dir);
         }
     }
     
@@ -127,8 +129,8 @@ int main(int argc, char **argv)
     }
     
     QStringList classes;
-    if (classList.exists()) {
-        QFile file(classList.filePath());
+    if (ParserOptions::classList.exists()) {
+        QFile file(ParserOptions::classList.filePath());
         file.open(QIODevice::ReadOnly);
         while (!file.atEnd()) {
             QByteArray array = file.readLine();
@@ -138,8 +140,8 @@ int main(int argc, char **argv)
     }
     
     QStringList defines;
-    if (definesList.exists()) {
-        QFile file(definesList.filePath());
+    if (ParserOptions::definesList.exists()) {
+        QFile file(ParserOptions::definesList.filePath());
         file.open(QIODevice::ReadOnly);
         while (!file.atEnd()) {
             QByteArray array = file.readLine();
@@ -149,21 +151,21 @@ int main(int argc, char **argv)
         file.close();
     }
     
-    foreach (QFileInfo file, headerList) {
+    foreach (QFileInfo file, ParserOptions::headerList) {
         qDebug() << "parsing" << file.absoluteFilePath();
         // this has already been parsed because it was included by some header
         if (parsedHeaders.contains(file.absoluteFilePath()))
             continue;
-        Preprocessor pp(includeDirs, defines, file);
+        Preprocessor pp(ParserOptions::includeDirs, defines, file);
         Control c;
         Parser parser(&c);
         ParseSession session;
         session.setContentsAndGenerateLocationTable(pp.preprocess());
         TranslationUnitAST* ast = parser.parse(&session);
         // TODO: improve 'header => class' association
-        GeneratorVisitor visitor(&session, resolveTypdefs, file.fileName(), namespacesAsClasses);
+        GeneratorVisitor visitor(&session, file.fileName());
         visitor.visit(ast);
     }
     
-    return generate(output, headerList, classes);
+    return generate(output, ParserOptions::headerList, classes);
 }
