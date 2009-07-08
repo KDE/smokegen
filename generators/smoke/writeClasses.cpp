@@ -200,7 +200,7 @@ void SmokeClassFiles::generateSetAccessor(QTextStream& out, const QString& class
     }
     fieldName += className + "::" + field.name();
     out << "void x_" << index << "(Smoke::Stack x) {\n"
-        << "        " << field.toString() << "=\n"
+        << "        // " << field.toString() << "=\n"
         << "        " << fieldName << " = ";
     QString unionField = Util::stackItemField(type);
     QString cast = type->toString();
