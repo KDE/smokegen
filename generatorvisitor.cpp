@@ -343,16 +343,16 @@ void GeneratorVisitor::visitEnumSpecifier(EnumSpecifierAST* node)
     Access a = (access.isEmpty() ? Access_public : access.top());
     currentEnum.setAccess(a);
     currentEnum.setFileName(m_header);
-    visitNodes(this, node->enumerators);
     QHash<QString, Enum>::iterator it = enums.insert(currentEnum.toString(), currentEnum);
     currentEnumRef = &it.value();
+    visitNodes(this, node->enumerators);
     if (parent)
         parent->appendChild(currentEnumRef);
 }
 
 void GeneratorVisitor::visitEnumerator(EnumeratorAST* node)
 {
-    currentEnum.appendMember(EnumMember(currentEnumRef, token(node->id).symbolString(), QString()));
+    currentEnumRef->appendMember(EnumMember(currentEnumRef, token(node->id).symbolString(), QString()));
 //     DefaultVisitor::visitEnumerator(node);
 }
 

@@ -39,7 +39,7 @@ QString BasicTypeDeclaration::toString() const
     return ret;
 }
 
-QString Member::toString(bool withAccess) const
+QString Member::toString(bool withAccess, bool withClass) const
 {
     QString ret;
     if (withAccess) {
@@ -54,8 +54,21 @@ QString Member::toString(bool withAccess) const
         ret += "static ";
     if (m_flags & Virtual)
         ret += "virtual ";
-    ret += m_type->toString() + " " + m_name;
+    ret += m_type->toString() + " ";
+    if (withClass)
+        ret += m_typeDecl->toString() + "::";
+    ret += m_name;
     return ret;
+}
+
+QString EnumMember::toString() const
+{
+    QString ret;
+    if (m_typeDecl->parent())
+        ret += m_typeDecl->parent()->toString();
+    else
+        ret += m_typeDecl->nameSpace();
+    return ret + "::" + name();
 }
 
 QString Parameter::toString() const
@@ -63,9 +76,9 @@ QString Parameter::toString() const
     return m_type->toString();
 }
 
-QString Method::toString(bool withAccess, bool withInitializer) const
+QString Method::toString(bool withAccess, bool withClass, bool withInitializer) const
 {
-    QString ret = Member::toString(withAccess);
+    QString ret = Member::toString(withAccess, withClass);
     ret += "(";
     for (int i = 0; i < m_params.count(); i++) {
         ret += m_params[i].toString();

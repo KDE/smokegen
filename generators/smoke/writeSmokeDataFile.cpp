@@ -355,7 +355,7 @@ void SmokeDataFile::write()
     out << "};\n\n";
     
     out << "// Raw list of all methods, using munged names\n";
-    out << "static const char *" << Options::module << "_methodNames[] {\n";
+    out << "static const char *" << Options::module << "_methodNames[] = {\n";
     out << "    \"\",\t//0\n";
     i = 1;
     for (QMap<QString, int>::iterator it = methodNames.begin(); it != methodNames.end(); it++, i++) {

@@ -44,6 +44,7 @@ QStringList Options::parentModules;
 QStringList Options::scalarTypes;
 QStringList Options::voidpTypes;
 bool Options::qtMode = false;
+QList<QRegExp> Options::excludeExpressions;
 
 static void showUsage()
 {
@@ -149,6 +150,19 @@ int generate(const QDir& outputDir, const QList<QFileInfo>& headerList, const QS
                     }
                     if (elem.tagName() == "typeName") {
                         Options::voidpTypes << elem.text();
+                    }
+                    typeName = typeName.nextSibling();
+                }
+            } else if (elem.tagName() == "exclude") {
+                QDomNode typeName = elem.firstChild();
+                while (!typeName.isNull()) {
+                    QDomElement elem = typeName.toElement();
+                    if (elem.isNull()) {
+                        typeName = typeName.nextSibling();
+                        continue;
+                    }
+                    if (elem.tagName() == "regexp") {
+                        Options::excludeExpressions << QRegExp(elem.text());
                     }
                     typeName = typeName.nextSibling();
                 }

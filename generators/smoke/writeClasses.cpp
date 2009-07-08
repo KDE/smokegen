@@ -392,7 +392,7 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
             // first, generate all virtual methods of this class. inherited ones come after that.
             if (((meth.flags() & Method::Virtual) || (meth.flags() & Method::PureVirtual)) && !meth.isDestructor()) {
                 generateVirtualMethod(out, className, meth, includes);
-                virtMeths.insert(meth.toString(false, false));
+                virtMeths.insert(meth.toString(false, false, false));
             }
         }
         
@@ -411,7 +411,7 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
                 continue;
             }
             
-            QString methString = meth->toString(false, false);
+            QString methString = meth->toString(false, false, false);
             if (virtMeths.contains(methString))
                 continue;
             const Method *m = 0;
@@ -424,7 +424,7 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
             virtMeths.insert(methString);
         }
         foreach (const Method* meth, pureVirtuals) {
-            QString methString = meth->toString(false, false);
+            QString methString = meth->toString(false, false, false);
             // Check if the pure virtual was overriden somewhere - then we shouldn't generate a callback with the pure virtual flag set
             // (as it isn't, anymore).
             // If the overriding method was declared virtual, too, we find it in virtMeths. Then it's already generated and we can continue.

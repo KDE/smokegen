@@ -163,6 +163,7 @@ public:
     virtual ~Enum() {}
 
     const QList<EnumMember>& members() const { return m_members; }
+    QList<EnumMember>& membersRef() { return m_members; }
     void appendMember(const EnumMember& member) { m_members.append(member); }
 
 private:
@@ -200,7 +201,7 @@ public:
     void setFlag(Flag flag) { m_flags |= flag; }
     Flags flags() const { return m_flags; }
 
-    virtual QString toString(bool withAccess = false) const;
+    virtual QString toString(bool withAccess = false, bool withClass = false) const;
 
 protected:
     BasicTypeDeclaration* m_typeDecl;
@@ -220,6 +221,8 @@ public:
 
     void setValue(const QString& value) { m_value = value; }
     QString value() const { return m_value; }
+
+    QString toString() const;
 
 protected:
     QString m_value;
@@ -277,7 +280,7 @@ public:
     void setIsConst(bool isConst) { m_isConst = isConst; }
     bool isConst() const { return m_isConst; }
 
-    virtual QString toString(bool withAccess = false, bool withInitializer = true) const;
+    virtual QString toString(bool withAccess = false, bool withClass = false, bool withInitializer = true) const;
 
 protected:
     ParameterList m_params;

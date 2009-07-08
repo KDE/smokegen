@@ -62,6 +62,16 @@ QList<const Class*> Util::descendantsList(const Class* klass)
     return ret;
 }
 
+bool operator==(const Field& lhs, const Field& rhs)
+{
+    return (lhs.name() == rhs.name() && lhs.declaringType() == rhs.declaringType() && lhs.type() == rhs.type());
+}
+
+bool operator==(const EnumMember& lhs, const EnumMember& rhs)
+{
+    return (lhs.name() == rhs.name() && lhs.declaringType() == rhs.declaringType() && lhs.type() == rhs.type());
+}
+
 void Util::preparse(QSet<Type*> *usedTypes, const QList<QString>& keys)
 {
     Class& globalSpace = classes["QGlobalSpace"];
@@ -106,7 +116,8 @@ void Util::preparse(QSet<Type*> *usedTypes, const QList<QString>& keys)
         foreach (const Method& m, klass.methods()) {
             if (m.access() == Access_private)
                 continue;
-            if (m.type()->getClass() && m.type()->getClass()->access() == Access_private) {
+            if ((m.type()->getClass() && m.type()->getClass()->access() == Access_private)
+                || Options::typeExcluded(m.toString(false, true))) {
                 klass.methodsRef().removeOne(m);
                 continue;
             }
@@ -120,8 +131,16 @@ void Util::preparse(QSet<Type*> *usedTypes, const QList<QString>& keys)
         foreach (const Field& f, klass.fields()) {
             if (f.access() == Access_private)
                 continue;
+            if (Options::typeExcluded(f.toString(false, true))) {
+                klass.fieldsRef().removeOne(f);
+                continue;
+            }
             if (klass.isNameSpace())
                 const_cast<Field&>(f).setFlag(Method::Static);
+        }
+        foreach (const Field& f, klass.fields()) {
+            if (f.access() == Access_private)
+                continue;
             addAccessorMethods(f, usedTypes);
         }
         foreach (BasicTypeDeclaration* decl, klass.children()) {
@@ -129,8 +148,15 @@ void Util::preparse(QSet<Type*> *usedTypes, const QList<QString>& keys)
             if ((e = dynamic_cast<Enum*>(decl))) {
                 Type *t = Type::registerType(Type(e));
                 (*usedTypes) << t;
+                foreach (const EnumMember& member, e->members()) {
+                    if (Options::typeExcluded(member.toString())) {
+                        e->membersRef().removeOne(member);
+                    }
+                }
             }
+            
         }
+        
     }
 }
 
@@ -507,4 +533,13 @@ const Method* Util::isVirtualOverriden(const Method& meth, const Class* klass)
     }
     
     return 0;
+}
+
+bool Options::typeExcluded(const QString& typeName)
+{
+    foreach (const QRegExp& exp, Options::excludeExpressions) {
+        if (exp.exactMatch(typeName))
+            return true;
+    }
+    return false;
 }
