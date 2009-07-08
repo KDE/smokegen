@@ -115,7 +115,7 @@ struct Util
     static void addCopyConstructor(Class* klass);
     static void addDestructor(Class* klass);
     static void addOverloads(const Method& meth);
-    static void addAccessorMethods(const Field& field);
+    static void addAccessorMethods(const Field& field, QSet<Type*> *usedTypes);
 
     static QString mungedName(const Method&);
     

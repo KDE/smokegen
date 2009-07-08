@@ -103,13 +103,6 @@ void Util::preparse(QSet<Type*> *usedTypes, const QList<QString>& keys)
             addDefaultConstructor(&klass);
             addDestructor(&klass);
         }
-        foreach (const Field& f, klass.fields()) {
-            if (f.access() == Access_private)
-                continue;
-            if (klass.isNameSpace())
-                const_cast<Field&>(f).setFlag(Method::Static);
-            addAccessorMethods(f);
-        }
         foreach (const Method& m, klass.methods()) {
             if (m.access() == Access_private)
                 continue;
@@ -123,6 +116,13 @@ void Util::preparse(QSet<Type*> *usedTypes, const QList<QString>& keys)
             (*usedTypes) << m.type();
             foreach (const Parameter& param, m.parameters())
                 (*usedTypes) << param.type();
+        }
+        foreach (const Field& f, klass.fields()) {
+            if (f.access() == Access_private)
+                continue;
+            if (klass.isNameSpace())
+                const_cast<Field&>(f).setFlag(Method::Static);
+            addAccessorMethods(f, usedTypes);
         }
         foreach (BasicTypeDeclaration* decl, klass.children()) {
             Enum* e = 0;
@@ -404,7 +404,7 @@ static bool operator==(const Method& rhs, const Method& lhs)
     return true;
 }
 
-void Util::addAccessorMethods(const Field& field)
+void Util::addAccessorMethods(const Field& field, QSet<Type*> *usedTypes)
 {
     Class* klass = field.getClass();
     Type* type = field.type();
@@ -412,6 +412,7 @@ void Util::addAccessorMethods(const Field& field)
         Type newType = *type;
         newType.setIsRef(true);
         type = Type::registerType(newType);
+        (*usedTypes) << type;
     }
     Method getter = Method(klass, field.name(), type, field.access());
     getter.setIsConst(true);
@@ -439,6 +440,7 @@ void Util::addAccessorMethods(const Field& field)
         newType.setIsRef(true);
         newType.setIsConst(true);
         type = Type::registerType(newType);
+        (*usedTypes) << type;
     }
     setter.appendParameter(Parameter(QString(), type));
     if (klass->methods().contains(setter))
