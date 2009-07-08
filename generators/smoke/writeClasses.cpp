@@ -174,11 +174,17 @@ void SmokeClassFiles::generateGetAccessor(QTextStream& out, const QString& class
                                           const Type* type, int index)
 {
     out << "    ";
-    if (field.flags() & Field::Static)
+    QString fieldName;
+    if (field.flags() & Field::Static) {
         out << "static ";
+    } else {
+        fieldName = "this->";
+    }
+    fieldName += className + "::" + field.name();
     out << "void x_" << index << "(Smoke::Stack x) {\n"
+        << "        // " << field.toString() << "\n"
         << "        x[0]." << Util::stackItemField(type) << " = "
-            << Util::assignmentString(type, "this->" + className + "::" + field.name()) << ";\n"
+            << Util::assignmentString(type, fieldName) << ";\n"
         << "    }\n";
 }
 
@@ -186,10 +192,16 @@ void SmokeClassFiles::generateSetAccessor(QTextStream& out, const QString& class
                                           const Type* type, int index)
 {
     out << "    ";
-    if (field.flags() & Field::Static)
+    QString fieldName;
+    if (field.flags() & Field::Static) {
         out << "static ";
+    } else {
+        fieldName = "this->";
+    }
+    fieldName += className + "::" + field.name();
     out << "void x_" << index << "(Smoke::Stack x) {\n"
-        << "        this->" << className << "::" << field.name() << " = ";
+        << "        " << field.toString() << "=\n"
+        << "        " << fieldName << " = ";
     QString unionField = Util::stackItemField(type);
     QString cast = type->toString();
     cast.replace("&", "");
