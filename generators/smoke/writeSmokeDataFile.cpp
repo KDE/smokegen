@@ -161,6 +161,8 @@ void SmokeDataFile::write()
     out << "// These are the xenum functions for manipulating enum pointers\n";
     QSet<QString> enumClassesHandled;
     for (QHash<QString, Enum>::const_iterator it = enums.constBegin(); it != enums.constEnd(); it++) {
+        if (!it.value().isValid())
+            continue;
         if (it.value().parent() && !externalClasses.contains(it.value().parent()) && it.value().access() != Access_private) {
             QString smokeClassName = it.value().parent()->toString();
             if (enumClassesHandled.contains(smokeClassName))

@@ -337,8 +337,6 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
 void GeneratorVisitor::visitEnumSpecifier(EnumSpecifierAST* node)
 {
     nc->run(node->name);
-    if (nc->name().isEmpty())
-        return;
     Class* parent = klass.isEmpty() ? 0 : klass.top();
     currentEnum = Enum(nc->name(), nspace.join("::"), parent);
     Access a = (access.isEmpty() ? Access_public : access.top());
