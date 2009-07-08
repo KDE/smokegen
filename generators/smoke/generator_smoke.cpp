@@ -25,6 +25,8 @@
 #include <QString>
 #include <QtDebug>
 
+#include <QtXml>
+
 #include <iostream>
 
 #include <type.h>
@@ -61,10 +63,12 @@ int generate(const QDir& outputDir, const QList<QFileInfo>& headerList, const QS
     Options::headerList = headerList;
     Options::classList = classes;
     
+    QFileInfo smokeConfig;
+    
     const QStringList& args = QCoreApplication::arguments();
     for (int i = 0; i < args.count(); i++) {
         if ((args[i] == "-m" || args[i] == "-p" || args[i] == "-pm" ||
-             args[i] == "-st" || args[i] == "-vt") && i + 1 >= args.count())
+             args[i] == "-st" || args[i] == "-vt" || args[i] == "-smokeconfig") && i + 1 >= args.count())
         {
             qCritical() << "generator_smoke: not enough parameters for option" << args[i];
             return EXIT_FAILURE;
@@ -83,10 +87,76 @@ int generate(const QDir& outputDir, const QList<QFileInfo>& headerList, const QS
             Options::scalarTypes = args[++i].split(',');
         } else if (args[i] == "-vt") {
             Options::voidpTypes = args[++i].split(',');
+        } else if (args[i] == "-smokeconfig") {
+            smokeConfig = QFileInfo(args[++i]);
         } else if (args[i] == "-h" || args[i] == "--help") {
             showUsage();
             return EXIT_SUCCESS;
         }
+    }
+    
+    if (smokeConfig.exists()) {
+        QFile file(smokeConfig.filePath());
+        file.open(QIODevice::ReadOnly);
+        QDomDocument doc;
+        doc.setContent(file.readAll());
+        file.close();
+        QDomElement root = doc.documentElement();
+        QDomNode node = root.firstChild();
+        while (!node.isNull()) {
+            QDomElement elem = node.toElement();
+            if (elem.isNull()) {
+                node = node.nextSibling();
+                continue;
+            }
+            if (elem.tagName() == "moduleName") {
+                Options::module = elem.text();
+            } else if (elem.tagName() == "parts") {
+                Options::parts = elem.text().toInt();
+            } else if (elem.tagName() == "parentModules") {
+                QDomNode parent = elem.firstChild();
+                while (!parent.isNull()) {
+                    QDomElement elem = parent.toElement();
+                    if (elem.isNull()) {
+                        parent = parent.nextSibling();
+                        continue;
+                    }
+                    if (elem.tagName() == "module") {
+                        Options::parentModules << elem.text();
+                    }
+                    parent = parent.nextSibling();
+                }
+            } else if (elem.tagName() == "scalarTypes") {
+                QDomNode typeName = elem.firstChild();
+                while (!typeName.isNull()) {
+                    QDomElement elem = typeName.toElement();
+                    if (elem.isNull()) {
+                        typeName = typeName.nextSibling();
+                        continue;
+                    }
+                    if (elem.tagName() == "typeName") {
+                        Options::scalarTypes << elem.text();
+                    }
+                    typeName = typeName.nextSibling();
+                }
+            } else if (elem.tagName() == "voidpTypes") {
+                QDomNode typeName = elem.firstChild();
+                while (!typeName.isNull()) {
+                    QDomElement elem = typeName.toElement();
+                    if (elem.isNull()) {
+                        typeName = typeName.nextSibling();
+                        continue;
+                    }
+                    if (elem.tagName() == "typeName") {
+                        Options::voidpTypes << elem.text();
+                    }
+                    typeName = typeName.nextSibling();
+                }
+            }
+            node = node.nextSibling();
+        }
+    } else {
+        qWarning() << "Couldn't find config file" << smokeConfig.filePath();
     }
     
     Options::qtMode = ParserOptions::qtMode;
