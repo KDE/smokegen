@@ -321,6 +321,7 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
     // field
     if (!inMethod && !klass.isEmpty() && inClass) {
         Field field = Field(klass.top(), declName, currentTypeRef, access.top());
+        if (isStatic) field.setFlag(Field::Static);
         klass.top()->appendField(field);
         return;
     } else if (!inMethod && !inClass) {
