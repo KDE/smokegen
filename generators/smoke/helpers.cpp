@@ -28,6 +28,7 @@
 QHash<QString, QString> Util::typeMap;
 QHash<const Method*, const Function*> Util::globalFunctionMap;
 QHash<const Method*, QStringList> Util::defaultParameterValues;
+QHash<const Method*, const Field*> Util::fieldAccessors;
 
 QList<const Class*> Util::superClassList(const Class* klass)
 {
@@ -102,6 +103,13 @@ void Util::preparse(QSet<Type*> *usedTypes, const QList<QString>& keys)
             addDefaultConstructor(&klass);
             addDestructor(&klass);
         }
+        foreach (const Field& f, klass.fields()) {
+            if (f.access() == Access_private)
+                continue;
+            if (klass.isNameSpace())
+                const_cast<Field&>(f).setFlag(Method::Static);
+            addAccessorMethods(f);
+        }
         foreach (const Method& m, klass.methods()) {
             if (m.access() == Access_private)
                 continue;
@@ -115,13 +123,6 @@ void Util::preparse(QSet<Type*> *usedTypes, const QList<QString>& keys)
             (*usedTypes) << m.type();
             foreach (const Parameter& param, m.parameters())
                 (*usedTypes) << param.type();
-        }
-        foreach (const Field& f, klass.fields()) {
-            if (f.access() == Access_private)
-                continue;
-            if (klass.isNameSpace())
-                const_cast<Field&>(f).setFlag(Method::Static);
-            (*usedTypes) << f.type();
         }
         foreach (BasicTypeDeclaration* decl, klass.children()) {
             Enum* e = 0;
@@ -401,6 +402,49 @@ static bool operator==(const Method& rhs, const Method& lhs)
     }
     
     return true;
+}
+
+void Util::addAccessorMethods(const Field& field)
+{
+    Class* klass = field.getClass();
+    Type* type = field.type();
+    if (type->getClass() && type->pointerDepth() == 0) {
+        Type newType = *type;
+        newType.setIsRef(true);
+        type = Type::registerType(newType);
+    }
+    Method getter = Method(klass, field.name(), type, field.access());
+    getter.setIsConst(true);
+    if (field.flags() & Field::Static)
+        getter.setFlag(Method::Static);
+    klass->appendMethod(getter);
+    fieldAccessors[&klass->methods().last()] = &field;
+    
+    // constant field? (i.e. no setter method)
+    if (field.type()->isConst() && field.type()->pointerDepth() == 0)
+        return;
+    
+    // foo => setFoo
+    QString newName = field.name();
+    newName[0] = newName[0].toUpper();
+    Method setter = Method(klass, "set" + newName, const_cast<Type*>(Type::Void), field.access());
+    if (field.flags() & Field::Static)
+        setter.setFlag(Method::Static);
+    
+    // reset
+    type = field.type();
+    // to avoid copying around more stuff than necessary, convert setFoo(Bar) to setFoo(const Bar&)
+    if (type->pointerDepth() == 0 && type->getClass()) {
+        Type newType = *type;
+        newType.setIsRef(true);
+        newType.setIsConst(true);
+        type = Type::registerType(newType);
+    }
+    setter.appendParameter(Parameter(QString(), type));
+    if (klass->methods().contains(setter))
+        return;
+    klass->appendMethod(setter);
+    fieldAccessors[&klass->methods().last()] = &field;
 }
 
 void Util::addOverloads(const Method& meth)

@@ -43,6 +43,7 @@ class Class;
 class Function;
 class Member;
 class Method;
+class Field;
 class Type;
 
 struct Options
@@ -81,6 +82,8 @@ struct SmokeClassFiles
 
 private:
     void generateMethod(QTextStream& out, const QString& className, const QString& smokeClassName, const Method& meth, int index, QSet<QString>& includes);
+    void generateGetAccessor(QTextStream& out, const QString& className, const Field& field, const Type* type, int index);
+    void generateSetAccessor(QTextStream& out, const QString& className, const Field& field, const Type* type, int index);
     void generateEnumMemberCall(QTextStream& out, const QString& className, const QString& member, int index);
     void generateVirtualMethod(QTextStream& out, const QString& className, const Method& meth, QSet<QString>& includes);
     
@@ -94,6 +97,7 @@ struct Util
     static QHash<QString, QString> typeMap;
     static QHash<const Method*, const Function*> globalFunctionMap;
     static QHash<const Method*, QStringList> defaultParameterValues;
+    static QHash<const Method*, const Field*> fieldAccessors;
     
     static QList<const Class*> superClassList(const Class* klass);
     static QList<const Class*> descendantsList(const Class* klass);
@@ -111,6 +115,7 @@ struct Util
     static void addCopyConstructor(Class* klass);
     static void addDestructor(Class* klass);
     static void addOverloads(const Method& meth);
+    static void addAccessorMethods(const Field& field);
 
     static QString mungedName(const Method&);
     

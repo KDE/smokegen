@@ -170,6 +170,37 @@ void SmokeClassFiles::generateMethod(QTextStream& out, const QString& className,
     }
 }
 
+void SmokeClassFiles::generateGetAccessor(QTextStream& out, const QString& className, const Field& field,
+                                          const Type* type, int index)
+{
+    out << "    ";
+    if (field.flags() & Field::Static)
+        out << "static ";
+    out << "void x_" << index << "(Smoke::Stack x) {\n"
+        << "        x[0]." << Util::stackItemField(type) << " = "
+            << Util::assignmentString(type, "this->" + className + "::" + field.name()) << ";\n"
+        << "    }\n";
+}
+
+void SmokeClassFiles::generateSetAccessor(QTextStream& out, const QString& className, const Field& field,
+                                          const Type* type, int index)
+{
+    out << "    ";
+    if (field.flags() & Field::Static)
+        out << "static ";
+    out << "void x_" << index << "(Smoke::Stack x) {\n"
+        << "        this->" << className << "::" << field.name() << " = ";
+    QString unionField = Util::stackItemField(type);
+    QString cast = type->toString();
+    cast.replace("&", "");
+    if (unionField == "s_class" && type->pointerDepth() == 0) {
+        out << '*';
+        cast += '*';
+    }
+    out << '(' << cast << ')' << "x[1]." << unionField << ";\n";
+    out << "    }\n";
+}
+
 void SmokeClassFiles::generateEnumMemberCall(QTextStream& out, const QString& className, const QString& member, int index)
 {
     out << "    static void x_" << index << "(Smoke::Stack x) {\n"
@@ -285,7 +316,18 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
             continue;
         switchOut << "        case " << xcall_index << ": " << (meth.flags() & Method::Static ? smokeClassName + "::" : "xself->") << "x_"
                   << xcall_index << "(args);\tbreak;\n";
-        generateMethod(out, className, smokeClassName, meth, xcall_index++, includes);
+        if (Util::fieldAccessors.contains(&meth)) {
+            // accessor method?
+            const Field* field = Util::fieldAccessors[&meth];
+            if (meth.name().startsWith("set")) {
+                generateSetAccessor(out, className, *field, meth.parameters()[0].type(), xcall_index);
+            } else {
+                generateGetAccessor(out, className, *field, meth.type(), xcall_index);
+            }
+        } else {
+            generateMethod(out, className, smokeClassName, meth, xcall_index, includes);
+        }
+        xcall_index++;
     }
     
     QString enumCode;
