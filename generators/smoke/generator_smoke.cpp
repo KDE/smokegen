@@ -30,6 +30,7 @@
 #include <type.h>
 
 #include "globals.h"
+#include "../../options.h"
 
 QDir Options::outputDir;
 QList<QFileInfo> Options::headerList;
@@ -82,13 +83,13 @@ int generate(const QDir& outputDir, const QList<QFileInfo>& headerList, const QS
             Options::scalarTypes = args[++i].split(',');
         } else if (args[i] == "-vt") {
             Options::voidpTypes = args[++i].split(',');
-        } else if (args[i] == "-qt") {
-            Options::qtMode = true;
         } else if (args[i] == "-h" || args[i] == "--help") {
             showUsage();
             return EXIT_SUCCESS;
         }
     }
+    
+    Options::qtMode = ParserOptions::qtMode;
     
     // Fill the type map. It maps some long integral types to shorter forms as used in SMOKE.
     Util::typeMap["long long"] = "long";

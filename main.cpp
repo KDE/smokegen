@@ -23,6 +23,8 @@
 #include <QFileInfo>
 #include <QLibrary>
 
+#include <QtXml>
+
 #include <QtDebug>
 
 #include <control.h>
@@ -70,6 +72,7 @@ int main(int argc, char **argv)
     QDir output;
     QString generator;
     bool addHeaders = false;
+    QStringList classes;
 
     for (int i = 1; i < args.count(); i++) {
         if ((args[i] == "-I" || args[i] == "-c" || args[i] == "-d" || args[i] == "-o"||
@@ -105,17 +108,63 @@ int main(int argc, char **argv)
             ParserOptions::headerList << QFileInfo(args[i]);
         }
     }
-    
-    if (!output.exists()) {
-        qWarning() << "output directoy" << output.path() << "doesn't exist; creating it...";
-        QDir::current().mkpath(output.path());
-    }
-    
-    foreach (QDir dir, ParserOptions::includeDirs) {
-        if (!dir.exists()) {
-            qWarning() << "include directory" << dir.path() << "doesn't exist";
-            ParserOptions::includeDirs.removeAll(dir);
+        
+    if (configFile.exists()) {
+        QFile file(configFile.filePath());
+        file.open(QIODevice::ReadOnly);
+        QDomDocument doc;
+        doc.setContent(file.readAll());
+        file.close();
+        QDomElement root = doc.documentElement();
+        QDomNode node = root.firstChild();
+        while (!node.isNull()) {
+            QDomElement elem = node.toElement();
+            if (elem.isNull()) {
+                node = node.nextSibling();
+                continue;
+            }
+            if (elem.tagName() == "resolveTypedefs") {
+                ParserOptions::resolveTypedefs = (elem.text() == "true");
+            } else if (elem.tagName() == "qtMode") {
+                ParserOptions::qtMode = (elem.text() == "true");
+            } else if (elem.tagName() == "generator") {
+                generator = elem.text();
+            } else if (elem.tagName() == "includeDirs") {
+                QDomNode dir = elem.firstChild();
+                while (!dir.isNull()) {
+                    QDomElement elem = dir.toElement();
+                    if (elem.isNull()) {
+                        dir = dir.nextSibling();
+                        continue;
+                    }
+                    if (elem.tagName() == "dir") {
+                        ParserOptions::includeDirs << QDir(elem.text());
+                    }
+                    dir = dir.nextSibling();
+                }
+            } else if (elem.tagName() == "outputDir") {
+                output = QDir(elem.text());
+            } else if (elem.tagName() == "definesList") {
+                // reference to an external file, so it can be auto-generated
+                ParserOptions::definesList = QFileInfo(elem.text());
+            } else if (elem.tagName() == "classList") {
+                QDomNode klass = elem.firstChild();
+                while (!klass.isNull()) {
+                    QDomElement elem = klass.toElement();
+                    if (elem.isNull()) {
+                        klass = klass.nextSibling();
+                        continue;
+                    }
+                    if (elem.tagName() == "class") {
+                        classes << elem.text();
+                    }
+                    klass = klass.nextSibling();
+                }
+            }
+            node = node.nextSibling();
         }
+    } else {
+        qWarning() << "Couldn't find config file" << configFile.filePath();
     }
     
     QLibrary lib("generator_" + generator);
@@ -131,7 +180,18 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
     
-    QStringList classes;
+    if (!output.exists()) {
+        qWarning() << "output directoy" << output.path() << "doesn't exist; creating it...";
+        QDir::current().mkpath(output.path());
+    }
+    
+    foreach (QDir dir, ParserOptions::includeDirs) {
+        if (!dir.exists()) {
+            qWarning() << "include directory" << dir.path() << "doesn't exist";
+            ParserOptions::includeDirs.removeAll(dir);
+        }
+    }
+    
     if (ParserOptions::classList.exists()) {
         QFile file(ParserOptions::classList.filePath());
         file.open(QIODevice::ReadOnly);

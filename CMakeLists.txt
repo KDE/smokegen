@@ -24,6 +24,6 @@ add_library(types SHARED ${types_SRC})
 target_link_libraries(types ${QT_QTCORE_LIBRARY})
 
 add_executable(generator ${generator_SRC})
-target_link_libraries(generator ${QT_QTCORE_LIBRARY} cppparser types)
+target_link_libraries(generator ${QT_QTCORE_LIBRARY} ${QT_QTXML_LIBRARY} cppparser types)
 
 add_subdirectory(generators)
