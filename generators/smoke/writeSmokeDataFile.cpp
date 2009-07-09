@@ -45,13 +45,12 @@ SmokeDataFile::SmokeDataFile()
     
     includedClasses = classIndex.keys();
     Util::preparse(&usedTypes, includedClasses);  // collect all used types, add c'tors.. etc.
-    includedClasses << "QGlobalSpace";
     
     // if a class is used somewhere but not listed in the class list, mark it external
     for (QHash<QString, Class>::iterator iter = ::classes.begin(); iter != ::classes.end(); iter++) {
-        if (isClassUsed(&iter.value()) && iter.value().access() != Access_private) {
+        if ((isClassUsed(&iter.value()) && iter.value().access() != Access_private) || iter.value().isNameSpace()) {
             classIndex[iter.key()] = 1;
-            if (!Options::classList.contains(iter.key()) || iter.value().isForwardDecl())
+            if ((!Options::classList.contains(iter.key()) || iter.value().isForwardDecl()) && !iter.value().isNameSpace())
                 externalClasses << &iter.value();
             else if (!includedClasses.contains(iter.key()))
                 includedClasses << iter.key();
@@ -219,7 +218,10 @@ void SmokeDataFile::write()
     out << "    { 0, 0, 0 },\t//0 (no type)\n";
     QMap<QString, Type*> sortedTypes;
     for (QSet<Type*>::const_iterator it = usedTypes.constBegin(); it != usedTypes.constEnd(); it++) {
-        sortedTypes.insert((*it)->toString().replace("< ", "<").replace(" >", ">"), *it);
+        QString typeString = (*it)->toString().replace("< ", "<").replace(" >", ">");
+        if (!typeString.isEmpty()) {
+            sortedTypes.insert(typeString, *it);
+        }
     }
     
     int i = 1;
@@ -558,11 +560,11 @@ void SmokeDataFile::write()
     out << "    if (initialized) return;\n";
     out << "    " << Options::module << "_Smoke = new Smoke(\n";
     out << "        \"" << Options::module << "\",\n";
-    out << "        " << Options::module << "_classes, " << classIndex.count() + 1 << ",\n";
+    out << "        " << Options::module << "_classes, " << classIndex.count() << ",\n";
     out << "        " << Options::module << "_methods, " << methodCount << ",\n";
     out << "        " << Options::module << "_methodMaps, " << methodMapCount << ",\n";
     out << "        " << Options::module << "_methodNames, " << methodNames.count() + 1 << ",\n";
-    out << "        " << Options::module << "_types, " << typeIndex.count() + 1 << ",\n";
+    out << "        " << Options::module << "_types, " << typeIndex.count() << ",\n";
     out << "        " << Options::module << "_inheritanceList,\n";
     out << "        " << Options::module << "_argumentList,\n";
     out << "        " << Options::module << "_ambiguousMethodList,\n";

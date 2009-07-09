@@ -50,7 +50,6 @@ static void showUsage()
     "    -c <path to file containing a list of classes>" << std::endl <<
     "    -d <path to file containing #defines>" << std::endl <<
     "    -g <generator to use>" << std::endl <<
-    "    -n <comma-seperated list of namespaces that should be parsed as classes>" << std::endl <<
     "    -qt enables Qt-mode (special treatment of QFlags)" << std::endl <<
     "    -t resolve typedefs" << std::endl <<
     "    -o <output dir>" << std::endl <<
@@ -93,8 +92,6 @@ int main(int argc, char **argv)
             output = QDir(args[++i]);
         } else if (args[i] == "-g") {
             generator = args[++i];
-        } else if (args[i] == "-n") {
-            ParserOptions::namespacesAsClasses = args[++i].split(",");
         } else if ((args[i] == "-h" || args[i] == "--help") && argc == 2) {
             showUsage();
             return EXIT_SUCCESS;

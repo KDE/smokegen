@@ -308,6 +308,13 @@ public:
 
     void setName(const QString& name) { m_name = name; }
     QString name() const { return m_name; }
+    QString qualifiedName() const {
+        QString ret = m_nspace;
+        if (!ret.isEmpty())
+            ret += "::";
+        ret += m_name;
+        return ret;
+    }
 
     void setNameSpace(const QString& nspace) { m_nspace = nspace; }
     QString nameSpace() const { return m_nspace; }

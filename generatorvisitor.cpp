@@ -398,19 +398,9 @@ void GeneratorVisitor::visitNamespace(NamespaceAST* node)
     usingNamespaces.push(QStringList());
 
     QString name = token(node->namespace_name).symbolString();
-    if (ParserOptions::namespacesAsClasses.contains(name) && !classes.contains(name)) {
-        Class clazz = Class(name);
-        clazz.setIsForwardDecl(false);
-        clazz.setIsNameSpace(true);
-        QHash<QString, Class>::iterator iter = classes.insert(clazz.toString(), clazz);
-        klass.push(&iter.value());
-        DefaultVisitor::visitNamespace(node);
-        klass.pop();
-    } else {
-        nspace.push_back(name);
-        DefaultVisitor::visitNamespace(node);
-        nspace.pop_back();
-    }
+    nspace.push_back(name);
+    DefaultVisitor::visitNamespace(node);
+    nspace.pop_back();
     // using directives in that namespace aren't interesting anymore :)
     usingTypes.pop();
     usingNamespaces.pop();

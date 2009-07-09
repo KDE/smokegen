@@ -28,7 +28,6 @@ QFileInfo ParserOptions::classList, ParserOptions::definesList;
 QList<QFileInfo>ParserOptions:: headerList;
 QList<QDir> ParserOptions::includeDirs;
 bool ParserOptions::resolveTypedefs = false;
-QStringList ParserOptions::namespacesAsClasses;
 bool ParserOptions::qtMode = false;
 
 QSet<const Typedef*> flagTypes;

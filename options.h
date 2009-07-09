@@ -33,7 +33,6 @@ struct ParserOptions
     static QList<QFileInfo> headerList;
     static QList<QDir> includeDirs;
     static bool resolveTypedefs;
-    static QStringList namespacesAsClasses;
     static bool qtMode;
 };
 

@@ -77,18 +77,29 @@ void Util::preparse(QSet<Type*> *usedTypes, const QList<QString>& keys)
     Class& globalSpace = classes["QGlobalSpace"];
     globalSpace.setName("QGlobalSpace");
     globalSpace.setKind(Class::Kind_Class);
+    globalSpace.setIsNameSpace(true);
     
-    // add all functions as methods to a class called 'QGlobalSpace'
+    // add all functions as methods to a class called 'QGlobalSpace' or a class that represents a namespace
     for (QHash<QString, Function>::const_iterator it = functions.constBegin(); it != functions.constEnd(); it++) {
         const Function& fn = it.value();
         
         // gcc doesn't like this function... for whatever reason
-        if (fn.name() == "_IO_ftrylockfile" || fn.name().startsWith("__"))
+        if (fn.name() == "_IO_ftrylockfile" || !Options::functionIncluded(fn.qualifiedName()))
             continue;
         
-        Method meth = Method(&globalSpace, fn.name(), fn.type(), Access_public, fn.parameters());
+        Class* parent = &globalSpace;
+        if (!fn.nameSpace().isEmpty()) {
+            parent = &classes[fn.nameSpace()];
+            if (parent->name().isEmpty()) {
+                parent->setName(fn.nameSpace());
+                parent->setKind(Class::Kind_Class);
+                parent->setIsNameSpace(true);
+            }
+        }
+        
+        Method meth = Method(parent, fn.name(), fn.type(), Access_public, fn.parameters());
         meth.setFlag(Method::Static);
-        globalSpace.appendMethod(meth);
+        parent->appendMethod(meth);
         // map this method to the function, so we can later retrieve the header it was defined in
         globalFunctionMap[&globalSpace.methods().last()] = &fn;
         
@@ -99,10 +110,21 @@ void Util::preparse(QSet<Type*> *usedTypes, const QList<QString>& keys)
     
     // all enums that don't have a parent are put under QGlobalSpace, too
     for (QHash<QString, Enum>::iterator it = enums.begin(); it != enums.end(); it++) {
-        if (!it.value().parent()) {
-            Type *t = Type::registerType(Type(&it.value()));
+        Enum& e = it.value();
+        if (!e.parent()) {
+            Class* parent = &globalSpace;
+            if (!e.nameSpace().isEmpty()) {
+                parent = &classes[e.nameSpace()];
+                if (parent->name().isEmpty()) {
+                    parent->setName(e.nameSpace());
+                    parent->setKind(Class::Kind_Class);
+                    parent->setIsNameSpace(true);
+                }
+            }
+
+            Type *t = Type::registerType(Type(&e));
             (*usedTypes) << t;
-            globalSpace.appendChild(&it.value());
+            parent->appendChild(&e);
         }
     }
     
@@ -539,6 +561,14 @@ bool Options::typeExcluded(const QString& typeName)
 {
     foreach (const QRegExp& exp, Options::excludeExpressions) {
         if (exp.exactMatch(typeName))
+            return true;
+    }
+    return false;
+}
+
+bool Options::functionIncluded(const QString& fnName) {
+    foreach (const QRegExp& exp, Options::includeFunctions) {
+        if (exp.exactMatch(fnName))
             return true;
     }
     return false;
