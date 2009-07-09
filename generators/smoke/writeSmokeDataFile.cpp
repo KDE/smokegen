@@ -202,10 +202,12 @@ void SmokeDataFile::write()
                 << inheritanceIndex.value(klass, 0) << ", xcall_" << smokeClassName << ", "
                 << (enumClassesHandled.contains(iter.key()) ? QString("xenum_").append(smokeClassName) : "0") << ", ";
             QString flags = "0";
-            if (Util::canClassBeInstanciated(klass)) flags += "|Smoke::cf_constructor";
-            if (Util::canClassBeCopied(klass)) flags += "|Smoke::cf_deepcopy";
-            if (Util::hasClassVirtualDestructor(klass)) flags += "|Smoke::cf_virtual";
-            flags.replace("0|", ""); // beautify
+            if (!klass->isNameSpace()) {
+                if (Util::canClassBeInstanciated(klass)) flags += "|Smoke::cf_constructor";
+                if (Util::canClassBeCopied(klass)) flags += "|Smoke::cf_deepcopy";
+                if (Util::hasClassVirtualDestructor(klass)) flags += "|Smoke::cf_virtual";
+                flags.replace("0|", ""); // beautify
+            }
             out << flags;
             out << " },\t//" << iter.value() << "\n";
         }
