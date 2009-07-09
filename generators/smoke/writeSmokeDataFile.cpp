@@ -558,11 +558,11 @@ void SmokeDataFile::write()
     out << "    if (initialized) return;\n";
     out << "    " << Options::module << "_Smoke = new Smoke(\n";
     out << "        \"" << Options::module << "\",\n";
-    out << "        " << Options::module << "_classes, " << classIndex.count() << ",\n";
+    out << "        " << Options::module << "_classes, " << classIndex.count() + 1 << ",\n";
     out << "        " << Options::module << "_methods, " << methodCount << ",\n";
     out << "        " << Options::module << "_methodMaps, " << methodMapCount << ",\n";
     out << "        " << Options::module << "_methodNames, " << methodNames.count() + 1 << ",\n";
-    out << "        " << Options::module << "_types, " << typeIndex.count() << ",\n";
+    out << "        " << Options::module << "_types, " << typeIndex.count() + 1 << ",\n";
     out << "        " << Options::module << "_inheritanceList,\n";
     out << "        " << Options::module << "_argumentList,\n";
     out << "        " << Options::module << "_ambiguousMethodList,\n";
