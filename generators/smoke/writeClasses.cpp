@@ -88,7 +88,7 @@ void SmokeClassFiles::generateMethod(QTextStream& out, const QString& className,
                                      const Method& meth, int index, QSet<QString>& includes)
 {
     out << "    ";
-    if (meth.flags() & Method::Static)
+    if ((meth.flags() & Method::Static) || meth.isConstructor())
         out << "static ";
     out << QString("void x_%1(Smoke::Stack x) {\n").arg(index);
     out << "        // " << meth.toString() << "\n";
@@ -326,8 +326,9 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
     foreach (const Method& meth, klass->methods()) {
         if (meth.access() == Access_private || meth.isDestructor())
             continue;
-        switchOut << "        case " << xcall_index << ": " << (meth.flags() & Method::Static ? smokeClassName + "::" : "xself->") << "x_"
-                  << xcall_index << "(args);\tbreak;\n";
+        switchOut << "        case " << xcall_index << ": "
+                  << (((meth.flags() & Method::Static) || meth.isConstructor()) ? smokeClassName + "::" : "xself->")
+                  << "x_" << xcall_index << "(args);\tbreak;\n";
         if (Util::fieldAccessors.contains(&meth)) {
             // accessor method?
             const Field* field = Util::fieldAccessors[&meth];
