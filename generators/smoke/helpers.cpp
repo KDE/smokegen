@@ -104,7 +104,7 @@ void Util::preparse(QSet<Type*> *usedTypes, const QList<QString>& keys)
         meth.setFlag(Method::Static);
         parent->appendMethod(meth);
         // map this method to the function, so we can later retrieve the header it was defined in
-        globalFunctionMap[&globalSpace.methods().last()] = &fn;
+        globalFunctionMap[&parent->methods().last()] = &fn;
         
         (*usedTypes) << meth.type();
         foreach (const Parameter& param, meth.parameters())
@@ -137,36 +137,33 @@ void Util::preparse(QSet<Type*> *usedTypes, const QList<QString>& keys)
             addCopyConstructor(&klass);
             addDefaultConstructor(&klass);
             addDestructor(&klass);
-        }
-        foreach (const Method& m, klass.methods()) {
-            if (m.access() == Access_private)
-                continue;
-            if ((m.type()->getClass() && m.type()->getClass()->access() == Access_private)
-                || Options::typeExcluded(m.toString(false, true))) {
-                klass.methodsRef().removeOne(m);
-                continue;
+            foreach (const Method& m, klass.methods()) {
+                if (m.access() == Access_private)
+                    continue;
+                if ((m.type()->getClass() && m.type()->getClass()->access() == Access_private)
+                    || Options::typeExcluded(m.toString(false, true)))
+                {
+                    klass.methodsRef().removeOne(m);
+                    continue;
+                }
+                addOverloads(m);
+                (*usedTypes) << m.type();
+                foreach (const Parameter& param, m.parameters())
+                    (*usedTypes) << param.type();
             }
-            if (klass.isNameSpace())
-                const_cast<Method&>(m).setFlag(Method::Static);
-            addOverloads(m);
-            (*usedTypes) << m.type();
-            foreach (const Parameter& param, m.parameters())
-                (*usedTypes) << param.type();
-        }
-        foreach (const Field& f, klass.fields()) {
-            if (f.access() == Access_private)
-                continue;
-            if (Options::typeExcluded(f.toString(false, true))) {
-                klass.fieldsRef().removeOne(f);
-                continue;
+            foreach (const Field& f, klass.fields()) {
+                if (f.access() == Access_private)
+                    continue;
+                if (Options::typeExcluded(f.toString(false, true))) {
+                    klass.fieldsRef().removeOne(f);
+                    continue;
+                }
             }
-            if (klass.isNameSpace())
-                const_cast<Field&>(f).setFlag(Method::Static);
-        }
-        foreach (const Field& f, klass.fields()) {
-            if (f.access() == Access_private)
-                continue;
-            addAccessorMethods(f, usedTypes);
+            foreach (const Field& f, klass.fields()) {
+                if (f.access() == Access_private)
+                    continue;
+                addAccessorMethods(f, usedTypes);
+            }
         }
         foreach (BasicTypeDeclaration* decl, klass.children()) {
             Enum* e = 0;
