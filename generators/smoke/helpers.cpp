@@ -134,8 +134,8 @@ void Util::preparse(QSet<Type*> *usedTypes, const QList<QString>& keys)
     foreach (const QString& key, keys) {
         Class& klass = classes[key];
         if (!klass.isNameSpace()) {
-            addCopyConstructor(&klass);
             addDefaultConstructor(&klass);
+            addCopyConstructor(&klass);
             addDestructor(&klass);
             foreach (const Method& m, klass.methods()) {
                 if (m.access() == Access_private)
