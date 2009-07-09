@@ -399,7 +399,7 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
         QList<const Method*> inheritedVirtuals;
         foreach (const Class::BaseClassSpecifier& bspec, klass->baseClasses()) {
             // now collect all virtual methods of the base classes
-            inheritedVirtuals.append(Util::collectVirtualMethods(bspec.baseClass));
+            inheritedVirtuals += Util::collectVirtualMethods(bspec.baseClass);
         }
         
         foreach (const Method* meth, inheritedVirtuals) {

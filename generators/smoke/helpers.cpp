@@ -39,7 +39,7 @@ QList<const Class*> Util::superClassList(const Class* klass)
         return superClassCache[klass];
     foreach (const Class::BaseClassSpecifier& base, klass->baseClasses()) {
         ret << base.baseClass;
-        ret.append(superClassList(base.baseClass));
+        ret += superClassList(base.baseClass);
     }
     // cache
     superClassCache[klass] = ret;
@@ -429,7 +429,7 @@ QList<const Method*> Util::collectVirtualMethods(const Class* klass)
             methods << &meth;
     }
     foreach (const Class::BaseClassSpecifier& baseClass, klass->baseClasses()) {
-        methods.append(collectVirtualMethods(baseClass.baseClass));
+        methods += collectVirtualMethods(baseClass.baseClass);
     }
     return methods;
 }
