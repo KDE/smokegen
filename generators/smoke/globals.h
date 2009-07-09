@@ -59,10 +59,12 @@ struct Options
     static bool qtMode;
     
     static QList<QRegExp> excludeExpressions;
-    static QList<QRegExp> includeFunctions;
+    static QList<QRegExp> includeFunctionNames;
+    static QList<QRegExp> includeFunctionSignatures;
     
     static bool typeExcluded(const QString& typeName);
-    static bool functionIncluded(const QString& fnName);
+    static bool functionNameIncluded(const QString& fnName);
+    static bool functionSignatureIncluded(const QString& sig);
 };
 
 struct SmokeDataFile

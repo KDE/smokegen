@@ -45,7 +45,8 @@ QStringList Options::scalarTypes;
 QStringList Options::voidpTypes;
 bool Options::qtMode = false;
 QList<QRegExp> Options::excludeExpressions;
-QList<QRegExp> Options::includeFunctions;
+QList<QRegExp> Options::includeFunctionNames;
+QList<QRegExp> Options::includeFunctionSignatures;
 
 static void showUsage()
 {
@@ -59,11 +60,9 @@ static void showUsage()
 }
 
 extern "C" Q_DECL_EXPORT
-int generate(const QDir& outputDir, const QList<QFileInfo>& headerList, const QStringList& classes)
+int generate(const QList<QFileInfo>& headerList)
 {
-    Options::outputDir = outputDir;
     Options::headerList = headerList;
-    Options::classList = classes;
     
     QFileInfo smokeConfig;
     
@@ -111,7 +110,9 @@ int generate(const QDir& outputDir, const QList<QFileInfo>& headerList, const QS
                 node = node.nextSibling();
                 continue;
             }
-            if (elem.tagName() == "moduleName") {
+            if (elem.tagName() == "outputDir") {
+                Options::outputDir = QDir(elem.text());
+            } else if (elem.tagName() == "moduleName") {
                 Options::module = elem.text();
             } else if (elem.tagName() == "parts") {
                 Options::parts = elem.text().toInt();
@@ -154,6 +155,19 @@ int generate(const QDir& outputDir, const QList<QFileInfo>& headerList, const QS
                     }
                     typeName = typeName.nextSibling();
                 }
+            } else if (elem.tagName() == "classList") {
+                QDomNode klass = elem.firstChild();
+                while (!klass.isNull()) {
+                    QDomElement elem = klass.toElement();
+                    if (elem.isNull()) {
+                        klass = klass.nextSibling();
+                        continue;
+                    }
+                    if (elem.tagName() == "class") {
+                        Options::classList << elem.text();
+                    }
+                    klass = klass.nextSibling();
+                }
             } else if (elem.tagName() == "exclude") {
                 QDomNode typeName = elem.firstChild();
                 while (!typeName.isNull()) {
@@ -162,7 +176,7 @@ int generate(const QDir& outputDir, const QList<QFileInfo>& headerList, const QS
                         typeName = typeName.nextSibling();
                         continue;
                     }
-                    if (elem.tagName() == "regexp") {
+                    if (elem.tagName() == "signature") {
                         Options::excludeExpressions << QRegExp(elem.text());
                     }
                     typeName = typeName.nextSibling();
@@ -175,8 +189,10 @@ int generate(const QDir& outputDir, const QList<QFileInfo>& headerList, const QS
                         function = function.nextSibling();
                         continue;
                     }
-                    if (elem.tagName() == "regexp") {
-                        Options::includeFunctions << QRegExp(elem.text());
+                    if (elem.tagName() == "name") {
+                        Options::includeFunctionNames << QRegExp(elem.text());
+                    } else if (elem.tagName() == "signature") {
+                        Options::includeFunctionSignatures << QRegExp(elem.text());
                     }
                     function = function.nextSibling();
                 }
@@ -185,6 +201,11 @@ int generate(const QDir& outputDir, const QList<QFileInfo>& headerList, const QS
         }
     } else {
         qWarning() << "Couldn't find config file" << smokeConfig.filePath();
+    }
+    
+    if (!Options::outputDir.exists()) {
+        qWarning() << "output directoy" << Options::outputDir.path() << "doesn't exist; creating it...";
+        QDir::current().mkpath(Options::outputDir.path());
     }
     
     Options::qtMode = ParserOptions::qtMode;

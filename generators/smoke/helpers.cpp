@@ -84,8 +84,11 @@ void Util::preparse(QSet<Type*> *usedTypes, const QList<QString>& keys)
         const Function& fn = it.value();
         
         // gcc doesn't like this function... for whatever reason
-        if (fn.name() == "_IO_ftrylockfile" || !Options::functionIncluded(fn.qualifiedName()))
+        if (fn.name() == "_IO_ftrylockfile" ||
+            (!Options::functionNameIncluded(fn.qualifiedName()) && !Options::functionSignatureIncluded(fn.toString())) )
+        {
             continue;
+        }
         
         Class* parent = &globalSpace;
         if (!fn.nameSpace().isEmpty()) {
@@ -566,9 +569,17 @@ bool Options::typeExcluded(const QString& typeName)
     return false;
 }
 
-bool Options::functionIncluded(const QString& fnName) {
-    foreach (const QRegExp& exp, Options::includeFunctions) {
+bool Options::functionNameIncluded(const QString& fnName) {
+    foreach (const QRegExp& exp, Options::includeFunctionNames) {
         if (exp.exactMatch(fnName))
+            return true;
+    }
+    return false;
+}
+
+bool Options::functionSignatureIncluded(const QString& sig) {
+    foreach (const QRegExp& exp, Options::includeFunctionNames) {
+        if (exp.exactMatch(sig))
             return true;
     }
     return false;

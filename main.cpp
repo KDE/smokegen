@@ -39,7 +39,7 @@
 #include "options.h"
 #include "type.h"
 
-typedef int (*GenerateFn)(const QDir& outputDir, const QList<QFileInfo>& headerList, const QStringList& classes);
+typedef int (*GenerateFn)(const QList<QFileInfo>& headerList);
 
 static void showUsage()
 {
@@ -47,7 +47,6 @@ static void showUsage()
     "Usage: generator [options] -- <header files>" << std::endl <<
     "Possible command line options are:" << std::endl <<
     "    -I <include dir>" << std::endl <<
-    "    -c <path to file containing a list of classes>" << std::endl <<
     "    -d <path to file containing #defines>" << std::endl <<
     "    -g <generator to use>" << std::endl <<
     "    -qt enables Qt-mode (special treatment of QFlags)" << std::endl <<
@@ -68,13 +67,12 @@ int main(int argc, char **argv)
     const QStringList& args = app.arguments();
 
     QFileInfo configFile;
-    QDir output;
     QString generator;
     bool addHeaders = false;
     QStringList classes;
 
     for (int i = 1; i < args.count(); i++) {
-        if ((args[i] == "-I" || args[i] == "-c" || args[i] == "-d" || args[i] == "-o"||
+        if ((args[i] == "-I" || args[i] == "-d" ||
              args[i] == "-n" || args[i] == "--config") && i + 1 >= args.count())
         {
             qCritical() << "not enough parameters for option" << args[i];
@@ -84,12 +82,8 @@ int main(int argc, char **argv)
             ParserOptions::includeDirs << QDir(args[++i]);
         } else if (args[i] == "-config") {
             configFile = QFileInfo(args[++i]);
-        } else if (args[i] == "-c") {
-            ParserOptions::classList = QFileInfo(args[++i]);
         } else if (args[i] == "-d") {
             ParserOptions::definesList = QFileInfo(args[++i]);
-        } else if (args[i] == "-o") {
-            output = QDir(args[++i]);
         } else if (args[i] == "-g") {
             generator = args[++i];
         } else if ((args[i] == "-h" || args[i] == "--help") && argc == 2) {
@@ -139,24 +133,9 @@ int main(int argc, char **argv)
                     }
                     dir = dir.nextSibling();
                 }
-            } else if (elem.tagName() == "outputDir") {
-                output = QDir(elem.text());
             } else if (elem.tagName() == "definesList") {
                 // reference to an external file, so it can be auto-generated
                 ParserOptions::definesList = QFileInfo(elem.text());
-            } else if (elem.tagName() == "classList") {
-                QDomNode klass = elem.firstChild();
-                while (!klass.isNull()) {
-                    QDomElement elem = klass.toElement();
-                    if (elem.isNull()) {
-                        klass = klass.nextSibling();
-                        continue;
-                    }
-                    if (elem.tagName() == "class") {
-                        classes << elem.text();
-                    }
-                    klass = klass.nextSibling();
-                }
             }
             node = node.nextSibling();
         }
@@ -176,27 +155,12 @@ int main(int argc, char **argv)
         qCritical() << "couldn't resolve symbol 'generate', aborting";
         return EXIT_FAILURE;
     }
-    
-    if (!output.exists()) {
-        qWarning() << "output directoy" << output.path() << "doesn't exist; creating it...";
-        QDir::current().mkpath(output.path());
-    }
-    
+        
     foreach (QDir dir, ParserOptions::includeDirs) {
         if (!dir.exists()) {
             qWarning() << "include directory" << dir.path() << "doesn't exist";
             ParserOptions::includeDirs.removeAll(dir);
         }
-    }
-    
-    if (ParserOptions::classList.exists()) {
-        QFile file(ParserOptions::classList.filePath());
-        file.open(QIODevice::ReadOnly);
-        while (!file.atEnd()) {
-            QByteArray array = file.readLine();
-            if (!array.isEmpty()) classes << array.trimmed();
-        }
-        file.close();
     }
     
     QStringList defines;
@@ -227,5 +191,5 @@ int main(int argc, char **argv)
         visitor.visit(ast);
     }
     
-    return generate(output, ParserOptions::headerList, classes);
+    return generate(ParserOptions::headerList);
 }

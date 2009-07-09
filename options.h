@@ -29,7 +29,7 @@ class Typedef;
 
 struct ParserOptions
 {
-    static QFileInfo classList, definesList;
+    static QFileInfo definesList;
     static QList<QFileInfo> headerList;
     static QList<QDir> includeDirs;
     static bool resolveTypedefs;
