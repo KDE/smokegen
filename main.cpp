@@ -39,7 +39,7 @@
 #include "options.h"
 #include "type.h"
 
-typedef int (*GenerateFn)(const QList<QFileInfo>& headerList);
+typedef int (*GenerateFn)();
 
 static void showUsage()
 {
@@ -73,7 +73,7 @@ int main(int argc, char **argv)
 
     for (int i = 1; i < args.count(); i++) {
         if ((args[i] == "-I" || args[i] == "-d" ||
-             args[i] == "-n" || args[i] == "--config") && i + 1 >= args.count())
+             args[i] == "-g" || args[i] == "--config") && i + 1 >= args.count())
         {
             qCritical() << "not enough parameters for option" << args[i];
             return EXIT_FAILURE;
@@ -191,5 +191,5 @@ int main(int argc, char **argv)
         visitor.visit(ast);
     }
     
-    return generate(ParserOptions::headerList);
+    return generate();
 }

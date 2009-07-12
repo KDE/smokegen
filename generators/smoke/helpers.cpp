@@ -83,10 +83,14 @@ void Util::preparse(QSet<Type*> *usedTypes, const QList<QString>& keys)
     for (QHash<QString, Function>::const_iterator it = functions.constBegin(); it != functions.constEnd(); it++) {
         const Function& fn = it.value();
         
+        QString fnString = fn.toString();
+        
         // gcc doesn't like this function... for whatever reason
-        if (fn.name() == "_IO_ftrylockfile" ||
-            (!Options::functionNameIncluded(fn.qualifiedName()) && !Options::functionSignatureIncluded(fn.toString())) )
+        if (fn.name() == "_IO_ftrylockfile"
+            || (!Options::functionNameIncluded(fn.qualifiedName()) && !Options::functionSignatureIncluded(fnString))
+            || Options::typeExcluded(fnString))
         {
+            // we don't want that function...
             continue;
         }
         

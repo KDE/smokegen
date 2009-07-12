@@ -60,15 +60,15 @@ static void showUsage()
 }
 
 extern "C" Q_DECL_EXPORT
-int generate(const QList<QFileInfo>& headerList)
+int generate()
 {
-    Options::headerList = headerList;
+    Options::headerList = ParserOptions::headerList;
     
     QFileInfo smokeConfig;
     
     const QStringList& args = QCoreApplication::arguments();
     for (int i = 0; i < args.count(); i++) {
-        if ((args[i] == "-m" || args[i] == "-p" || args[i] == "-pm" ||
+        if ((args[i] == "-m" || args[i] == "-p" || args[i] == "-pm" || args[i] == "-o" ||
              args[i] == "-st" || args[i] == "-vt" || args[i] == "-smokeconfig") && i + 1 >= args.count())
         {
             qCritical() << "generator_smoke: not enough parameters for option" << args[i];
@@ -90,6 +90,8 @@ int generate(const QList<QFileInfo>& headerList)
             Options::voidpTypes = args[++i].split(',');
         } else if (args[i] == "-smokeconfig") {
             smokeConfig = QFileInfo(args[++i]);
+        } else if (args[i] == "-o") {
+            Options::outputDir = QDir(args[++i]);
         } else if (args[i] == "-h" || args[i] == "--help") {
             showUsage();
             return EXIT_SUCCESS;

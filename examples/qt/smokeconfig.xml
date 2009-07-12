@@ -24,6 +24,8 @@
         <signature>.*QTextCodec::ConverterState::state_data.*</signature>
         <!-- Thread related stuff belongs to the bindings language -->
         <signature>.*QtConcurrent.*</signature>
+        <!-- this doesn't link, internal stuff.. -->
+        <signature>.*qFindString.*</signature>
     </exclude>
     <functions>
         <!-- include functions starting with 'q' -->

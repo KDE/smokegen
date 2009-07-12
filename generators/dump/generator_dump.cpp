@@ -24,7 +24,7 @@
 
 #include <iostream>
 
-extern "C"
+extern "C" Q_DECL_EXPORT
 void generate(const QList<QFileInfo>& headerList)
 {
     foreach (const QString& className, classes.keys()) {
