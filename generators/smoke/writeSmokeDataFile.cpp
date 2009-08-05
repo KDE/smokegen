@@ -50,14 +50,17 @@ SmokeDataFile::SmokeDataFile()
     
     // if a class is used somewhere but not listed in the class list, mark it external
     for (QHash<QString, Class>::iterator iter = ::classes.begin(); iter != ::classes.end(); iter++) {
-        if ((isClassUsed(&iter.value()) && iter.value().access() != Access_private)
-            || iter.value().isNameSpace() || superClasses.contains(&iter.value()))
-        {
+        if ((isClassUsed(&iter.value()) && iter.value().access() != Access_private) || superClasses.contains(&iter.value())) {
             classIndex[iter.key()] = 1;
-            if ((!Options::classList.contains(iter.key()) || iter.value().isForwardDecl()) && !iter.value().isNameSpace())
+            
+            if (!Options::classList.contains(iter.key()) || iter.value().isForwardDecl())
                 externalClasses << &iter.value();
             else if (!includedClasses.contains(iter.key()))
                 includedClasses << iter.key();
+        } else if (iter.value().isNameSpace() && (Options::classList.contains(iter.key()) || iter.key() == "QGlobalSpace")) {
+            // wanted namespace or QGlobalSpace
+            classIndex[iter.key()] = 1;
+            includedClasses << iter.key();
         }
     }
     
