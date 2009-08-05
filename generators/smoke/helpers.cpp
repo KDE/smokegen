@@ -72,7 +72,7 @@ bool operator==(const EnumMember& lhs, const EnumMember& rhs)
     return (lhs.name() == rhs.name() && lhs.declaringType() == rhs.declaringType() && lhs.type() == rhs.type());
 }
 
-void Util::preparse(QSet<Type*> *usedTypes, const QList<QString>& keys)
+void Util::preparse(QSet<Type*> *usedTypes, QSet<const Class*> *superClasses, const QList<QString>& keys)
 {
     Class& globalSpace = classes["QGlobalSpace"];
     globalSpace.setName("QGlobalSpace");
@@ -137,6 +137,9 @@ void Util::preparse(QSet<Type*> *usedTypes, const QList<QString>& keys)
     
     foreach (const QString& key, keys) {
         Class& klass = classes[key];
+        foreach (const Class::BaseClassSpecifier base, klass.baseClasses()) {
+            superClasses->insert(base.baseClass);
+        }
         if (!klass.isNameSpace()) {
             addDefaultConstructor(&klass);
             addCopyConstructor(&klass);

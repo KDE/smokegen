@@ -43,12 +43,16 @@ SmokeDataFile::SmokeDataFile()
         }
     }
     
+    // superclasses might be in different modules, still they need to be indexed for inheritanceList to work properly
+    QSet<const Class*> superClasses;
     includedClasses = classIndex.keys();
-    Util::preparse(&usedTypes, includedClasses);  // collect all used types, add c'tors.. etc.
+    Util::preparse(&usedTypes, &superClasses, includedClasses);  // collect all used types, add c'tors.. etc.
     
     // if a class is used somewhere but not listed in the class list, mark it external
     for (QHash<QString, Class>::iterator iter = ::classes.begin(); iter != ::classes.end(); iter++) {
-        if ((isClassUsed(&iter.value()) && iter.value().access() != Access_private) || iter.value().isNameSpace()) {
+        if ((isClassUsed(&iter.value()) && iter.value().access() != Access_private)
+            || iter.value().isNameSpace() || superClasses.contains(&iter.value()))
+        {
             classIndex[iter.key()] = 1;
             if ((!Options::classList.contains(iter.key()) || iter.value().isForwardDecl()) && !iter.value().isNameSpace())
                 externalClasses << &iter.value();
@@ -124,8 +128,8 @@ void SmokeDataFile::write()
     
     int currentIdx = 1;
     for (QMap<QString, int>::const_iterator iter = classIndex.constBegin(); iter != classIndex.constEnd(); iter++) {
-        const Class& klass = classes[iter.key()];
-        if (!klass.baseClasses().count())
+        Class& klass = classes[iter.key()];
+        if (!klass.baseClasses().count() || externalClasses.contains(&klass))
             continue;
         QVector<int> indices;
         QStringList comment;

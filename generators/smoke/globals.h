@@ -110,7 +110,7 @@ struct Util
     static QList<const Class*> superClassList(const Class* klass);
     static QList<const Class*> descendantsList(const Class* klass);
 
-    static void preparse(QSet<Type*> *usedTypes, const QList<QString>& keys);
+    static void preparse(QSet<Type*> *usedTypes, QSet<const Class*> *superClasses, const QList<QString>& keys);
 
     static bool canClassBeInstanciated(const Class* klass);
     static bool canClassBeCopied(const Class* klass);
