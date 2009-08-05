@@ -22,6 +22,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QLibrary>
+#include <qdatastream.h>
 
 #include <QtXml>
 
@@ -136,6 +137,19 @@ int main(int argc, char **argv)
             } else if (elem.tagName() == "definesList") {
                 // reference to an external file, so it can be auto-generated
                 ParserOptions::definesList = QFileInfo(elem.text());
+            } else if (elem.tagName() == "dropMacros") {
+                QDomNode macro = elem.firstChild();
+                while (!macro.isNull()) {
+                    QDomElement elem = macro.toElement();
+                    if (elem.isNull()) {
+                        macro = macro.nextSibling();
+                        continue;
+                    }
+                    if (elem.tagName() == "name") {
+                        ParserOptions::dropMacros << elem.text();
+                    }
+                    macro = macro.nextSibling();
+                }
             }
             node = node.nextSibling();
         }
@@ -155,7 +169,7 @@ int main(int argc, char **argv)
         qCritical() << "couldn't resolve symbol 'generate', aborting";
         return EXIT_FAILURE;
     }
-        
+    
     foreach (QDir dir, ParserOptions::includeDirs) {
         if (!dir.exists()) {
             qWarning() << "include directory" << dir.path() << "doesn't exist";
@@ -173,6 +187,8 @@ int main(int argc, char **argv)
                 defines << array.trimmed();
         }
         file.close();
+    } else if (!ParserOptions::definesList.filePath().isEmpty()) {
+        qWarning() << "didn't find file" << ParserOptions::definesList.filePath();
     }
     
     foreach (QFileInfo file, ParserOptions::headerList) {

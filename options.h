@@ -34,6 +34,7 @@ struct ParserOptions
     static QList<QDir> includeDirs;
     static bool resolveTypedefs;
     static bool qtMode;
+    static QStringList dropMacros;
 };
 
 extern QSet<const Typedef*> flagTypes;

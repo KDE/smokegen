@@ -152,7 +152,11 @@ rpp::Stream* Preprocessor::sourceNeeded(QString& fileName, rpp::Preprocessor::In
     }
     
     QString path;
-    if (type == rpp::Preprocessor::IncludeLocal) {
+    QFileInfo info(fileName);
+    
+    if (info.isAbsolute()) {
+        path = fileName;
+    } else if (type == rpp::Preprocessor::IncludeLocal) {
         if (m_fileStack.last().absoluteDir().exists(fileName))
             path = m_fileStack.last().absoluteDir().filePath(fileName);
     } else {

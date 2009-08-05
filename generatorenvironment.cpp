@@ -19,6 +19,7 @@
 #include "generatorenvironment.h"
 
 #include <rpp/pp-macro.h>
+#include "options.h"
 
 GeneratorEnvironment::GeneratorEnvironment(rpp::pp * preprocessor) : rpp::Environment(preprocessor)
 {
@@ -27,8 +28,9 @@ GeneratorEnvironment::GeneratorEnvironment(rpp::pp * preprocessor) : rpp::Enviro
 void GeneratorEnvironment::setMacro(rpp::pp_macro* macro)
 {
     QString macroName = macro->name.str();
-    if (macroName != "signals" && macroName != "slots")
-        rpp::Environment::setMacro(macro);
-    else
+    if (macroName == "signals" || macroName == "slots" || ParserOptions::dropMacros.contains(macroName)) {
         delete macro;
+        return;
+    }
+    rpp::Environment::setMacro(macro);
 }
