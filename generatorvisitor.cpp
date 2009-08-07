@@ -198,6 +198,10 @@ void GeneratorVisitor::visitBaseSpecifier(BaseSpecifierAST* node)
 
 void GeneratorVisitor::visitClassSpecifier(ClassSpecifierAST* node)
 {
+    nc->run(node->name);
+    if (klass.isEmpty())
+        return;
+    
     if (kind == Class::Kind_Class)
         access.push(Access_private);
     else
@@ -267,7 +271,7 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
 
     // only run this if we're not in a method. only checking for parameter_declaration_clause
     // won't be enough because function pointer types also have that.
-    if (node->parameter_declaration_clause && !inMethod && !klass.isEmpty()) {
+    if (node->parameter_declaration_clause && !inMethod && inClass) {
         bool isConstructor = (declName == klass.top()->name());
         bool isDestructor = (declName == "~" + klass.top()->name());
         Type* returnType = currentTypeRef;
