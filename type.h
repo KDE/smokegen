@@ -419,13 +419,8 @@ public:
 
     static Type* registerType(const Type& type) {
         QString typeString = type.toString();
-        if (types.contains(typeString)) {
-            // return a reference to the existing type
-            return &types[typeString];
-        } else {
-            QHash<QString, Type>::iterator iter = types.insert(typeString, type);
-            return &iter.value();
-        }
+        QHash<QString, Type>::iterator iter = types.insert(typeString, type);
+        return &iter.value();
     }
 
     static const Type* Void;

@@ -130,6 +130,9 @@ BasicTypeDeclaration* GeneratorVisitor::resolveType(QString & name)
             nspace.pop_back();
     } while (!nspace.isEmpty());
 
+    // maybe it's just 'there'
+    returnOnExistence(name);
+
     // check for the name in any of the namespaces included by 'using namespace'
     foreach (const QStringList& list, usingNamespaces) {
         foreach (const QString& string, list) {
@@ -198,7 +201,6 @@ void GeneratorVisitor::visitBaseSpecifier(BaseSpecifierAST* node)
 
 void GeneratorVisitor::visitClassSpecifier(ClassSpecifierAST* node)
 {
-    nc->run(node->name);
     if (klass.isEmpty())
         return;
     
@@ -207,15 +209,15 @@ void GeneratorVisitor::visitClassSpecifier(ClassSpecifierAST* node)
     else
         access.push(Access_public);
     inClass++;
-    if (!klass.isEmpty()) {
-        klass.top()->setFileName(m_header);
-        klass.top()->setIsForwardDecl(false);
-        if (klass.count() > 1) {
-            // get the element before the last element, which is the parent
-            Class* parent = klass[klass.count() - 2];
-            parent->appendChild(klass.top());
-        }
+    
+    klass.top()->setFileName(m_header);
+    klass.top()->setIsForwardDecl(false);
+    if (klass.count() > 1) {
+        // get the element before the last element, which is the parent
+        Class* parent = klass[klass.count() - 2];
+        parent->appendChild(klass.top());
     }
+    
     DefaultVisitor::visitClassSpecifier(node);
     access.pop();
     inClass--;
@@ -239,7 +241,7 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
     else
         nc->run(node->id);
     const QString declName = nc->name();
-    
+
     if (createTypedef) {
         if (!typeCreated)
             return;
