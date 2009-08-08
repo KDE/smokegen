@@ -159,7 +159,8 @@ rpp::Stream* Preprocessor::sourceNeeded(QString& fileName, rpp::Preprocessor::In
     } else if (type == rpp::Preprocessor::IncludeLocal) {
         if (m_fileStack.last().absoluteDir().exists(fileName))
             path = m_fileStack.last().absoluteDir().filePath(fileName);
-    } else {
+    }
+    if (path.isEmpty()) {
         foreach (QDir dir, m_includeDirs) {
             if (dir.exists(fileName)) {
                 path = dir.absoluteFilePath(fileName);
