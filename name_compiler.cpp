@@ -119,6 +119,7 @@ void NameCompiler::internal_run(AST *node)
 {
   m_name.clear();
   m_castType = Type();
+  m_templateArgs.clear();
   visit(node);
 }
 

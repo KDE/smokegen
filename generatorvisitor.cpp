@@ -432,7 +432,39 @@ void GeneratorVisitor::visitParameterDeclaration(ParameterDeclarationAST* node)
     QString defaultValue;
     if (node->expression) {
         // this parameter has a default value
-        for (int i = node->expression->start_token; i < node->expression->end_token; i++)
+        ExpressionAST* expression = node->expression;
+        
+        PostfixExpressionAST* postfix = 0;
+        if ((postfix = ast_cast<PostfixExpressionAST*>(node->expression))
+             && (postfix->sub_expressions->count() == 1
+             && postfix->sub_expressions->at(0)->element->kind == AST::Kind_FunctionCall))
+        {
+            // We have a function call expression as default value, most probably something like 'const QString& foo = QString()'.
+            // Try to resolve the classname if it's a constructor call.
+            PrimaryExpressionAST* primary = ast_cast<PrimaryExpressionAST*>(postfix->expression);
+            expression = postfix->sub_expressions->at(0)->element;
+            
+            nc->run(primary->name);
+            QString className = nc->qualifiedName().join("::");
+            BasicTypeDeclaration* decl = resolveType(className);
+            if (decl)
+                className = decl->toString();
+            
+            // TODO: This only works if the last part of the name has the template parameters.
+            // Maybe create a special "Identifier" class for names that has a proper toString() method.
+            int templatePos = nc->qualifiedName().count() - 1;
+            if (nc->templateArguments().contains(templatePos)) {
+                className.append("< ");
+                for (int i = 0; i < nc->templateArguments()[templatePos].count(); i++) {
+                    if (i > 0) className.append(',');
+                    className.append(nc->templateArguments()[templatePos][i].toString());
+                }
+                className.append(" >");
+            }
+            defaultValue.append(className);
+        }
+        
+        for (int i = expression->start_token; i < expression->end_token; i++)
             defaultValue.append(token(i).symbolByteArray());
     }
     if (inClass)
