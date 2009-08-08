@@ -99,7 +99,6 @@ struct Util
 {
     static QHash<QString, QString> typeMap;
     static QHash<const Method*, const Function*> globalFunctionMap;
-    static QHash<const Method*, QStringList> defaultParameterValues;
     static QHash<const Method*, const Field*> fieldAccessors;
     
     static bool isVirtualInheritancePath(const Class* desc, const Class* super);

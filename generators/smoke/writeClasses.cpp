@@ -143,8 +143,8 @@ void SmokeClassFiles::generateMethod(QTextStream& out, const QString& className,
     
     // if the method has any other default parameters, append them here as values, so 
     
-    if (Util::defaultParameterValues.contains(&meth)) {
-        QStringList defaultParams = Util::defaultParameterValues[&meth];
+    if (!meth.remainingDefaultValues().isEmpty()) {
+        const QStringList& defaultParams = meth.remainingDefaultValues();
         if (meth.parameters().count() > 0)
             out << "," ;
         out << defaultParams.join(",");
@@ -388,7 +388,7 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
         QList<const Method*> pureVirtuals;
         foreach (const Method& meth, klass->methods()) {
             // if there are default parameters, it's not the 'original' method.. skip it
-            if (Util::defaultParameterValues.contains(&meth))
+            if (!meth.remainingDefaultValues().isEmpty())
                 continue;
             // first, generate all virtual methods of this class. inherited ones come after that.
             if (((meth.flags() & Method::Virtual) || (meth.flags() & Method::PureVirtual)) && !meth.isDestructor()) {
@@ -406,7 +406,7 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
         }
         
         foreach (const Method* meth, inheritedVirtuals) {
-            if (Util::defaultParameterValues.contains(meth))
+            if (!meth->remainingDefaultValues().isEmpty())
                 continue;
             if (meth->flags() & Method::PureVirtual) {
                 // postpone pure virtuals to see if they have been overridden

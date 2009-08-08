@@ -28,7 +28,6 @@
 
 QHash<QString, QString> Util::typeMap;
 QHash<const Method*, const Function*> Util::globalFunctionMap;
-QHash<const Method*, QStringList> Util::defaultParameterValues;
 QHash<const Method*, const Field*> Util::fieldAccessors;
 
 // looks up the inheritance path from desc to super and sets 'virt' to true if it encounters a virtual base
@@ -543,7 +542,12 @@ void Util::addOverloads(const Method& meth)
         }
         Method overload = meth;
         overload.setParameterList(params);
-        klass->appendMethod(overload);
+        if (klass->methods().contains(overload)) {
+            qDebug() << "removing ambiguous" << overload.toString(false, true);
+            klass->methodsRef().removeOne(overload);
+            params << param;
+            continue;
+        }
         
         QStringList remainingDefaultValues;
         for (int j = i; j < meth.parameters().count(); j++) {
@@ -553,7 +557,8 @@ void Util::addOverloads(const Method& meth)
             cast += defParam.defaultValue();
             remainingDefaultValues << cast;
         }
-        defaultParameterValues[&klass->methods().last()] = remainingDefaultValues;
+        overload.setRemainingDefaultValues(remainingDefaultValues);
+        klass->appendMethod(overload);
         
         params << param;
     }

@@ -20,6 +20,7 @@
 #define TYPE_H
 
 #include <QString>
+#include <QStringList>
 #include <QHash>
 #include <QtDebug>
 
@@ -280,6 +281,11 @@ public:
     void setIsConst(bool isConst) { m_isConst = isConst; }
     bool isConst() const { return m_isConst; }
 
+    // TODO: This actually doesn't belong here. Better add a dynamic property system to Member subclasses.
+    //       Then we can also get rid of the various method => foo maps in the 'Util' struct.
+    const QStringList& remainingDefaultValues() const { return m_remainingValues; }
+    void setRemainingDefaultValues(const QStringList& params) { m_remainingValues = params; }
+
     virtual QString toString(bool withAccess = false, bool withClass = false, bool withInitializer = true) const;
 
 protected:
@@ -287,6 +293,7 @@ protected:
     bool m_isConstructor;
     bool m_isDestructor;
     bool m_isConst;
+    QStringList m_remainingValues;
 };
 
 class Field : public Member
