@@ -262,10 +262,6 @@ bool Util::canClassBeCopied(const Class* klass)
         }
     }
     
-    if (klass->toString() == "KParts::Factory") {
-        qDebug() << klass->toString() << "private copy ctor:" << privateCopyCtorFound << "parent copiable:" << parentCanBeCopied << "parents:" << klass->baseClasses().count();
-    }
-    
     // if the parent can be copied and we didn't find a private copy c'tor, the class is copiable
     bool ret = (parentCanBeCopied && !privateCopyCtorFound);
     cache[klass] = ret;
