@@ -19,6 +19,7 @@
 
 #include <QHash>
 #include <QList>
+#include <QStack>
 
 #include <type.h>
 
@@ -29,6 +30,26 @@ QHash<QString, QString> Util::typeMap;
 QHash<const Method*, const Function*> Util::globalFunctionMap;
 QHash<const Method*, QStringList> Util::defaultParameterValues;
 QHash<const Method*, const Field*> Util::fieldAccessors;
+
+// looks up the inheritance path from desc to super and sets 'virt' to true if it encounters a virtual base
+static bool isVirtualInheritancePathPrivate(const Class* desc, const Class* super, bool *virt)
+{
+    foreach (const Class::BaseClassSpecifier bspec, desc->baseClasses()) {
+        if (bspec.baseClass == super || isVirtualInheritancePathPrivate(bspec.baseClass, super, virt)) {
+            if (bspec.isVirtual)
+                *virt = true;
+            return true;
+        }
+    }
+    return false;
+}
+
+bool Util::isVirtualInheritancePath(const Class* desc, const Class* super)
+{
+    bool isVirtual = false;
+    isVirtualInheritancePathPrivate(desc, super, &isVirtual);
+    return isVirtual;
+}
 
 QList<const Class*> Util::superClassList(const Class* klass)
 {

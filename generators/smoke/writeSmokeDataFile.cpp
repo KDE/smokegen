@@ -97,21 +97,41 @@ void SmokeDataFile::write()
         const Class& klass = classes[iter.key()];
         if (klass.isNameSpace())
             continue;
+        
+        QSet<int> indices; // avoid duplicate case values (diamond-shaped inheritance)
+        
         out << "    case " << iter.value() << ":   //" << iter.key() << "\n";
         out << "      switch(to) {\n";
         foreach (const Class* base, Util::superClassList(&klass)) {
             QString className = base->toString();
+            
             if (includedClasses.contains(className)) {
+                int index = classIndex[className];
+                if (indices.contains(index))
+                    continue;
+                indices << index;
+                
                 out << QString("        case %1: return (void*)(%2*)(%3*)xptr;\n")
-                    .arg(classIndex[className]).arg(className).arg(klass.toString());
+                    .arg(index).arg(className).arg(klass.toString());
             }
         }
         out << QString("        case %1: return (void*)(%2*)xptr;\n").arg(iter.value()).arg(klass.toString());
         foreach (const Class* desc, Util::descendantsList(&klass)) {
             QString className = desc->toString();
+            
             if (includedClasses.contains(className)) {
-                out << QString("        case %1: return (void*)(%2*)(%3*)xptr;\n")
-                    .arg(classIndex[className]).arg(className).arg(klass.toString());
+                int index = classIndex[className];
+                if (indices.contains(index))
+                    continue;
+                indices << index;
+                
+                if (Util::isVirtualInheritancePath(desc, &klass)) {
+                    out << QString("        case %1: return (void*)dynamic_cast<%2*>((%3*)xptr);\n")
+                        .arg(index).arg(className).arg(klass.toString());
+                } else {
+                    out << QString("        case %1: return (void*)(%2*)(%3*)xptr;\n")
+                        .arg(index).arg(className).arg(klass.toString());
+                }
             }
         }
         out << "        default: return xptr;\n";
