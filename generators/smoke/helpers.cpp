@@ -318,6 +318,8 @@ void Util::addDefaultConstructor(Class* klass)
         // if the class already has a constructor or if it has pure virtuals, there's nothing to do for us
         if (meth.isConstructor() || meth.flags() & Method::PureVirtual)
             return;
+        else if (meth.isDestructor() && meth.access() == Access_private)
+            return;
     }
     
     Type t = Type(klass);
@@ -335,6 +337,9 @@ void Util::addCopyConstructor(Class* klass)
             // found a copy c'tor? then there's nothing to do
             if (type->isConst() && type->isRef() && type->getClass() == klass)
                 return;
+        } else if (meth.isDestructor() && meth.access() == Access_private) {
+            // private destructor, so we can't create instances of that class
+            return;
         }
     }
     

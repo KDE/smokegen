@@ -392,7 +392,9 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
                 continue;
             // first, generate all virtual methods of this class. inherited ones come after that.
             if (((meth.flags() & Method::Virtual) || (meth.flags() & Method::PureVirtual)) && !meth.isDestructor()) {
-                generateVirtualMethod(out, className, meth, includes);
+                if (meth.access() != Access_private) {
+                    generateVirtualMethod(out, className, meth, includes);
+                }
                 virtMeths.insert(meth.toString(false, false, false));
             }
         }
