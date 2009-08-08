@@ -262,6 +262,10 @@ bool Util::canClassBeCopied(const Class* klass)
         }
     }
     
+    if (klass->toString() == "KParts::Factory") {
+        qDebug() << klass->toString() << "private copy ctor:" << privateCopyCtorFound << "parent copiable:" << parentCanBeCopied << "parents:" << klass->baseClasses().count();
+    }
+    
     // if the parent can be copied and we didn't find a private copy c'tor, the class is copiable
     bool ret = (parentCanBeCopied && !privateCopyCtorFound);
     cache[klass] = ret;
@@ -457,8 +461,11 @@ QList<const Method*> Util::collectVirtualMethods(const Class* klass)
 {
     QList<const Method*> methods;
     foreach (const Method& meth, klass->methods()) {
-        if ((meth.flags() & Method::Virtual || meth.flags() & Method::PureVirtual) && !meth.isDestructor())
+        if ((meth.flags() & Method::Virtual || meth.flags() & Method::PureVirtual)
+            && !meth.isDestructor() && meth.access() != Access_private)
+        {
             methods << &meth;
+        }
     }
     foreach (const Class::BaseClassSpecifier& baseClass, klass->baseClasses()) {
         methods += collectVirtualMethods(baseClass.baseClass);

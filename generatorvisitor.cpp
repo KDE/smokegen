@@ -193,9 +193,18 @@ void GeneratorVisitor::visitBaseSpecifier(BaseSpecifierAST* node)
     baseClass.isVirtual = (node->virt > 0);
     nc->run(node->name);
     BasicTypeDeclaration* base = resolveType(nc->qualifiedName().join("::"));
-    if (!base || !dynamic_cast<Class*>(base))
+    if (!base)
         return;
-    baseClass.baseClass = static_cast<Class*>(base);
+    Class* bptr = dynamic_cast<Class*>(base);
+    if (!bptr) {
+        Typedef* tdef = dynamic_cast<Typedef*>(base);
+        if (!tdef)
+            return;
+        bptr = tdef->resolve().getClass();
+        if (!bptr)
+            return;
+    }
+    baseClass.baseClass = bptr;
     klass.top()->appendBaseClass(baseClass);
 }
 
