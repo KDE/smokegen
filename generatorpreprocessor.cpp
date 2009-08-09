@@ -194,7 +194,8 @@ rpp::Stream* Preprocessor::sourceNeeded(QString& fileName, rpp::Preprocessor::In
            We also don't need to push any files on the fileStack because the directory for local includes is
            not changing. */
         m_localContent.append(convertFromByteArray(array));
-        return new rpp::Stream(&m_localContent.last());
+        m_fileStack.push(QFileInfo(path));
+        return new HeaderStream(&m_localContent.last(), &m_fileStack);
     }
     return 0;
 }

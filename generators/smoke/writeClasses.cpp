@@ -158,7 +158,10 @@ void SmokeClassFiles::generateMethod(QTextStream& out, const QString& className,
     }
     
     out << "    }\n";
-    if (meth.isConstructor()) {
+    
+    // If the constructor was generated from another one with default parameteres, we don't need to explicitly create
+    // it here again. The x_* call will append the default parameters at the end and thus choose the right constructor.
+    if (meth.isConstructor() && meth.remainingDefaultValues().isEmpty()) {
         out << "    explicit " << smokeClassName << '(';
         QStringList x_list;
         for (int i = 0; i < meth.parameters().count(); i++) {

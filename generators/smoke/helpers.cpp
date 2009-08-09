@@ -546,8 +546,7 @@ void Util::addOverloads(const Method& meth)
         Method overload = meth;
         overload.setParameterList(params);
         if (klass->methods().contains(overload)) {
-            qDebug() << "removing ambiguous" << overload.toString(false, true);
-            klass->methodsRef().removeOne(overload);
+            // we already have that, skip it
             params << param;
             continue;
         }
