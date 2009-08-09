@@ -27,3 +27,4 @@ add_executable(generator ${generator_SRC})
 target_link_libraries(generator ${QT_QTCORE_LIBRARY} ${QT_QTXML_LIBRARY} cppparser types)
 
 add_subdirectory(generators)
+add_subdirectory(examples)
