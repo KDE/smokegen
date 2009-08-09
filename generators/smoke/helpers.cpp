@@ -164,6 +164,7 @@ void Util::preparse(QSet<Type*> *usedTypes, QSet<const Class*> *superClasses, co
             addDefaultConstructor(&klass);
             addCopyConstructor(&klass);
             addDestructor(&klass);
+            checkForAbstractClass(&klass);
             foreach (const Method& m, klass.methods()) {
                 if (m.access() == Access_private)
                     continue;
@@ -309,6 +310,26 @@ bool Util::hasClassPublicDestructor(const Class* klass)
     
     cache[klass] = publicDtorFound;
     return publicDtorFound;
+}
+
+void Util::checkForAbstractClass(Class* klass)
+{
+    QList<const Method*> list;
+    
+    bool hasPureVirtuals = false;
+    foreach (const Method& meth, klass->methods()) {
+        if (meth.flags() & Method::PureVirtual)
+            hasPureVirtuals = true;
+        if (meth.isConstructor())
+            list << &meth;
+    }
+    
+    // abstract classes can't be instanciated - remove the constructors
+    if (hasPureVirtuals) {
+        foreach (const Method* ctor, list) {
+            klass->methodsRef().removeOne(*ctor);
+        }
+    }
 }
 
 void Util::addDefaultConstructor(Class* klass)

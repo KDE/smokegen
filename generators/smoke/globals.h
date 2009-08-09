@@ -114,6 +114,7 @@ struct Util
 
     static bool derivesFromInvalid(const Class* klass);
 
+    static void checkForAbstractClass(Class* klass);
     static void addDefaultConstructor(Class* klass);
     static void addCopyConstructor(Class* klass);
     static void addDestructor(Class* klass);
