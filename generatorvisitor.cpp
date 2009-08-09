@@ -580,13 +580,38 @@ void GeneratorVisitor::visitTypedef(TypedefAST* node)
 void GeneratorVisitor::visitUsing(UsingAST* node)
 {
     nc->run(node->name);
-    usingTypes.top() << nc->name();
-    DefaultVisitor::visitUsing(node);
+    if (inClass) {
+        // if we encounter 'using' in a class, it means we should import methods from another class
+        QStringList tmp = nc->qualifiedName();
+        const QString methodName = tmp.takeLast();
+        const QString className = tmp.join("::");
+        const BasicTypeDeclaration* decl = resolveType(className);
+        const Class* clazz = dynamic_cast<const Class*>(decl);
+        if (!clazz) {
+            const Typedef* tdef = dynamic_cast<const Typedef*>(decl);
+            if (tdef) {
+                clazz = tdef->resolve().getClass();
+            }
+        }
+        if (!clazz)
+            return;
+        
+        foreach (const Method& meth, clazz->methods()) {
+            if (meth.name() != methodName)
+                continue;
+            Method copy = meth;
+            copy.setDeclaringType(klass.top());
+            copy.setAccess(access.top());
+            klass.top()->appendMethod(copy);
+        }
+    } else {
+        usingTypes.top() << nc->qualifiedName().join("::");
+    }
 }
 
 void GeneratorVisitor::visitUsingDirective(UsingDirectiveAST* node)
 {
     nc->run(node->name);
-    usingNamespaces.top() << nc->name();
+    usingNamespaces.top() << nc->qualifiedName().join("::");
     DefaultVisitor::visitUsingDirective(node);
 }
