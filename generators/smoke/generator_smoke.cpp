@@ -34,7 +34,7 @@
 #include "globals.h"
 #include "../../options.h"
 
-QDir Options::outputDir;
+QDir Options::outputDir = QDir::current();
 QList<QFileInfo> Options::headerList;
 QStringList Options::classList;
 
