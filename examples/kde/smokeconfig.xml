@@ -22,6 +22,16 @@
         <signature>.*::virtual_hook\(int, void\*\).*</signature>
         <signature>.*QDebug.*</signature>
         <signature>.*Q3.*</signature>
+        
+        <signature>.*stat\*.*</signature>
+        <signature>.*utimbuf\*.*</signature>
+        
+        <!-- these don't link.. -->
+        <signature>.*KIO::file_move\(const KUrl&amp;, const KUrl&amp;, KIO::JobFlags\)</signature>
+        <signature>.*KIO::buildHTMLErrorString.*</signature>
+        <signature>.*KStandardShortcut::insert\(\)</signature>
+        <signature>.*KServiceTypeProfile::clearCache\(\)</signature>
+        
         <!-- internal use only, not exported -->
         <signature>.*KWallet::Wallet::Wallet\(const KWallet::Wallet&amp;\)</signature>
         <!-- operator(<<|>>)(QDataStream&, KDateTime*) - why are these operators not implemented/exported? -->
@@ -31,6 +41,8 @@
         <!-- include functions starting with 'k' -->
         <name>^k.*</name>
         <name>.*::k.*</name>
+        
+        <name>K.*::.*</name>
         <!-- and operators -->
         <name>.*operator.*</name>
         <!-- and i18n functions -->

@@ -122,7 +122,11 @@ Type Typedef::resolve() const {
 
 QString GlobalVar::toString() const
 {
-    return m_type->toString() + " " + m_name;
+    QString ret = m_type->toString() + " ";
+    if (!m_nspace.isEmpty())
+        ret += m_nspace + "::";
+    ret += m_name;
+    return ret;
 }
 
 QString Function::toString() const
