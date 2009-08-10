@@ -155,12 +155,19 @@ QString Type::toString(const QString& fnPtrName) const
         }
         ret += " >";
     }
+    
+    // FIXME: This won't work for an array of function pointers!
+    if (isArray()) ret += '(';
+    
     for (int i = 0; i < m_pointerDepth; i++) {
         ret += "*";
         if (isConstPointer(i)) ret += " const ";
     }
     ret = ret.trimmed();
     if (m_isRef) ret += "&";
+    
+    if (isArray()) ret += fnPtrName + ")[" + QString::number(m_dimensions) + ']';
+    
     if (m_isFunctionPointer) {
         ret += "(*" + fnPtrName + ")(";
         for (int i = 0; i < m_params.count(); i++) {

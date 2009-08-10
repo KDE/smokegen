@@ -287,6 +287,7 @@
         <class>KMacroExpanderBase</class>
         <class>KMainWindow</class>
         <class>KMakeTypeList</class>
+        <class>KMD5</class>
         <class>KMenu</class>
         <class>KMenuBar</class>
         <class>KMessage</class>

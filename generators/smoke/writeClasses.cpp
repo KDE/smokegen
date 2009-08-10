@@ -104,7 +104,7 @@ void SmokeClassFiles::generateMethod(QTextStream& out, const QString& className,
         if (meth.type()->getClass())
             includes.insert(meth.type()->getClass()->fileName());
         
-        if (meth.type()->isFunctionPointer())
+        if (meth.type()->isFunctionPointer() || meth.type()->isArray())
             out << meth.type()->toString("xret") << " = ";
         else if (meth.type() != Type::Void)
             out << meth.type()->toString() << " xret = ";
@@ -131,7 +131,13 @@ void SmokeClassFiles::generateMethod(QTextStream& out, const QString& className,
         
         QString field = Util::stackItemField(param.type());
         QString typeName = param.type()->toString();
-        if (field == "s_class" && (param.type()->pointerDepth() == 0 || param.type()->isRef()) && !param.type()->isFunctionPointer()) {
+        if (param.type()->isArray()) {
+            Type t = *param.type();
+            t.setPointerDepth(t.pointerDepth() + 1);
+            t.setIsRef(false);
+            typeName = t.toString();
+            out << '*';
+        } else if (field == "s_class" && (param.type()->pointerDepth() == 0 || param.type()->isRef()) && !param.type()->isFunctionPointer()) {
             // references and classes are passed in s_class
             typeName.append('*');
             out << '*';

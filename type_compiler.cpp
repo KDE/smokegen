@@ -68,8 +68,17 @@ void TypeCompiler::run(const DeclaratorAST* declarator)
     if (declarator->ptr_ops)
         run(declarator->ptr_ops);
     
-    if (declarator->array_dimensions)
-        m_realType.setPointerDepth(m_realType.pointerDepth() + 1);
+    if (declarator->array_dimensions) {
+        PrimaryExpressionAST* primary = ast_cast<PrimaryExpressionAST*>(declarator->array_dimensions->at(0)->element);
+        if (primary) {
+            QByteArray token = m_session->token_stream->token(primary->token).symbolByteArray();
+            bool ok = false;
+            int dimensions = token.toInt(&ok);
+            if (ok) {
+                m_realType.setArrayDimensions(dimensions);
+            }
+        }
+    }
     
     NameCompiler name_cc(m_session, m_visitor);
     name_cc.run(declarator->id);
