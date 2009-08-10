@@ -76,7 +76,11 @@ void TypeCompiler::run(const DeclaratorAST* declarator)
             int dimensions = token.toInt(&ok);
             if (ok) {
                 m_realType.setArrayDimensions(dimensions);
+            } else {
+                m_realType.setPointerDepth(m_realType.pointerDepth() + 1);
             }
+        } else {
+            m_realType.setPointerDepth(m_realType.pointerDepth() + 1);
         }
     }
     

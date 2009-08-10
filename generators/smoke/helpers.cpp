@@ -328,7 +328,6 @@ void Util::checkForAbstractClass(Class* klass)
     
     // abstract classes can't be instanciated - remove the constructors
     if (hasPrivatePureVirtuals) {
-        qDebug() << "making class" << klass->toString() << "abstract";
         foreach (const Method* ctor, list) {
             klass->methodsRef().removeOne(*ctor);
         }
