@@ -202,6 +202,10 @@ void TypeCompiler::visitSimpleTypeSpecifier(SimpleTypeSpecifierAST *node)
   
   if (node->integrals) {
     m_realType = Type(m_type.join(" "), isConstant(), isVolatile());
+    if (m_realType.name() == "unsigned") {
+        // implicit int..
+        m_realType.setName("unsigned int");
+    }
     m_realType.setIsIntegral(true);
   } else {
     setRealType();
