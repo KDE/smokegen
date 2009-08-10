@@ -644,5 +644,8 @@
         <class>QXmlStreamReader</class>
         <class>QXmlStreamStringRef</class>
         <class>QXmlStreamWriter</class>
+        <!-- namespaces -->
+        <class>Qt</class>
+        <class>QDBus</class>
     </classList>
 </config>

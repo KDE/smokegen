@@ -375,7 +375,7 @@ void SmokeDataFile::write()
     }
     QMap<QString, QList<const Member*> >& globalSpaceMungedNameMap = classMungedNames[&classes["QGlobalSpace"]];
     for (QHash<QString, Enum>::const_iterator it = ::enums.constBegin(); it != ::enums.constEnd(); it++) {
-        if (!it.value().parent()) {
+        if (!it.value().parent() && it.value().nameSpace().isEmpty()) {
             foreach (const EnumMember& member, it.value().members()) {
                 methodNames[member.name()] = 1;
                 globalSpaceMungedNameMap[member.name()].append(&member);
