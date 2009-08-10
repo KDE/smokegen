@@ -73,7 +73,7 @@ int main(int argc, char **argv)
     QStringList classes;
 
     for (int i = 1; i < args.count(); i++) {
-        if ((args[i] == "-I" || args[i] == "-d" ||
+        if ((args[i] == "-I" || args[i] == "-d" || args[i] == "-dm" ||
              args[i] == "-g" || args[i] == "--config") && i + 1 >= args.count())
         {
             qCritical() << "not enough parameters for option" << args[i];
@@ -85,6 +85,8 @@ int main(int argc, char **argv)
             configFile = QFileInfo(args[++i]);
         } else if (args[i] == "-d") {
             ParserOptions::definesList = QFileInfo(args[++i]);
+        } else if (args[i] == "-dm") {
+            ParserOptions::dropMacros = args[++i].split(',');
         } else if (args[i] == "-g") {
             generator = args[++i];
         } else if ((args[i] == "-h" || args[i] == "--help") && argc == 2) {
