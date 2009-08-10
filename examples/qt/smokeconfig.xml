@@ -156,6 +156,7 @@
         <class>QDockWidget</class>
         <class>QDomAttr</class>
         <class>QDomCDATASection</class>
+        <class>QDomCharacterData</class>
         <class>QDomComment</class>
         <class>QDomDocument</class>
         <class>QDomDocumentFragment</class>
