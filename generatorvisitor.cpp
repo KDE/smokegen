@@ -314,7 +314,7 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
     }
     
     // global function
-    if (node->parameter_declaration_clause && !inMethod && !inClass && !currentTypeRef->isFunctionPointer()) {
+    if (node->parameter_declaration_clause && !inMethod && !inClass) {
         if (!declName.contains("::")) {
             Type* returnType = currentTypeRef;
             currentFunction = Function(declName, nspace.join("::"), returnType);
