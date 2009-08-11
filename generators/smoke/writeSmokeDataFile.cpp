@@ -479,7 +479,7 @@ void SmokeDataFile::write()
             }
         }
         if (destructor) {
-            out << "    { " << iter.value() << ", " << methodNames[destructor->name()] << ", 0, 0, Smoke::mf_dtor";
+            out << "    {" << iter.value() << ", " << methodNames[destructor->name()] << ", 0, 0, Smoke::mf_dtor";
             if (destructor->access() == Access_private)
                 out << "|Smoke::mf_protected";
             out << ", " << typeIndex[destructor->type()] << ", " << xcall_index << " },\t//" << i << " " << klass->toString()
