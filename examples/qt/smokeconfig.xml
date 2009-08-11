@@ -9,8 +9,6 @@
         <typeName>QString</typeName>
     </voidpTypes>
     <exclude>
-        <!-- this is actually wrapped in a #if QT_VERSION >= ..., but the preprocessor doesn't understand it (yet) -->
-        <signature>QDataStream::Qt_4_6</signature>
         <!-- we don't want private stuff in smoke.. -->
         <signature>.*QDBusPendingCallPrivate.*</signature>
         <signature>.*QUuid::data.*</signature>
