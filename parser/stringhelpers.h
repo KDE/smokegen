@@ -55,6 +55,7 @@ QString Q_DECL_EXPORT stripFinalWhitespace(QString str);
 
 /**
  * Fills all c++-style comments  within the given code with the given 'replacement' character
+ * Newlines are preserved.
  * */
 QString Q_DECL_EXPORT clearComments( QString str, QChar replacement = ' ' );
 /**
@@ -68,6 +69,12 @@ QString Q_DECL_EXPORT clearStrings( QString str, QChar replacement = ' ' );
  * For example it removes all the stars at the beginning, and re-indents the text.
  * */
 QString Q_DECL_EXPORT formatComment( const QString& comment );
+
+/**
+ * Extracts the interesting information out of a comment.
+ * For example it removes all the stars at the beginning, and re-indents the text.
+ * */
+QByteArray Q_DECL_EXPORT formatComment( const QByteArray& comment );
 
 /**
  * Can be used to iterate through different kinds of parameters, for example template-parameters(By giving it "<>:")

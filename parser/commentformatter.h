@@ -34,10 +34,10 @@ class ParseSession;
 class Q_DECL_EXPORT CommentFormatter {
     public:
     ///Processes the comment represented by the given token-number within the parse-session's token-stream
-    static QString formatComment( size_t token, const ParseSession* session );
+    static QByteArray formatComment( size_t token, const ParseSession* session );
 
     ///Processes the list of comments represented by the given token-number within the parse-session's token-stream
-    static QString formatComment( const ListNode<size_t>* node, const ParseSession* session );
+    static QByteArray formatComment( const ListNode<size_t>* node, const ParseSession* session );
   private:
 };
 

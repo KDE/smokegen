@@ -111,6 +111,26 @@ private slots:
     QVERIFY(ast->declarations != 0);
   }
   
+  void testManyComparisons()
+  {
+    //Should not crash
+    {
+      QByteArray clazz("void test() { if(val < f && val < val1 && val < val2 && val < val3 ){ } }");
+      pool mem_pool;
+      TranslationUnitAST* ast = parse(clazz, &mem_pool);
+      QVERIFY(ast != 0);
+      QVERIFY(ast->declarations != 0);
+      dumper.dump(ast, lastSession->token_stream);
+    }
+    {
+      QByteArray clazz("void test() { if(val < f && val < val1 && val < val2 && val < val3 && val < val4 && val < val5 && val < val6 && val < val7 && val < val8 && val < val9 && val < val10 && val < val11 && val < val12 && val < val13 && val < val14 && val < val15 && val < val16 && val < val17 && val < val18 && val < val19 && val < val20 && val < val21 && val < val22 && val < val23 && val < val24 && val < val25 && val < val26){ } }");
+      pool mem_pool;
+      TranslationUnitAST* ast = parse(clazz, &mem_pool);
+      QVERIFY(ast != 0);
+      QVERIFY(ast->declarations != 0);
+    }
+  }
+  
   void testParserFail()
   {
     QByteArray stuff("foo bar !!! nothing that really looks like valid c++ code");
@@ -241,21 +261,21 @@ private slots:
     pool mem_pool;
     TranslationUnitAST* ast = parse(method, &mem_pool);
 
-    QCOMPARE(CommentFormatter::formatComment(ast->comments, lastSession), QString("TranslationUnitComment")); //The comments were merged
+    QCOMPARE(CommentFormatter::formatComment(ast->comments, lastSession), QByteArray("TranslationUnitComment")); //The comments were merged
 
     const ListNode<DeclarationAST*>* it = ast->declarations;
     QVERIFY(it);
     it = it->next;
     QVERIFY(it);
-    QCOMPARE(CommentFormatter::formatComment(it->element->comments, lastSession), QString("Hello\n(behind)"));
+    QCOMPARE(CommentFormatter::formatComment(it->element->comments, lastSession), QByteArray("Hello\n(behind)"));
 
     it = it->next;
     QVERIFY(it);
-    QCOMPARE(CommentFormatter::formatComment(it->element->comments, lastSession), QString("between\nHello2\n(behind)"));
+    QCOMPARE(CommentFormatter::formatComment(it->element->comments, lastSession), QByteArray("between\nHello2\n(behind)"));
 
     it = it->next;
     QVERIFY(it);
-    QCOMPARE(CommentFormatter::formatComment(it->element->comments, lastSession), QString("Hello3\nbeforeTest\n(testBehind)"));
+    QCOMPARE(CommentFormatter::formatComment(it->element->comments, lastSession), QByteArray("Hello3\nbeforeTest\n(testBehind)"));
   }
 
   void testComments2()
@@ -279,12 +299,12 @@ private slots:
     enumerator = enumerator->next;
     QVERIFY(enumerator);
 
-    QCOMPARE(CommentFormatter::formatComment(enumerator->element->comments, lastSession), QString("enumerator1Comment\n(enumerator1BehindComment)"));
+    QCOMPARE(CommentFormatter::formatComment(enumerator->element->comments, lastSession), QByteArray("enumerator1Comment\n(enumerator1BehindComment)"));
 
     enumerator = enumerator->next;
     QVERIFY(enumerator);
 
-    QCOMPARE(CommentFormatter::formatComment(enumerator->element->comments, lastSession), QString("enumerator2Comment\n(enumerator2BehindComment)"));
+    QCOMPARE(CommentFormatter::formatComment(enumerator->element->comments, lastSession), QByteArray("enumerator2Comment\n(enumerator2BehindComment)"));
   }
 
   void testComments3()
@@ -308,7 +328,7 @@ private slots:
     members = members->next;
     QVERIFY(members);
 
-    QCOMPARE(CommentFormatter::formatComment(members->element->comments, lastSession), QString("Comment"));
+    QCOMPARE(CommentFormatter::formatComment(members->element->comments, lastSession), QByteArray("Comment"));
   }
 
   void testComments4()
@@ -346,7 +366,7 @@ private slots:
   {
     rpp::Preprocessor preprocessor;
     QCOMPARE(preprocess("Hello##You"), QString("HelloYou"));
-    QCOMPARE(preprocess("#define CONCAT(Var1, Var2) Var1##Var2 Var2##Var1\nCONCAT(      Hello      ,      You     )"), QString("\nHelloYou YouHello"));
+    QCOMPARE(preprocess("#define CONCAT(Var1, Var2) Var1##Var2 Var2##Var1\nCONCAT(      Hello      ,      You     )").simplified(), QString("\nHelloYou YouHello").simplified());
   }
 
   void testCondition()

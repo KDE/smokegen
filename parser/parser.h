@@ -27,6 +27,13 @@
 #include <QtCore/QQueue>
 #include <QtCore/QSet>
 #include <QtCore/QString>
+#ifdef Q_OS_WIN
+#include <hash_map>
+using namespace stdext;
+#else
+#include <ext/hash_map>
+using namespace __gnu_cxx;
+#endif
 
 class TokenStream;
 class Control;
@@ -51,8 +58,8 @@ public:
 
   @sa pool for more information about the memory pool used.*/
   TranslationUnitAST *parse(ParseSession* session);
-
   /**
+
    * Same as parse, except that it parses the content as a compound statement.
    * This is useful for parsing independent expression-strings that appear for
    * example within a function.
@@ -71,6 +78,8 @@ public:
    * if that fails, as an expression. This is perfect for parsing template-arguements.
    * The input can be as simple as "A" or "A::a+2"
    * @param forceExpression If this is true, the text will not be considered to be a type-id, only an expression.
+   *                                         With this parameter, unlike during normal parsing, primary expressions may
+   *                                         have template parameters even without a function-call behind. That allows evaluating only partial expressions.
    * */
   AST *parseTypeOrExpression(ParseSession* session, bool forceExpression = false);
   /**@return the problem count.*/
@@ -148,7 +157,14 @@ public:
   bool parseMemInitializerList(const ListNode<MemInitializerAST*> *&node);
   bool parseMemberSpecification(DeclarationAST *&node);
   bool parseMultiplicativeExpression(ExpressionAST *&node);
-  bool parseName(NameAST *&node, bool acceptTemplateId = false);
+  
+  enum ParseNameAcceptTemplate {
+    DontAcceptTemplate = 0,
+    AcceptTemplate = 1,
+    //If this is given, template-parameters are only accepted if the name is followed by a function call
+    EventuallyAcceptTemplate = 2
+  };
+  bool parseName(NameAST *&node, ParseNameAcceptTemplate acceptTemplateId = DontAcceptTemplate);
   bool parseNamespace(DeclarationAST *&node);
   bool parseNamespaceAliasDefinition(DeclarationAST *&node);
   bool parseNewDeclarator(NewDeclaratorAST *&node);
@@ -216,9 +232,20 @@ public:
   Control *control;
   Lexer lexer;
 private:
+  
+  enum TokenMarkers {
+    None = 0,
+    IsNoTemplateArgumentList = 1
+  };
+  
+  TokenMarkers tokenMarkers(size_t tokenNumber) const;
+  void addTokenMarkers(size_t tokenNumber, TokenMarkers markers);
+
 
   int lineFromTokenNumber( size_t tokenNumber ) const;
 
+  void clear();
+  
   ///parses all comments until the end of the line
   Comment comment();
   ///Preparses comments in the same line as given token-number
@@ -231,7 +258,8 @@ private:
 
   Comment m_currentComment;
   CommentStore m_commentStore;
-
+ 
+  hash_map<size_t, TokenMarkers> m_tokenMarkers;
   int _M_problem_count;
   int _M_max_problem_count;
   ParseSession* session;
@@ -240,6 +268,7 @@ private:
   size_t _M_last_parsed_comment;
   
   bool _M_hadMismatchingCompoundTokens;
+  bool m_primaryExpressionWithTemplateParamsNeedsFunctionCall;
 
   // keeps track of tokens where a syntax error has been found
   // so that the same error is not reported twice for a token

@@ -208,7 +208,7 @@ void skipFunctionArguments(QString str, QStringList& skippedArguments, int& argu
   //we are searching for an opening-brace, but the reversion has also reversed the brace
   while( pos < len && s ) {
     int lastPos = pos;
-    pos = ::findCommaOrEnd( reversed, pos )  ;
+    pos = findCommaOrEnd( reversed, pos )  ;
     if( pos > lastPos ) {
       QString arg = reverse( withStringsReversed.mid(lastPos, pos-lastPos) ).trimmed();
       if( !arg.isEmpty() )
@@ -274,6 +274,14 @@ QString clearComments( QString str, QChar replacement ) {
   while( (pos = withoutStrings.indexOf( "/*", lastPos )) != -1 ) {
     if( !s ) return str;
     int i = withoutStrings.indexOf( "*/", pos );
+    int iNewline = withoutStrings.indexOf( '\n', pos );
+    
+    while(iNewline != -1 && iNewline < i && pos < len) {
+      //Preserve newlines
+      iNewline = withoutStrings.indexOf( '\n', pos );
+      fillString( str, pos, iNewline, replacement );
+      pos = iNewline+1;
+    }
     if( i != -1 && i <= len - 2 ) {
       fillString( str, pos, i+2, replacement );
       lastPos = i+2;
@@ -288,7 +296,7 @@ QString clearComments( QString str, QChar replacement ) {
     if( !s ) return str;
     int i = withoutStrings.indexOf( '\n', pos );
     if( i != -1 && i <= len - 1 ) {
-      fillString( str, pos, i+1, replacement );
+      fillString( str, pos, i, replacement );
       lastPos = i+1;
     } else {
       fillString( str, pos, len, replacement );
@@ -333,6 +341,11 @@ QString clearStrings( QString str, QChar replacement ) {
 static inline bool isWhite( QChar c ) {
   return c.isSpace();
 }
+
+static inline bool isWhite( char c ) {
+  return QChar(c).isSpace();
+}
+
 void rStrip( const QString& str, QString& from ) {
   if( str.isEmpty() ) return;
 
@@ -381,42 +394,104 @@ void strip( const QString& str, QString& from ) {
   if( ip ) from = from.mid( ip );
 }
 
-QString formatComment( const QString& comment ) {
-  QString ret;
+void rStrip( const QByteArray& str, QByteArray& from ) {
+  if( str.isEmpty() ) return;
+
   int i = 0;
+  int ip = from.length();
+  int s = from.length();
 
-  if( i > 1 ) {
-      ret = comment.mid( i );
-  } else {
-      ///remove the star in each line
-      QStringList lines = comment.split( '\n', QString::KeepEmptyParts );
-
-      if( lines.isEmpty() ) return ret;
-
-      QStringList::iterator it = lines.begin();
-      QStringList::iterator eit = lines.end();
-
-      if( it != lines.end() ) {
-
-          for( ; it != eit; ++it ) {
-              strip( "//", *it );
-              strip( "**", *it );
-              rStrip( "/**", *it );
+  for( int a = s-1; a >= 0; a-- ) {
+      if( isWhite( from[a] ) ) { ///@todo Check whether this can cause problems in utf-8, as only one real character is treated!
+          continue;
+      } else {
+          if( from[a] == str[i] ) {
+              i++;
+              ip = a;
+              if( i == (int)str.length() ) break;
+          } else {
+              break;
           }
-
-          if( lines.front().trimmed().isEmpty() )
-              lines.pop_front();
-
-          if( !lines.isEmpty() && lines.back().trimmed().isEmpty() )
-              lines.pop_back();
       }
-
-      ret = lines.join( "\n" );
   }
 
-  return ret;
+  if( ip != (int)from.length() ) from = from.left( ip );
 }
 
+void strip( const QByteArray& str, QByteArray& from ) {
+  if( str.isEmpty() ) return;
+
+  int i = 0;
+  int ip = 0;
+  int s = from.length();
+
+  for( int a = 0; a < s; a++ ) {
+      if( isWhite( from[a] ) ) { ///@todo Check whether this can cause problems in utf-8, as only one real character is treated!
+          continue;
+      } else {
+          if( from[a] == str[i] ) {
+              i++;
+              ip = a+1;
+              if( i == (int)str.length() ) break;
+          } else {
+              break;
+          }
+      }
+  }
+
+  if( ip ) from = from.mid( ip );
+}
+QString formatComment( const QString& comment ) {
+  QString ret;
+
+  QStringList lines = comment.split( '\n', QString::KeepEmptyParts );
+
+  if ( !lines.isEmpty() ) {
+
+    QStringList::iterator it = lines.begin();
+    QStringList::iterator eit = lines.end();
+
+    // remove common leading chars from the beginning of lines
+    for( ; it != eit; ++it ) {
+        strip( "///", *it );
+        strip( "//", *it );
+        strip( "**", *it );
+        rStrip( "/**", *it );
+    }
+
+    ret = lines.join( "\n" );
+  }
+
+  return ret.trimmed();
+}
+
+QByteArray formatComment( const QByteArray& comment ) {
+  QByteArray ret;
+
+  QList<QByteArray> lines = comment.split( '\n' );
+
+  if ( !lines.isEmpty() ) {
+
+    QList<QByteArray>::iterator it = lines.begin();
+    QList<QByteArray>::iterator eit = lines.end();
+
+    // remove common leading chars from the beginning of lines
+    for( ; it != eit; ++it ) {
+        strip( "///", *it );
+        strip( "//", *it );
+        strip( "**", *it );
+        rStrip( "/**", *it );
+    }
+
+    foreach(const QByteArray& line, lines) {
+      if(!ret.isEmpty())
+        ret += "\n";
+      ret += line;
+    }
+  }
+
+  return ret.trimmed();
+}
 ParamIterator::~ParamIterator()
 {
   delete d;

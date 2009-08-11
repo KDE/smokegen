@@ -120,6 +120,9 @@ pp_actual pp_macro_expander::resolve_formal(IndexedString name, Stream& input)
   return pp_actual();
 }
 
+#define RETURN_IF_INPUT_BROKEN    if(input.atEnd()) { qDebug() << "too early end while expanding" << macro->name.str(); return; }
+
+
 pp_macro_expander::pp_macro_expander(pp* engine, pp_frame* frame, bool inHeaderSection)
   : m_engine(engine)
   , m_frame(frame)
@@ -420,6 +423,8 @@ void pp_macro_expander::operator()(Stream& input, Stream& output)
         
         QList<pp_actual> actuals;
         ++input; // skip '('
+        
+        RETURN_IF_INPUT_BROKEN
 
         pp_macro_expander expand_actual(m_engine, m_frame);
 
@@ -455,6 +460,8 @@ void pp_macro_expander::operator()(Stream& input, Stream& output)
         while (!input.atEnd() && input == ',')
         {
           ++input; // skip ','
+          
+          RETURN_IF_INPUT_BROKEN
 
           {
             PreprocessedContents actualText;
@@ -494,6 +501,7 @@ void pp_macro_expander::operator()(Stream& input, Stream& output)
           //Move one character into the output, so we don't get an endless loop
           output << input;
           ++input;
+          
           continue;
         }
         
@@ -506,7 +514,7 @@ void pp_macro_expander::operator()(Stream& input, Stream& output)
         //Q_ASSERT(!input.atEnd() && input == ')');
 
         ++input; // skip ')'
-
+        
 #if 0 // ### enable me
         assert ((macro->variadics && macro->formals.size () >= actuals.size ())
                     || macro->formals.size() == actuals.size());
@@ -520,6 +528,8 @@ void pp_macro_expander::operator()(Stream& input, Stream& output)
         if(frame.depth >= maxMacroExpansionDepth) 
         {
           qDebug() << "reached maximum macro-expansion depth while expanding" << macro->name.str();
+          RETURN_IF_INPUT_BROKEN
+          
           output << input;
           ++input;
         }else{
