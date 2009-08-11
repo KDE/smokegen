@@ -149,7 +149,15 @@ void Util::preparse(QSet<Type*> *usedTypes, QSet<const Class*> *superClasses, co
                 }
             }
 
-            Type *t = Type::registerType(Type(&e));
+            Type *t = 0;
+            if (e.name().isEmpty()) {
+                // unnamed enum
+                Type longType = Type("long");
+                longType.setIsIntegral(true);
+                t = Type::registerType(longType);
+            } else {
+                t = Type::registerType(Type(&e));
+            }
             (*usedTypes) << t;
             parent->appendChild(&e);
         }

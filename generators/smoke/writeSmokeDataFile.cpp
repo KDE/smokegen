@@ -373,15 +373,6 @@ void SmokeDataFile::write()
             }
         }
     }
-    QMap<QString, QList<const Member*> >& globalSpaceMungedNameMap = classMungedNames[&classes["QGlobalSpace"]];
-    for (QHash<QString, Enum>::const_iterator it = ::enums.constBegin(); it != ::enums.constEnd(); it++) {
-        if (!it.value().parent() && it.value().nameSpace().isEmpty()) {
-            foreach (const EnumMember& member, it.value().members()) {
-                methodNames[member.name()] = 1;
-                globalSpaceMungedNameMap[member.name()].append(&member);
-            }
-        }
-    }
     
     out << "};\n\n";
     
@@ -465,8 +456,16 @@ void SmokeDataFile::write()
                 if (e->access() == Access_private)
                     continue;
                 foreach (const EnumMember& member, e->members()) {
+                    int index = 0;
+                    if (e->name().isEmpty()) {
+                        // unnamed enum
+                        index = typeIndex[&types["long"]];
+                    } else {
+                        index = typeIndex[&types[e->toString()]];
+                    }
+                    
                     out << "    {" << iter.value() << ", " << methodNames[member.name()]
-                        << ", 0, 0, Smoke::mf_static|Smoke::mf_enum, " << typeIndex[&types[e->toString()]]
+                        << ", 0, 0, Smoke::mf_static|Smoke::mf_enum, " << index
                         << ", " << xcall_index << "},";
                     
                     // comment
