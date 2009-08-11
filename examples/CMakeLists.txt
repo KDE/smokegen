@@ -1,4 +1,5 @@
 add_subdirectory(qt)
+add_subdirectory(qtuitools)
 
 find_package(KDE4)
 

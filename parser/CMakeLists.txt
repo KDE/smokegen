@@ -1,6 +1,6 @@
 project(parser)
 
-add_subdirectory(tests)
+# add_subdirectory(tests)
 
 ########### next target ###############
 
