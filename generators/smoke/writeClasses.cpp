@@ -364,8 +364,21 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
     foreach (const BasicTypeDeclaration* decl, klass->children()) {
         if (!(e = dynamic_cast<const Enum*>(decl)))
             continue;
-        if (e->access() == Access_private || !e->isValid())
+        if (e->access() == Access_private)
             continue;
+        
+        foreach (const EnumMember& member, e->members()) {
+            switchOut << "        case " << xcall_index << ": " << smokeClassName <<  "::x_" << xcall_index << "(args);\tbreak;\n";
+            if (e->parent())
+                generateEnumMemberCall(out, className, member.name(), xcall_index++);
+            else
+                generateEnumMemberCall(out, e->nameSpace(), member.name(), xcall_index++);
+        }
+        
+        // only generate the xenum_call if the enum has a valid name
+        if (e->name().isEmpty())
+            continue;
+        
         enumFound = true;
         
         // xenum_operation method code
@@ -386,14 +399,6 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
         enumOut << "                    break;\n";
         enumOut << "            }\n";
         enumOut << "            break;\n";
-        
-        foreach (const EnumMember& member, e->members()) {
-            switchOut << "        case " << xcall_index << ": " << smokeClassName <<  "::x_" << xcall_index << "(args);\tbreak;\n";
-            if (e->parent())
-                generateEnumMemberCall(out, className, member.name(), xcall_index++);
-            else
-                generateEnumMemberCall(out, e->nameSpace(), member.name(), xcall_index++);
-        }
     }
     
     // virtual method callbacks for classes that can't be instanciated aren't useful

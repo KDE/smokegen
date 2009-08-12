@@ -301,8 +301,18 @@ bool Util::hasClassVirtualDestructor(const Class* klass)
         }
     }
     
-    cache[klass] = virtualDtorFound;
-    return virtualDtorFound;
+    bool superClassHasVirtualDtor = false;
+    foreach (const Class::BaseClassSpecifier& bspec, klass->baseClasses()) {
+        if (hasClassVirtualDestructor(bspec.baseClass)) {
+            superClassHasVirtualDtor = true;
+            break;
+        }
+    }
+    
+    // if the superclass has a virtual d'tor, then the descendants have one automatically, too
+    bool ret = (virtualDtorFound || superClassHasVirtualDtor);
+    cache[klass] = ret;
+    return ret;
 }
 
 bool Util::hasClassPublicDestructor(const Class* klass)
