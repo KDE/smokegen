@@ -77,8 +77,12 @@ void SmokeClassFiles::write(const QList<QString>& keys)
             fileOut << "#include <" << str << ">\n";
         }
 
+        fileOut << "\nnamespace __smoke" << Options::module << " {\n\n";
+
         // now the class code
-        fileOut << "\n" << classCode;
+        fileOut << classCode;
+        
+        fileOut << "\n}\n";
         
         file.close();
     }

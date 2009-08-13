@@ -90,8 +90,12 @@ void SmokeDataFile::write()
     out << "\n#include <smoke.h>\n";
     out << "#include <" << Options::module << "_smoke.h>\n\n";
     
+    QString smokeNamespaceName = "__smoke" + Options::module;
+    
+    out << "namespace " << smokeNamespaceName  << " {\n\n";
+    
     // write out Options::module_cast() function
-    out << "static void *" << Options::module << "_cast(void *xptr, Smoke::Index from, Smoke::Index to) {\n";
+    out << "static void *cast(void *xptr, Smoke::Index from, Smoke::Index to) {\n";
     out << "  switch(from) {\n";
     for (QMap<QString, int>::const_iterator iter = classIndex.constBegin(); iter != classIndex.constEnd(); iter++) {
         const Class& klass = classes[iter.key()];
@@ -146,7 +150,7 @@ void SmokeDataFile::write()
     QHash<const Class*, int> inheritanceIndex;
     out << "// Group of Indexes (0 separated) used as super class lists.\n";
     out << "// Classes with super classes have an index into this array.\n";
-    out << "static Smoke::Index " << Options::module << "_inheritanceList[] = {\n";
+    out << "static Smoke::Index inheritanceList[] = {\n";
     out << "    0,\t// 0: (no super class)\n";
     
     int currentIdx = 1;
@@ -217,7 +221,7 @@ void SmokeDataFile::write()
     // classes table
     out << "\n// List of all classes\n";
     out << "// Name, external, index into inheritanceList, method dispatcher, enum dispatcher, class flags\n";
-    out << "static Smoke::Class " << Options::module << "_classes[] = {\n";
+    out << "static Smoke::Class classes[] = {\n";
     out << "    { 0L, false, 0, 0, 0, 0 },\t// 0 (no class)\n";
     for (QMap<QString, int>::const_iterator iter = classIndex.constBegin(); iter != classIndex.constEnd(); iter++) {
         Class* klass = &classes[iter.key()];
@@ -243,7 +247,7 @@ void SmokeDataFile::write()
     
     out << "// List of all types needed by the methods (arguments and return values)\n"
         << "// Name, class ID if arg is a class, and TypeId\n";
-    out << "static Smoke::Type " << Options::module << "_types[] = {\n";
+    out << "static Smoke::Type types[] = {\n";
     out << "    { 0, 0, 0 },\t//0 (no type)\n";
     QMap<QString, Type*> sortedTypes;
     for (QSet<Type*>::const_iterator it = usedTypes.constBegin(); it != usedTypes.constEnd(); it++) {
@@ -310,7 +314,7 @@ void SmokeDataFile::write()
     }
     out << "};\n\n";
     
-    out << "static Smoke::Index " << Options::module << "_argumentList[] = {\n";
+    out << "static Smoke::Index argumentList[] = {\n";
     out << "    0,\t//0  (void)\n";
     
     QHash<QVector<int>, int> parameterList;
@@ -377,7 +381,7 @@ void SmokeDataFile::write()
     out << "};\n\n";
     
     out << "// Raw list of all methods, using munged names\n";
-    out << "static const char *" << Options::module << "_methodNames[] = {\n";
+    out << "static const char *methodNames[] = {\n";
     out << "    \"\",\t//0\n";
     i = 1;
     for (QMap<QString, int>::iterator it = methodNames.begin(); it != methodNames.end(); it++, i++) {
@@ -388,7 +392,7 @@ void SmokeDataFile::write()
     
     out << "// (classId, name (index in methodNames), argumentList index, number of args, method flags, "
         << "return type (index in types), xcall() index)\n";
-    out << "static Smoke::Method " << Options::module << "_methods[] = {\n";
+    out << "static Smoke::Method methods[] = {\n";
     
     i = 0;
     int methodCount = 0;
@@ -493,7 +497,7 @@ void SmokeDataFile::write()
     
     out << "};\n\n";
 
-    out << "static Smoke::Index " << Options::module << "_ambiguousMethodList[] = {\n";
+    out << "static Smoke::Index ambiguousMethodList[] = {\n";
     out << "    0,\n";
     
     QHash<const Class*, QHash<QString, int> > ambigiousIds;
@@ -537,7 +541,7 @@ void SmokeDataFile::write()
 
     int methodMapCount = 1;
     out << "// Class ID, munged name ID (index into methodNames), method def (see methods) if >0 or number of overloads if <0\n";
-    out << "static Smoke::MethodMap " << Options::module << "_methodMaps[] = {\n";
+    out << "static Smoke::MethodMap methodMaps[] = {\n";
     out << "    {0, 0, 0},\t//0 (no method)\n";
 
     for (QMap<QString, int>::const_iterator iter = classIndex.constBegin(); iter != classIndex.constEnd(); iter++) {
@@ -568,6 +572,8 @@ void SmokeDataFile::write()
 
     out << "};\n\n";
 
+    out << "}\n\n";
+
     if (Options::parentModules.isEmpty()) {
         out << "std::map<std::string, Smoke*> Smoke::classMap;\n\n";
     }
@@ -588,15 +594,15 @@ void SmokeDataFile::write()
     out << "    if (initialized) return;\n";
     out << "    " << Options::module << "_Smoke = new Smoke(\n";
     out << "        \"" << Options::module << "\",\n";
-    out << "        " << Options::module << "_classes, " << classIndex.count() << ",\n";
-    out << "        " << Options::module << "_methods, " << methodCount << ",\n";
-    out << "        " << Options::module << "_methodMaps, " << methodMapCount << ",\n";
-    out << "        " << Options::module << "_methodNames, " << methodNames.count() + 1 << ",\n";
-    out << "        " << Options::module << "_types, " << typeIndex.count() << ",\n";
-    out << "        " << Options::module << "_inheritanceList,\n";
-    out << "        " << Options::module << "_argumentList,\n";
-    out << "        " << Options::module << "_ambiguousMethodList,\n";
-    out << "        " << Options::module << "_cast );\n";
+    out << "        " << smokeNamespaceName << "::classes, " << classIndex.count() << ",\n";
+    out << "        " << smokeNamespaceName << "::methods, " << methodCount << ",\n";
+    out << "        " << smokeNamespaceName << "::methodMaps, " << methodMapCount << ",\n";
+    out << "        " << smokeNamespaceName << "::methodNames, " << methodNames.count() + 1 << ",\n";
+    out << "        " << smokeNamespaceName << "::types, " << typeIndex.count() << ",\n";
+    out << "        " << smokeNamespaceName << "::inheritanceList,\n";
+    out << "        " << smokeNamespaceName << "::argumentList,\n";
+    out << "        " << smokeNamespaceName << "::ambiguousMethodList,\n";
+    out << "        " << smokeNamespaceName << "::cast );\n";
     out << "    initialized = true;\n";
     out << "}\n";
 
