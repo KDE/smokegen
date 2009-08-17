@@ -22,7 +22,6 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QLibrary>
-#include <qdatastream.h>
 
 #include <QtXml>
 
@@ -38,7 +37,6 @@
 #include "generatorpreprocessor.h"
 #include "generatorvisitor.h"
 #include "options.h"
-#include "type.h"
 
 typedef int (*GenerateFn)();
 

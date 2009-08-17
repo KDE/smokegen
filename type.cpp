@@ -16,14 +16,17 @@
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
+// hack for MSVC++
+#define TYPES_EXPORT
+
 #include "type.h"
 
-QHash<QString, Class> classes;
-QHash<QString, Typedef> typedefs;
-QHash<QString, Enum> enums;
-QHash<QString, Function> functions;
-QHash<QString, GlobalVar> globals;
-QHash<QString, Type> types;
+Q_DECL_EXPORT QHash<QString, Class> classes;
+Q_DECL_EXPORT QHash<QString, Typedef> typedefs;
+Q_DECL_EXPORT QHash<QString, Enum> enums;
+Q_DECL_EXPORT QHash<QString, Function> functions;
+Q_DECL_EXPORT QHash<QString, GlobalVar> globals;
+Q_DECL_EXPORT QHash<QString, Type> types;
 
 QString BasicTypeDeclaration::toString() const
 {

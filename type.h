@@ -24,6 +24,13 @@
 #include <QHash>
 #include <QtDebug>
 
+// hack for MSVC++
+#ifdef TYPES_EXPORT
+#   define EXPORT_IMPORT Q_DECL_EXPORT
+#else
+#   define EXPORT_IMPORT Q_DECL_IMPORT
+#endif
+
 class Class;
 class Typedef;
 class Enum;
@@ -31,12 +38,12 @@ class GlobalVar;
 class Function;
 class Type;
 
-extern QHash<QString, Class> classes;
-extern QHash<QString, Typedef> typedefs;
-extern QHash<QString, Enum> enums;
-extern QHash<QString, Function> functions;
-extern QHash<QString, GlobalVar> globals;
-extern QHash<QString, Type> types;
+extern EXPORT_IMPORT QHash<QString, Class> classes;
+extern EXPORT_IMPORT QHash<QString, Typedef> typedefs;
+extern EXPORT_IMPORT QHash<QString, Enum> enums;
+extern EXPORT_IMPORT QHash<QString, Function> functions;
+extern EXPORT_IMPORT QHash<QString, GlobalVar> globals;
+extern EXPORT_IMPORT QHash<QString, Type> types;
 
 class Method;
 class Field;
@@ -49,7 +56,7 @@ enum Access {
 
 class Class;
 
-class BasicTypeDeclaration
+class Q_DECL_EXPORT BasicTypeDeclaration
 {
 public:
     BasicTypeDeclaration() : m_access(Access_public) {}
@@ -74,7 +81,7 @@ public:
     QString toString() const;
 
 protected:
-    BasicTypeDeclaration(const QString& name = QString(), const QString& nspace = QString(), Class* parent = 0)
+    BasicTypeDeclaration(const QString& name, const QString& nspace = QString(), Class* parent = 0)
         : m_name(name), m_nspace(nspace), m_parent(parent) {}
 
     QString m_name;
@@ -84,7 +91,7 @@ protected:
     Access m_access;
 };
 
-class Class : public BasicTypeDeclaration
+class Q_DECL_EXPORT Class : public BasicTypeDeclaration
 {
 public:
     enum Kind {
@@ -136,7 +143,7 @@ private:
     QList<BasicTypeDeclaration*> m_children;
 };
 
-class Typedef : public BasicTypeDeclaration
+class Q_DECL_EXPORT Typedef : public BasicTypeDeclaration
 {
 public:
     Typedef(Type* type = 0, const QString& name = QString(), const QString nspace = QString(), Class* parent = 0)
@@ -156,7 +163,7 @@ private:
 
 class EnumMember;
 
-class Enum : public BasicTypeDeclaration
+class Q_DECL_EXPORT Enum : public BasicTypeDeclaration
 {
 public:
     Enum(const QString& name = QString(), const QString nspace = QString(), Class* parent = 0)
@@ -171,7 +178,7 @@ private:
     QList<EnumMember> m_members;
 };
 
-class Member
+class Q_DECL_EXPORT Member
 {
 public:
     enum Flag {
@@ -212,7 +219,7 @@ protected:
     Flags m_flags;
 };
 
-class EnumMember : public Member
+class Q_DECL_EXPORT EnumMember : public Member
 {
 public:
     EnumMember(Enum* e = 0, const QString& name = QString(), const QString& value = QString(), Type* type = 0)
@@ -229,7 +236,7 @@ protected:
     QString m_value;
 };
 
-class Parameter
+class Q_DECL_EXPORT Parameter
 {
 public:
     Parameter(const QString& name = QString(), Type* type = 0, const QString& defaultValue = QString())
@@ -259,7 +266,7 @@ protected:
 
 typedef QList<Parameter> ParameterList;
 
-class Method : public Member
+class Q_DECL_EXPORT Method : public Member
 {
 public:
     Method(Class* klass = 0, const QString& name = QString(), Type* type = 0, Access access = Access_public, ParameterList params = ParameterList())
@@ -296,7 +303,7 @@ protected:
     QStringList m_remainingValues;
 };
 
-class Field : public Member
+class Q_DECL_EXPORT Field : public Member
 {
 public:
     Field(Class* klass = 0, const QString& name = QString(), Type* type = 0, Access access = Access_public)
@@ -306,7 +313,7 @@ public:
     Class* getClass() const { return static_cast<Class*>(m_typeDecl); }
 };
 
-class GlobalVar
+class Q_DECL_EXPORT GlobalVar
 {
 public:
     GlobalVar(const QString& name = QString(), const QString nspace = QString(), Type* type = 0) : m_name(name), m_nspace(nspace), m_type(type) {}
@@ -341,7 +348,7 @@ protected:
     QString m_file;
 };
 
-class Function : public GlobalVar
+class Q_DECL_EXPORT Function : public GlobalVar
 {
 public:
     Function(const QString& name = QString(), const QString nspace = QString(), Type* type = 0, ParameterList params = ParameterList())
@@ -356,7 +363,7 @@ protected:
     ParameterList m_params;
 };
 
-class Type
+class Q_DECL_EXPORT Type
 {
 public:
     Type(Class* klass = 0, bool isConst = false, bool isVolatile = false, int pointerDepth = 0, bool isRef = false)
