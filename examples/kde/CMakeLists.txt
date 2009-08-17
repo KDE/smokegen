@@ -27,7 +27,7 @@ add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/smokedata.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/x_19.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/x_20.cpp
 
-    COMMAND ${EXECUTABLE_OUTPUT_PATH}/generator
+    COMMAND generator
     ARGS -config "${CMAKE_CURRENT_BINARY_DIR}/config.xml" -smokeconfig "${CMAKE_CURRENT_SOURCE_DIR}/smokeconfig.xml"
          -- ${CMAKE_CURRENT_SOURCE_DIR}/kde_includes.h
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
