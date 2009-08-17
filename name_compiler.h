@@ -22,6 +22,7 @@
 #include <QString>
 #include <QStringList>
 
+#include "generator_export.h"
 #include "default_visitor.h"
 #include "type.h"
 
@@ -29,7 +30,7 @@ class ParseSession;
 class OperatorAST;
 class GeneratorVisitor;
 
-class Q_DECL_EXPORT NameCompiler: protected DefaultVisitor
+class GENERATOR_EXPORT NameCompiler: protected DefaultVisitor
 {
 public:
   NameCompiler(ParseSession* session, GeneratorVisitor* visitor);
@@ -69,7 +70,7 @@ private:
 
 //Extracts a type-identifier from a template argument
 // KDevelop::IndexedTypeIdentifier Q_DECL_EXPORT typeIdentifierFromTemplateArgument(ParseSession* session, TemplateArgumentAST *node);
-uint Q_DECL_EXPORT parseConstVolatile(ParseSession* session, const ListNode<std::size_t> *cv);
+uint GENERATOR_EXPORT parseConstVolatile(ParseSession* session, const ListNode<std::size_t> *cv);
 
 #endif // NAME_COMPILER_H
 

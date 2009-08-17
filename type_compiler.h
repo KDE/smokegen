@@ -20,6 +20,7 @@
 #ifndef TYPE_COMPILER_H
 #define TYPE_COMPILER_H
 
+#include "generator_export.h"
 #include "default_visitor.h"
 #include "type.h"
 
@@ -31,7 +32,7 @@
 class ParseSession;
 class GeneratorVisitor;
 
-class Q_DECL_EXPORT TypeCompiler: protected DefaultVisitor
+class GENERATOR_EXPORT TypeCompiler: protected DefaultVisitor
 {
 public:
   TypeCompiler(ParseSession* session, GeneratorVisitor* visitor);

@@ -4,5 +4,5 @@ set(generator_dump_SRC
     generator_dump.cpp)
 
 add_library(generator_dump SHARED ${generator_dump_SRC})
-target_link_libraries(generator_dump ${QT_QTCORE_LIBRARY})
+target_link_libraries(generator_dump ${QT_QTCORE_LIBRARY} types)
 set_target_properties(generator_dump PROPERTIES PREFIX "")

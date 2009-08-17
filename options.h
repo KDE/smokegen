@@ -16,6 +16,8 @@
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
+#include "generator_export.h"
+
 class QDir;
 class QFileInfo;
 template<typename T>
@@ -27,7 +29,7 @@ class QStringList;
 
 class Typedef;
 
-struct ParserOptions
+struct GENERATOR_EXPORT ParserOptions
 {
     static QFileInfo definesList;
     static QList<QFileInfo> headerList;
@@ -37,4 +39,4 @@ struct ParserOptions
     static QStringList dropMacros;
 };
 
-extern QSet<const Typedef*> flagTypes;
+extern GENERATOR_EXPORT QSet<const Typedef*> flagTypes;

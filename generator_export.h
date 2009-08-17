@@ -1,6 +1,5 @@
 /*
-    Dump all parsed classes to stdout.
-    Copyright (C) 2009 Arno Rehn <arno@arnorehn.de>
+    Copyright (C) 2009  Arno Rehn <arno@arnorehn.de>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,17 +16,16 @@
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#include <QFileInfo>
-#include <QList>
+#ifndef GENERATOR_EXPORT_H
+#define GENERATOR_EXPORT_H
 
-#include <type.h>
+#include <qglobal.h>
 
-#include <iostream>
+// When building the library, export the symbols - otherwise import them.
+#ifdef __GENERATOR_BUILDING
+#   define GENERATOR_EXPORT Q_DECL_EXPORT
+#else
+#   define GENERATOR_EXPORT Q_DECL_IMPORT
+#endif
 
-extern "C" Q_DECL_EXPORT
-void generate()
-{
-    foreach (const QString& className, classes.keys()) {
-        std::cout << qPrintable(className) << std::endl;
-    }
-}
+#endif
