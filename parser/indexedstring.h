@@ -16,9 +16,8 @@
 
 //krazy:excludeall=dpointer,inline
 
+#include "cppparser_export.h"
 #include <QtCore/QString>
-// #include "../languageexport.h"
-// #include <language/duchain/referencecounting.h>
 
 class QDataStream;
 class QUrl;
@@ -36,7 +35,7 @@ class IndexedString;
 ///Empty strings have an index of zero.
 ///Strings of length one are not put into the repository, but are encoded directly within the index:
 ///They are encoded like 0xffff00bb where bb is the byte of the character.
-class Q_DECL_EXPORT IndexedString {
+class CPPPARSER_EXPORT IndexedString {
  public:
   IndexedString();
   ///@param str must be a utf8 encoded string, does not need to be 0-terminated.
@@ -140,7 +139,7 @@ class Q_DECL_EXPORT IndexedString {
    uint m_index;
 };
 
-Q_DECL_EXPORT inline uint qHash( const IndexedString& str ) {
+CPPPARSER_EXPORT inline uint qHash( const IndexedString& str ) {
   return str.index();
 }
 

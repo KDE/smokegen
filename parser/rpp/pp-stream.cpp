@@ -29,7 +29,7 @@
 
 using namespace rpp;
 
-Q_DECL_EXPORT const unsigned int Stream::newline(indexFromCharacter('\n'));
+const unsigned int Stream::newline(indexFromCharacter('\n'));
 static unsigned int nullItem(0);
 const unsigned int deepLine(indexFromCharacter('_'));
 

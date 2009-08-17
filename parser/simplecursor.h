@@ -18,7 +18,9 @@
 #ifndef SIMPLECURSOR_H
 #define SIMPLECURSOR_H
 
-struct Q_DECL_EXPORT SimpleCursor {
+#include "cppparser_export.h"
+
+struct CPPPARSER_EXPORT SimpleCursor {
 
  int line, column;
 

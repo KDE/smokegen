@@ -21,9 +21,11 @@
 
 #include <QtCore/Qt>
 
+#include "cppparser_export.h"
+
 #include "ast.h"
 
-class Q_DECL_EXPORT Visitor
+class CPPPARSER_EXPORT Visitor
 {
 public:
   Visitor();

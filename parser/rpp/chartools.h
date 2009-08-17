@@ -22,6 +22,8 @@
 #define CHARTOOLS
 #include <QChar>
 
+#include "../cppparser_export.h"
+
 template<class T>
 class QVector;
 class QString;
@@ -71,18 +73,18 @@ inline bool isNumber(unsigned int c) {
 }
 
 ///Opposite of convertFromByteArray
-Q_DECL_EXPORT QByteArray stringFromContents(const PreprocessedContents& contents, int offset = 0, int count = 0);
+CPPPARSER_EXPORT QByteArray stringFromContents(const PreprocessedContents& contents, int offset = 0, int count = 0);
 
 ///Opposite of convertFromByteArray
-Q_DECL_EXPORT QByteArray stringFromContents(const uint* contents, int count);
+CPPPARSER_EXPORT QByteArray stringFromContents(const uint* contents, int count);
 
 ///Returns a string that has a gap inserted between the tokens(for debugging)
-Q_DECL_EXPORT QByteArray stringFromContentsWithGaps(const PreprocessedContents& contents, int offset = 0, int count = 0);
+CPPPARSER_EXPORT QByteArray stringFromContentsWithGaps(const PreprocessedContents& contents, int offset = 0, int count = 0);
 
 ///Converts the byte array to a vector of fake-indices containing the text
-Q_DECL_EXPORT PreprocessedContents convertFromByteArray(const QByteArray& array);
+CPPPARSER_EXPORT PreprocessedContents convertFromByteArray(const QByteArray& array);
 
 ///Converts the byte array to a vector of fake-indices containing the text
 ///This also tokenizes the given array when possible
-Q_DECL_EXPORT PreprocessedContents tokenizeFromByteArray(const QByteArray& array);
+CPPPARSER_EXPORT PreprocessedContents tokenizeFromByteArray(const QByteArray& array);
 #endif

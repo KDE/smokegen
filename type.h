@@ -24,11 +24,10 @@
 #include <QHash>
 #include <QtDebug>
 
-// hack for MSVC++
-#ifdef TYPES_EXPORT
-#   define EXPORT_IMPORT Q_DECL_EXPORT
+#ifdef __TYPES_BUILDING
+#   define TYPES_EXPORT Q_DECL_EXPORT
 #else
-#   define EXPORT_IMPORT Q_DECL_IMPORT
+#   define TYPES_EXPORT Q_DECL_IMPORT
 #endif
 
 class Class;
@@ -38,12 +37,12 @@ class GlobalVar;
 class Function;
 class Type;
 
-extern EXPORT_IMPORT QHash<QString, Class> classes;
-extern EXPORT_IMPORT QHash<QString, Typedef> typedefs;
-extern EXPORT_IMPORT QHash<QString, Enum> enums;
-extern EXPORT_IMPORT QHash<QString, Function> functions;
-extern EXPORT_IMPORT QHash<QString, GlobalVar> globals;
-extern EXPORT_IMPORT QHash<QString, Type> types;
+extern TYPES_EXPORT QHash<QString, Class> classes;
+extern TYPES_EXPORT QHash<QString, Typedef> typedefs;
+extern TYPES_EXPORT QHash<QString, Enum> enums;
+extern TYPES_EXPORT QHash<QString, Function> functions;
+extern TYPES_EXPORT QHash<QString, GlobalVar> globals;
+extern TYPES_EXPORT QHash<QString, Type> types;
 
 class Method;
 class Field;
@@ -56,7 +55,7 @@ enum Access {
 
 class Class;
 
-class Q_DECL_EXPORT BasicTypeDeclaration
+class TYPES_EXPORT BasicTypeDeclaration
 {
 public:
     BasicTypeDeclaration() : m_access(Access_public) {}
@@ -91,7 +90,7 @@ protected:
     Access m_access;
 };
 
-class Q_DECL_EXPORT Class : public BasicTypeDeclaration
+class TYPES_EXPORT Class : public BasicTypeDeclaration
 {
 public:
     enum Kind {
@@ -143,7 +142,7 @@ private:
     QList<BasicTypeDeclaration*> m_children;
 };
 
-class Q_DECL_EXPORT Typedef : public BasicTypeDeclaration
+class TYPES_EXPORT Typedef : public BasicTypeDeclaration
 {
 public:
     Typedef(Type* type = 0, const QString& name = QString(), const QString nspace = QString(), Class* parent = 0)
@@ -163,7 +162,7 @@ private:
 
 class EnumMember;
 
-class Q_DECL_EXPORT Enum : public BasicTypeDeclaration
+class TYPES_EXPORT Enum : public BasicTypeDeclaration
 {
 public:
     Enum(const QString& name = QString(), const QString nspace = QString(), Class* parent = 0)
@@ -178,7 +177,7 @@ private:
     QList<EnumMember> m_members;
 };
 
-class Q_DECL_EXPORT Member
+class TYPES_EXPORT Member
 {
 public:
     enum Flag {
@@ -219,7 +218,7 @@ protected:
     Flags m_flags;
 };
 
-class Q_DECL_EXPORT EnumMember : public Member
+class TYPES_EXPORT EnumMember : public Member
 {
 public:
     EnumMember(Enum* e = 0, const QString& name = QString(), const QString& value = QString(), Type* type = 0)
@@ -236,7 +235,7 @@ protected:
     QString m_value;
 };
 
-class Q_DECL_EXPORT Parameter
+class TYPES_EXPORT Parameter
 {
 public:
     Parameter(const QString& name = QString(), Type* type = 0, const QString& defaultValue = QString())
@@ -266,7 +265,7 @@ protected:
 
 typedef QList<Parameter> ParameterList;
 
-class Q_DECL_EXPORT Method : public Member
+class TYPES_EXPORT Method : public Member
 {
 public:
     Method(Class* klass = 0, const QString& name = QString(), Type* type = 0, Access access = Access_public, ParameterList params = ParameterList())
@@ -303,7 +302,7 @@ protected:
     QStringList m_remainingValues;
 };
 
-class Q_DECL_EXPORT Field : public Member
+class TYPES_EXPORT Field : public Member
 {
 public:
     Field(Class* klass = 0, const QString& name = QString(), Type* type = 0, Access access = Access_public)
@@ -313,7 +312,7 @@ public:
     Class* getClass() const { return static_cast<Class*>(m_typeDecl); }
 };
 
-class Q_DECL_EXPORT GlobalVar
+class TYPES_EXPORT GlobalVar
 {
 public:
     GlobalVar(const QString& name = QString(), const QString nspace = QString(), Type* type = 0) : m_name(name), m_nspace(nspace), m_type(type) {}
@@ -348,7 +347,7 @@ protected:
     QString m_file;
 };
 
-class Q_DECL_EXPORT Function : public GlobalVar
+class TYPES_EXPORT Function : public GlobalVar
 {
 public:
     Function(const QString& name = QString(), const QString nspace = QString(), Type* type = 0, ParameterList params = ParameterList())
@@ -363,7 +362,7 @@ protected:
     ParameterList m_params;
 };
 
-class Q_DECL_EXPORT Type
+class TYPES_EXPORT Type
 {
 public:
     Type(Class* klass = 0, bool isConst = false, bool isVolatile = false, int pointerDepth = 0, bool isRef = false)

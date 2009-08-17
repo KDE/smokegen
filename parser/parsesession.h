@@ -26,6 +26,7 @@
 #include <QtCore/QVector>
 #include <QtCore/QPair>
 
+#include "cppparser_export.h"
 #include "indexedstring.h"
 #include "rpp/anchor.h"
 
@@ -43,7 +44,7 @@ namespace rpp { class MacroBlock; class LocationTable; }
 
 /// Contains everything needed to keep an AST useful once the rest of the parser
 /// has gone away.
-class Q_DECL_EXPORT ParseSession
+class CPPPARSER_EXPORT ParseSession
 {
 public:
   ParseSession();

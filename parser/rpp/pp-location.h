@@ -26,6 +26,7 @@
 #include <QVector>
 #include <QPair>
 
+#include "../cppparser_export.h"
 #include "../simplecursor.h"
 
 #include "anchor.h"
@@ -34,7 +35,7 @@ typedef QVector<unsigned int> PreprocessedContents;
 
 namespace rpp {
 
-class Q_DECL_EXPORT LocationTable
+class CPPPARSER_EXPORT LocationTable
 {
   public:
     LocationTable();

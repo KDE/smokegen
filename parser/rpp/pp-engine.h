@@ -27,6 +27,7 @@
 
 #include <QtCore/QStack>
 
+#include "../cppparser_export.h"
 #include "../problem.h"
 
 #include "pp-macro.h"
@@ -116,7 +117,7 @@ struct Value
 };
 
 
-class Q_DECL_EXPORT pp
+class CPPPARSER_EXPORT pp
 {
   Environment* m_environment;
   pp_macro_expander expand;

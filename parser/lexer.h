@@ -20,6 +20,7 @@
 #ifndef LEXER_H
 #define LEXER_H
 
+#include "cppparser_export.h"
 #include "symbol.h"
 #include <QtCore/QString>
 #include <cstdlib>
@@ -34,7 +35,7 @@ class ParseSession;
 typedef void (Lexer::*scan_fun_ptr)();
 
 /**Token.*/
-class Q_DECL_EXPORT Token
+class CPPPARSER_EXPORT Token
 {
 public:
   ///kind of the token @see TOKEN_KIND enum reference.
@@ -71,7 +72,7 @@ All tokens are destructed when this stream is deleted.
 The stream has a "cursor" which is simply an integer which defines
 the offset (index) of the token currently "observed" from the beginning of
 the stream.*/
-class TokenStream
+class CPPPARSER_EXPORT TokenStream
 {
 private:
   TokenStream(const TokenStream &);
@@ -157,7 +158,7 @@ private:
 };
 
 /**C++ Lexer.*/
-class Lexer
+class CPPPARSER_EXPORT Lexer
 {
 public:
   /**

@@ -23,6 +23,7 @@
 
 #include <QtCore/Qt>
 
+#include "../cppparser_export.h"
 #include "../simplecursor.h"
 
 namespace rpp {
@@ -30,7 +31,7 @@ namespace rpp {
  * A SimpleCursor with additional boolean value whether the range opened by this anchor is collapsed.
  * If that value is true, it means that Everything behind the anchor until the next one is collapsed to the exact position of this anchor.
  * */
-class Q_DECL_EXPORT Anchor : public SimpleCursor {
+class CPPPARSER_EXPORT Anchor : public SimpleCursor {
 public:
   Anchor() : collapsed(false) {
   }

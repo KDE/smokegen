@@ -24,6 +24,7 @@
 
 #include <QtCore/QIODevice>
 
+#include "../cppparser_export.h"
 #include "../simplecursor.h"
 #include "../indexedstring.h"
 #include "anchor.h"
@@ -44,7 +45,7 @@ class LocationTable;
  *
  * @author Hamish Rodda <rodda@kde.org>
  */
-class Q_DECL_EXPORT Stream
+class CPPPARSER_EXPORT Stream
 {
     static const uint newline;
 

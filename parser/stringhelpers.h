@@ -19,6 +19,8 @@
 #ifndef __DUCHAIN_STRINGHELPERS_H__
 #define __DUCHAIN_STRINGHELPERS_H__
 
+#include "cppparser_export.h"
+
 #include <QtCore/QChar>
 
 class QString;
@@ -27,7 +29,7 @@ class QStringList;
 /**
 searches a fitting closing brace from left to right: a ')' for '(', ']' for '[', ...
 */
-int Q_DECL_EXPORT findClose( const QString& str , int pos );
+int CPPPARSER_EXPORT findClose( const QString& str , int pos );
 
 /**
  * Searches in the given string for a ',' or closing brace,
@@ -37,49 +39,49 @@ int Q_DECL_EXPORT findClose( const QString& str , int pos );
  * @param validEnd when this is set differently, the function will stop when it finds a comma or the given character, and not at closing-braces.
  * @return  On fail, str.length() is returned, else the position of the closing character.
  * */
-int Q_DECL_EXPORT findCommaOrEnd( const QString& str , int pos, QChar validEnd = ' ' );
+int CPPPARSER_EXPORT findCommaOrEnd( const QString& str , int pos, QChar validEnd = ' ' );
 
 /**
  * Skips in the string backwards over function-arguments, and stops at the right side of a "("
  * @param skippedArguments Will contain all skipped arguments
  * @param argumentsStart Should be set to the position where the seeking should start, will be changed to the right side of a "(" when found. Should be at the right side of a '(', and may be max. str.length()
  * */
-void Q_DECL_EXPORT skipFunctionArguments(QString str, QStringList& skippedArguments, int& argumentsStart );
+void CPPPARSER_EXPORT skipFunctionArguments(QString str, QStringList& skippedArguments, int& argumentsStart );
 
 /**
  * Removes white space at the beginning and end, and replaces contiguous inner white-spaces with single white-spaces. Newlines are treated as whitespaces, the returned text will have no more newlines.
  * */
-QString Q_DECL_EXPORT reduceWhiteSpace(QString str);
+QString CPPPARSER_EXPORT reduceWhiteSpace(QString str);
 
-QString Q_DECL_EXPORT stripFinalWhitespace(QString str);
+QString CPPPARSER_EXPORT stripFinalWhitespace(QString str);
 
 /**
  * Fills all c++-style comments  within the given code with the given 'replacement' character
  * Newlines are preserved.
  * */
-QString Q_DECL_EXPORT clearComments( QString str, QChar replacement = ' ' );
+QString CPPPARSER_EXPORT clearComments( QString str, QChar replacement = ' ' );
 /**
  * Fills all c++-strings within the given code with the given 'replacement' character
  * Comments should have been removed before.
  * */
-QString Q_DECL_EXPORT clearStrings( QString str, QChar replacement = ' ' );
+QString CPPPARSER_EXPORT clearStrings( QString str, QChar replacement = ' ' );
 
 /**
  * Extracts the interesting information out of a comment.
  * For example it removes all the stars at the beginning, and re-indents the text.
  * */
-QString Q_DECL_EXPORT formatComment( const QString& comment );
+QString CPPPARSER_EXPORT formatComment( const QString& comment );
 
 /**
  * Extracts the interesting information out of a comment.
  * For example it removes all the stars at the beginning, and re-indents the text.
  * */
-QByteArray Q_DECL_EXPORT formatComment( const QByteArray& comment );
+QByteArray CPPPARSER_EXPORT formatComment( const QByteArray& comment );
 
 /**
  * Can be used to iterate through different kinds of parameters, for example template-parameters(By giving it "<>:")
  * */
-class Q_DECL_EXPORT ParamIterator
+class CPPPARSER_EXPORT ParamIterator
 {
   public:
     /**

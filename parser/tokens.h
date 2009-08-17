@@ -19,6 +19,8 @@
 #ifndef TOKENS_H
 #define TOKENS_H
 
+#include "cppparser_export.h"
+
 #include <QtCore/Qt>
 
 /**@file Token kinds.*/
@@ -136,10 +138,10 @@ enum TOKEN_KIND
 };
 
 /**@return human-readable name of the token.*/
-Q_DECL_EXPORT char const *token_name(int token);
+CPPPARSER_EXPORT char const *token_name(int token);
 
 /**@return text corresponding to the token.*/
-Q_DECL_EXPORT char const *token_text(int token);
+CPPPARSER_EXPORT char const *token_text(int token);
 
 #endif
 

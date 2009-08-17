@@ -22,11 +22,12 @@
 #include <QTextStream>
 #include <QString>
 
+#include "cppparser_export.h"
 #include "default_visitor.h"
 
 class Token;
 
-class Q_DECL_EXPORT CodeGenerator : public DefaultVisitor
+class CPPPARSER_EXPORT CodeGenerator : public DefaultVisitor
 {
 public:
   CodeGenerator(ParseSession* session);

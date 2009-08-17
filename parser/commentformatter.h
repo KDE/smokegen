@@ -19,6 +19,7 @@
 #ifndef COMMENTFORMATTER_H
 #define COMMENTFORMATTER_H
 
+#include "cppparser_export.h"
 #include <QString>
 
 template<class Tp>
@@ -31,7 +32,7 @@ class ListNode;
 
 class ParseSession;
 
-class Q_DECL_EXPORT CommentFormatter {
+class CPPPARSER_EXPORT CommentFormatter {
     public:
     ///Processes the comment represented by the given token-number within the parse-session's token-stream
     static QByteArray formatComment( size_t token, const ParseSession* session );

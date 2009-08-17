@@ -24,6 +24,8 @@
 #include "lexer.h"
 #include "commentparser.h"
 
+#include "cppparser_export.h"
+
 #include <QtCore/QQueue>
 #include <QtCore/QSet>
 #include <QtCore/QString>
@@ -42,7 +44,7 @@ class Control;
 The Parser.
 LL(k) parser for c++ code.
 */
-class Q_DECL_EXPORT Parser
+class CPPPARSER_EXPORT Parser
 {
 public:
   Parser(Control *control);

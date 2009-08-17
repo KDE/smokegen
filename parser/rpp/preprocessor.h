@@ -24,12 +24,13 @@
 
 #include <QtCore/QString>
 #include "../indexedstring.h"
+#include "../cppparser_export.h"
 
 namespace rpp {
 
 class Stream;
 
-class Q_DECL_EXPORT Preprocessor
+class CPPPARSER_EXPORT Preprocessor
 {
 public:
     enum IncludeType {

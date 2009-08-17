@@ -19,6 +19,7 @@
 #ifndef CONTROL_H
 #define CONTROL_H
 
+#include "cppparser_export.h"
 #include "symbol.h"
 #include "memorypool.h"
 #include "problem.h"
@@ -31,7 +32,7 @@ struct Type;
 /**Parser control information.
 Provides problem tracking, context(visibility)-aware symbol name tables,
 typedef table and other information about the parsing process.*/
-class Q_DECL_EXPORT Control
+class CPPPARSER_EXPORT Control
 {
 public:
   Control();

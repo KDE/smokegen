@@ -22,14 +22,15 @@
 
 #include <QtCore/Qt>
 
+#include "cppparser_export.h"
 #include "default_visitor.h"
 
 class TokenStream;
 
 //Contains the name for each AST kind enumerator
-Q_DECL_EXPORT extern char const * const names[];
+CPPPARSER_EXPORT extern char const * const names[];
 
-class Q_DECL_EXPORT DumpTree: protected DefaultVisitor
+class CPPPARSER_EXPORT DumpTree: protected DefaultVisitor
 {
 public:
   DumpTree();

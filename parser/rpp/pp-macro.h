@@ -26,6 +26,7 @@
 #include <QtCore/QStringList>
 #include <QVector>
 #include "../indexedstring.h"
+#include "../cppparser_export.h"
 // #include "appendedlist.h"
 // #include <language/editor/hashedstring.h>
 // #include <language/duchain/appendedlist.h>
@@ -38,7 +39,7 @@ namespace rpp {
 // Q_DECL_EXPORT DECLARE_LIST_MEMBER_HASH(pp_macro, formals, IndexedString)
 
   //This contains the data of a macro that can be marshalled by directly copying the memory
-struct Q_DECL_EXPORT pp_macro
+struct CPPPARSER_EXPORT pp_macro
 { ///@todo enable structure packing
   pp_macro(const IndexedString& name = IndexedString());
   pp_macro(const char* name);

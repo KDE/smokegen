@@ -34,8 +34,6 @@ set(cppparser_LIB_SRCS
     rpp/chartools.cpp
 )
 
-# Note: This library doesn't follow API/ABI/BC rules and shouldn't have a SOVERSION
-#       Its only purpose is to support the plugin without needing to add all source files
-#       to the plugin target
+add_definitions(-D__CPPPARSER_BUILDING)
 add_library(cppparser SHARED ${cppparser_LIB_SRCS})
 target_link_libraries(cppparser ${QT_QTCORE_LIBRARY})

@@ -27,6 +27,7 @@
 
 #include <QStack>
 
+#include "../cppparser_export.h"
 #include "../indexedstring.h"
 
 namespace rpp {
@@ -35,7 +36,7 @@ class pp_macro;
 class pp;
 class LocationTable;
 
-class Q_DECL_EXPORT MacroBlock
+class CPPPARSER_EXPORT MacroBlock
 {
 public:
   MacroBlock(int _sourceLine);
@@ -57,7 +58,7 @@ public:
   QList<pp_macro*> macros;
 };
 
-class Q_DECL_EXPORT Environment
+class CPPPARSER_EXPORT Environment
 {
 public:
   typedef QHash<IndexedString, pp_macro*> EnvironmentMap;
