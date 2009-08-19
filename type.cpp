@@ -16,7 +16,6 @@
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#define __TYPES_BUILDING
 #include "type.h"
 
 QHash<QString, Class> classes;

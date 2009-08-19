@@ -24,11 +24,7 @@
 #include <QHash>
 #include <QtDebug>
 
-#ifdef __TYPES_BUILDING
-#   define TYPES_EXPORT Q_DECL_EXPORT
-#else
-#   define TYPES_EXPORT Q_DECL_IMPORT
-#endif
+#include "generator_export.h"
 
 class Class;
 class Typedef;
@@ -37,12 +33,12 @@ class GlobalVar;
 class Function;
 class Type;
 
-extern TYPES_EXPORT QHash<QString, Class> classes;
-extern TYPES_EXPORT QHash<QString, Typedef> typedefs;
-extern TYPES_EXPORT QHash<QString, Enum> enums;
-extern TYPES_EXPORT QHash<QString, Function> functions;
-extern TYPES_EXPORT QHash<QString, GlobalVar> globals;
-extern TYPES_EXPORT QHash<QString, Type> types;
+extern GENERATOR_EXPORT QHash<QString, Class> classes;
+extern GENERATOR_EXPORT QHash<QString, Typedef> typedefs;
+extern GENERATOR_EXPORT QHash<QString, Enum> enums;
+extern GENERATOR_EXPORT QHash<QString, Function> functions;
+extern GENERATOR_EXPORT QHash<QString, GlobalVar> globals;
+extern GENERATOR_EXPORT QHash<QString, Type> types;
 
 class Method;
 class Field;
@@ -55,7 +51,7 @@ enum Access {
 
 class Class;
 
-class TYPES_EXPORT BasicTypeDeclaration
+class GENERATOR_EXPORT BasicTypeDeclaration
 {
 public:
     BasicTypeDeclaration() : m_access(Access_public) {}
@@ -90,7 +86,7 @@ protected:
     Access m_access;
 };
 
-class TYPES_EXPORT Class : public BasicTypeDeclaration
+class GENERATOR_EXPORT Class : public BasicTypeDeclaration
 {
 public:
     enum Kind {
@@ -142,7 +138,7 @@ private:
     QList<BasicTypeDeclaration*> m_children;
 };
 
-class TYPES_EXPORT Typedef : public BasicTypeDeclaration
+class GENERATOR_EXPORT Typedef : public BasicTypeDeclaration
 {
 public:
     Typedef(Type* type = 0, const QString& name = QString(), const QString nspace = QString(), Class* parent = 0)
@@ -162,7 +158,7 @@ private:
 
 class EnumMember;
 
-class TYPES_EXPORT Enum : public BasicTypeDeclaration
+class GENERATOR_EXPORT Enum : public BasicTypeDeclaration
 {
 public:
     Enum(const QString& name = QString(), const QString nspace = QString(), Class* parent = 0)
@@ -177,7 +173,7 @@ private:
     QList<EnumMember> m_members;
 };
 
-class TYPES_EXPORT Member
+class GENERATOR_EXPORT Member
 {
 public:
     enum Flag {
@@ -218,7 +214,7 @@ protected:
     Flags m_flags;
 };
 
-class TYPES_EXPORT EnumMember : public Member
+class GENERATOR_EXPORT EnumMember : public Member
 {
 public:
     EnumMember(Enum* e = 0, const QString& name = QString(), const QString& value = QString(), Type* type = 0)
@@ -235,7 +231,7 @@ protected:
     QString m_value;
 };
 
-class TYPES_EXPORT Parameter
+class GENERATOR_EXPORT Parameter
 {
 public:
     Parameter(const QString& name = QString(), Type* type = 0, const QString& defaultValue = QString())
@@ -265,7 +261,7 @@ protected:
 
 typedef QList<Parameter> ParameterList;
 
-class TYPES_EXPORT Method : public Member
+class GENERATOR_EXPORT Method : public Member
 {
 public:
     Method(Class* klass = 0, const QString& name = QString(), Type* type = 0, Access access = Access_public, ParameterList params = ParameterList())
@@ -302,7 +298,7 @@ protected:
     QStringList m_remainingValues;
 };
 
-class TYPES_EXPORT Field : public Member
+class GENERATOR_EXPORT Field : public Member
 {
 public:
     Field(Class* klass = 0, const QString& name = QString(), Type* type = 0, Access access = Access_public)
@@ -312,10 +308,11 @@ public:
     Class* getClass() const { return static_cast<Class*>(m_typeDecl); }
 };
 
-class TYPES_EXPORT GlobalVar
+class GENERATOR_EXPORT GlobalVar
 {
 public:
     GlobalVar(const QString& name = QString(), const QString nspace = QString(), Type* type = 0) : m_name(name), m_nspace(nspace), m_type(type) {}
+    virtual ~GlobalVar() {}
 
     bool isValid() const { return (!m_name.isEmpty() && m_type); }
 
@@ -347,7 +344,7 @@ protected:
     QString m_file;
 };
 
-class TYPES_EXPORT Function : public GlobalVar
+class GENERATOR_EXPORT Function : public GlobalVar
 {
 public:
     Function(const QString& name = QString(), const QString nspace = QString(), Type* type = 0, ParameterList params = ParameterList())
@@ -362,7 +359,7 @@ protected:
     ParameterList m_params;
 };
 
-class TYPES_EXPORT Type
+class GENERATOR_EXPORT Type
 {
 public:
     Type(Class* klass = 0, bool isConst = false, bool isVolatile = false, int pointerDepth = 0, bool isRef = false)

@@ -1,7 +1,5 @@
 project(smokegenerator)
 
-cmake_minimum_required(VERSION 2.6)
-
 find_package(Qt4 REQUIRED)
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
@@ -19,17 +17,11 @@ set(generator_SRC
     options.cpp
     type_compiler.cpp
     name_compiler.cpp
+    type.cpp
 )
 
-set(types_SRC
-    type.cpp)
-
-add_library(types SHARED ${types_SRC})
-target_link_libraries(types ${QT_QTCORE_LIBRARY})
-
 add_executable(generator ${generator_SRC})
-target_link_libraries(generator ${QT_QTCORE_LIBRARY} ${QT_QTXML_LIBRARY} cppparser types)
+target_link_libraries(generator ${QT_QTCORE_LIBRARY} ${QT_QTXML_LIBRARY} cppparser)
 set_target_properties(generator PROPERTIES COMPILE_DEFINITIONS __GENERATOR_BUILDING ENABLE_EXPORTS TRUE)
 
 add_subdirectory(generators)
-add_subdirectory(examples)
