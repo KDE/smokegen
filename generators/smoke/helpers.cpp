@@ -489,13 +489,7 @@ QString Util::assignmentString(const Type* type, const QString& var)
     } else if (Options::qtMode && type->getTypedef() && flagTypes.contains(type->getTypedef())) {
         return "(uint)" + var;
     } else {
-        QString ret = "(void*)new ";
-        if (Class* retClass = type->getClass())
-            ret += retClass->toString();
-        else if (Typedef* retTdef = type->getTypedef())
-            ret += retTdef->toString(); 
-        else
-            ret += type->toString();
+        QString ret = "(void*)new " + type->toString();
         ret += '(' + var + ')';
         return ret;
     }

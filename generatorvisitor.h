@@ -73,6 +73,7 @@ private:
     bool createTypedef;
     short inClass;
     
+    bool inTemplate;
     bool isStatic;
     bool isVirtual;
     bool hasInitializer;

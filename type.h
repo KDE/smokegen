@@ -102,7 +102,7 @@ public:
     };
     
     Class(const QString& name = QString(), const QString nspace = QString(), Class* parent = 0, Kind kind = Kind_Class, bool isForward = true)
-          : BasicTypeDeclaration(name, nspace, parent), m_kind(kind), m_forward(isForward), m_isNamespace(false) {}
+          : BasicTypeDeclaration(name, nspace, parent), m_kind(kind), m_forward(isForward), m_isNamespace(false), m_isTemplate(false) {}
     virtual ~Class() {}
     
     void setKind(Kind kind) { m_kind = kind; }
@@ -128,10 +128,14 @@ public:
     const QList<BasicTypeDeclaration*>& children() const { return m_children; }
     void appendChild(BasicTypeDeclaration* child) { m_children.append(child); }
     
+    bool isTemplate() const { return m_isTemplate; }
+    void setIsTemplate(bool isTemplate) { m_isTemplate = isTemplate; }
+    
 private:
     Kind m_kind;
     bool m_forward;
     bool m_isNamespace;
+    bool m_isTemplate;
     QList<Method> m_methods;
     QList<Field> m_fields;
     QList<BaseClassSpecifier> m_bases;

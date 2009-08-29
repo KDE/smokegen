@@ -28,7 +28,7 @@
 
 GeneratorVisitor::GeneratorVisitor(ParseSession *session, const QString& header) 
     : m_session(session), m_header(header), createType(false), createTypedef(false),
-      inClass(0), isStatic(false), isVirtual(false), hasInitializer(false), currentTypeRef(0), inMethod(false)
+      inClass(0), inTemplate(false), isStatic(false), isVirtual(false), hasInitializer(false), currentTypeRef(0), inMethod(false)
 {
     nc = new NameCompiler(m_session, this);
     tc = new TypeCompiler(m_session, this);
@@ -143,12 +143,55 @@ BasicTypeDeclaration* GeneratorVisitor::resolveType(QString & name)
 
     QStringList parts = name.split("::");
     if (parts.count() > 1) {
+        // try to resolve the first part - if that works simply append the last part.
         BasicTypeDeclaration* decl = resolveType(parts.takeFirst());
         if (!decl)
             return 0;
         parts.prepend(decl->toString());
         name = parts.join("::");
         returnOnExistence(name);
+    } else {
+        // maybe it's an enum value (as used for template args in phonon)
+        
+        // look through all the enums of the parent classes
+        if (!klass.isEmpty()) {
+            const Class* clazz = klass.top();
+            while (clazz) {
+                foreach (BasicTypeDeclaration* decl, klass.top()->children()) {
+                    Enum* e = 0;
+                    if (!(e = dynamic_cast<Enum*>(decl)))
+                        continue;
+                    foreach (const EnumMember& member, e->members()) {
+                        if (member.name() == name) {
+                            name.prepend(klass.top()->toString() + "::");
+                            return 0;
+                        }
+                    }
+                }
+                clazz = clazz->parent();
+            }
+        }
+        
+        // look through all global enums in our namespace
+        QStringList nspace = this->nspace;
+        do {
+            QString n = nspace.join("::");
+            foreach (const Enum& e, enums.values()) {
+                if (e.parent())
+                    continue;
+                
+                if (e.nameSpace() == n) {
+                    foreach (const EnumMember& member, e.members()) {
+                        if (member.name() == name) {
+                            name.prepend(n + "::");
+                            return 0;
+                        }
+                    }
+                }
+            }
+            if (!nspace.isEmpty())
+                nspace.pop_back();
+        } while (!nspace.isEmpty());
     }
 
     return 0;
@@ -504,6 +547,10 @@ void GeneratorVisitor::visitSimpleDeclaration(SimpleDeclarationAST* node)
         if (classes.contains(name) && !classes[name].isForwardDecl())
             return;
         QHash<QString, Class>::iterator item = classes.insert(name, _class);
+        if (inTemplate) {
+            item.value().setIsTemplate(true);
+            return;
+        }
         klass.push(&item.value());
         popKlass = true;
     }
@@ -561,6 +608,12 @@ void GeneratorVisitor::visitSimpleTypeSpecifier(SimpleTypeSpecifierAST* node)
 
 void GeneratorVisitor::visitTemplateDeclaration(TemplateDeclarationAST* node)
 {
+    int kind = token(node->declaration->start_token).kind;
+    if (kind == Token_class || kind == Token_struct) {
+        inTemplate = true;
+        visit(node->declaration);
+        inTemplate = false;
+    }
     // skip template declarations
     return;
 }

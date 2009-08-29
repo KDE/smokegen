@@ -50,6 +50,9 @@ SmokeDataFile::SmokeDataFile()
     
     // if a class is used somewhere but not listed in the class list, mark it external
     for (QHash<QString, Class>::iterator iter = ::classes.begin(); iter != ::classes.end(); iter++) {
+        if (iter.value().isTemplate())
+            continue;
+        
         if ((isClassUsed(&iter.value()) && iter.value().access() != Access_private) || superClasses.contains(&iter.value())) {
             classIndex[iter.key()] = 1;
             

@@ -175,6 +175,8 @@ TypeSpecifierAST* NameCompiler::lastTypeSpecifier() const {
 
 void NameCompiler::visitTemplateArgument(TemplateArgumentAST *node)
 {
+    if (!node->type_id)
+        return;
     TypeCompiler tc(m_session, m_visitor);
     tc.run(node->type_id->type_specifier, node->type_id->declarator ? node->type_id->declarator : 0);
     m_templateArgs[m_name.count()] << tc.type();
