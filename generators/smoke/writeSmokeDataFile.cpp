@@ -215,7 +215,7 @@ void SmokeDataFile::write()
     out << "\n// Those are the xcall functions defined in each x_*.cpp file, for dispatching method calls\n";
     for (QMap<QString, int>::const_iterator iter = classIndex.constBegin(); iter != classIndex.constEnd(); iter++) {
         Class& klass = classes[iter.key()];
-        if (externalClasses.contains(&klass))
+        if (externalClasses.contains(&klass) || klass.isTemplate())
             continue;
         QString smokeClassName = QString(klass.toString()).replace("::", "__");
         out << "void xcall_" << smokeClassName << "(Smoke::Index, void*, Smoke::Stack);\n";
@@ -228,6 +228,9 @@ void SmokeDataFile::write()
     out << "    { 0L, false, 0, 0, 0, 0 },\t// 0 (no class)\n";
     for (QMap<QString, int>::const_iterator iter = classIndex.constBegin(); iter != classIndex.constEnd(); iter++) {
         Class* klass = &classes[iter.key()];
+        if (klass->isTemplate())
+            continue;
+        
         if (externalClasses.contains(klass)) {
             out << "    { \""  << iter.key() << "\", true, 0, 0, 0, 0 },\t//" << iter.value() << "\n";
         } else {
