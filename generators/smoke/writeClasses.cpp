@@ -41,6 +41,8 @@ void SmokeClassFiles::write()
 
 void SmokeClassFiles::write(const QList<QString>& keys)
 {
+    qDebug("writing out x_*.cpp [%s]", qPrintable(Options::module));
+    
     // how many classes go in one file
     int count = keys.count() / Options::parts;
     int count2 = count;
@@ -446,7 +448,20 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
                 virtMeths.insert(methString);
                 continue;
             }
-            generateVirtualMethod(out, className, *meth, includes);
+            /* If the method was overridden, use the overriding method for getting the classname - else use the virtual method itself
+               Don't use className here, as this won't work with hidden methods. Imagine:
+               
+               struct A {
+                   virtual void foo() {}
+               };
+               
+               struct B : public A {
+                   virtual void foo(int) {}
+               };
+               
+               B::foo(int) hides A::foo(). So if we have an instance of B, we can't call this->B::foo(), but have to use this->A::foo()
+             */
+            generateVirtualMethod(out, m ? m->getClass()->toString() : meth->getClass()->toString(), *meth, includes);
             virtMeths.insert(methString);
         }
         foreach (const Method* meth, pureVirtuals) {

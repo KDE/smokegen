@@ -227,5 +227,7 @@ int generate()
     SmokeClassFiles classFiles(&smokeData);
     classFiles.write();
     
+    qDebug() << "Done.";
+    
     return EXIT_SUCCESS;
 }
