@@ -39,6 +39,8 @@ public:
     BasicTypeDeclaration* resolveTypeInSuperClasses(const Class* klass, const QString& name);
     BasicTypeDeclaration* resolveType(const QString& name);
     BasicTypeDeclaration* resolveType(QString& name);
+    QString resolveEnumMember(const QString& name);
+    QString resolveEnumMember(const QString& parent, const QString& name);
     QPair<bool, bool> parseCv(const ListNode<std::size_t> *cv);
 
 protected:

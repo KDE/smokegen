@@ -197,6 +197,56 @@ BasicTypeDeclaration* GeneratorVisitor::resolveType(QString & name)
     return 0;
 }
 
+QString GeneratorVisitor::resolveEnumMember(const QString& name)
+{
+    QString parent, member;
+    int idx = -1;
+    if ((idx = name.lastIndexOf("::")) != -1) {
+        parent = name.mid(0, idx);
+        member = name.mid(idx + 2);
+    } else {
+        member = name;
+    }
+    return resolveEnumMember(parent, member);
+}
+
+QString GeneratorVisitor::resolveEnumMember(const QString& parent, const QString& name)
+{
+    // is 'parent' a know class?
+    BasicTypeDeclaration* decl = resolveType(parent);
+    if (decl)
+        return decl->toString() + "::" + name;
+    
+    // doesn't seem to be a class, so it's probably a part of a namespace name
+    QStringList nspace = this->nspace;
+    do {
+        QString n = nspace.join("::");
+        if (!n.isEmpty()) n += "::";
+        n += parent;
+        
+        foreach (const Enum& e, enums.values()) {
+            if (e.parent())
+                continue;
+            
+            if (e.nameSpace() == n) {
+                foreach (const EnumMember& member, e.members()) {
+                    if (member.name() == name) {
+                        QString ret = n;
+                        if (!n.isEmpty())
+                            n += "::";
+                        return n + name;
+                    }
+                }
+            }
+        }
+        
+        if (!nspace.isEmpty())
+            nspace.pop_back();
+    } while (!nspace.isEmpty());
+    
+    return QString();
+}
+
 #undef returnOnExistence
 
 void GeneratorVisitor::visitAccessSpecifier(AccessSpecifierAST* node)
@@ -487,6 +537,7 @@ void GeneratorVisitor::visitParameterDeclaration(ParameterDeclarationAST* node)
         ExpressionAST* expression = node->expression;
         
         PostfixExpressionAST* postfix = 0;
+        PrimaryExpressionAST* primary = 0;
         if ((postfix = ast_cast<PostfixExpressionAST*>(node->expression))
              && (postfix->sub_expressions->count() == 1
              && postfix->sub_expressions->at(0)->element->kind == AST::Kind_FunctionCall))
@@ -514,10 +565,36 @@ void GeneratorVisitor::visitParameterDeclaration(ParameterDeclarationAST* node)
                 className.append(" >");
             }
             defaultValue.append(className);
+        } else if ((primary = ast_cast<PrimaryExpressionAST*>(node->expression))) {
+            if (primary->name) {
+                // don't build the default value twice
+                expression = 0;
+                // enum - try to resolve that
+                nc->run(primary->name);
+                
+                if (nc->qualifiedName().count() > 1) {
+                    QString name;
+                    // build the name of the containing class/namespace
+                    for (int i = 0; i < nc->qualifiedName().count() - 1; i++) {
+                        if (i > 0) name.append("::");
+                        name.append(nc->qualifiedName()[i]);
+                    }
+                    
+                    defaultValue = resolveEnumMember(name, nc->qualifiedName().last());
+                    if (defaultValue.isEmpty()) {
+                        defaultValue = nc->qualifiedName().join("::");
+                    }
+                    
+                } else {
+                    defaultValue = nc->qualifiedName().last();
+                }
+            }
         }
         
-        for (int i = expression->start_token; i < expression->end_token; i++)
-            defaultValue.append(token(i).symbolByteArray());
+        if (expression) {
+            for (int i = expression->start_token; i < expression->end_token; i++)
+                defaultValue.append(token(i).symbolByteArray());
+        }
     }
     if (inClass)
         currentMethod.appendParameter(Parameter(name, currentTypeRef, defaultValue));
@@ -630,6 +707,24 @@ void GeneratorVisitor::visitTypedef(TypedefAST* node)
     DefaultVisitor::visitTypedef(node);
 }
 
+// don't make this public - it's just a utility function for the next method and probably not what you would expect it to be
+static bool operator==(const Method& rhs, const Method& lhs)
+{
+    // these have to be equal for methods to be the same
+    bool ok = (rhs.name() == lhs.name() && rhs.isConst() == lhs.isConst() &&
+               rhs.parameters().count() == lhs.parameters().count() && rhs.type() == lhs.type());
+    if (!ok)
+        return false;
+    
+    // now check the parameter types for equality
+    for (int i = 0; i < rhs.parameters().count(); i++) {
+        if (rhs.parameters()[i].type() != lhs.parameters()[i].type())
+            return false;
+    }
+    
+    return true;
+}
+
 void GeneratorVisitor::visitUsing(UsingAST* node)
 {
     nc->run(node->name);
@@ -652,6 +747,11 @@ void GeneratorVisitor::visitUsing(UsingAST* node)
         foreach (const Method& meth, clazz->methods()) {
             if (meth.name() != methodName)
                 continue;
+            
+            // prevent importing of already overridden (pure) virtuals
+            if (klass.top()->methods().contains(meth))
+                continue;
+            
             Method copy = meth;
             copy.setDeclaringType(klass.top());
             copy.setAccess(access.top());
