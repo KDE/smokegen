@@ -210,18 +210,21 @@ QString GeneratorVisitor::resolveEnumMember(const QString& name)
     return resolveEnumMember(parent, member);
 }
 
+// TODO: This doesn't look for the enum in superclasses and parent classes yet - but it suffices for the moment.
 QString GeneratorVisitor::resolveEnumMember(const QString& parent, const QString& name)
 {
     // is 'parent' a know class?
-    BasicTypeDeclaration* decl = resolveType(parent);
-    if (decl)
-        return decl->toString() + "::" + name;
+    if (!parent.isEmpty()) {
+        BasicTypeDeclaration* decl = resolveType(parent);
+        if (decl)
+            return decl->toString() + "::" + name;
+    }
     
     // doesn't seem to be a class, so it's probably a part of a namespace name
     QStringList nspace = this->nspace;
     do {
         QString n = nspace.join("::");
-        if (!n.isEmpty()) n += "::";
+        if (!n.isEmpty() && !parent.isEmpty()) n += "::";
         n += parent;
         
         foreach (const Enum& e, enums.values()) {
@@ -232,9 +235,9 @@ QString GeneratorVisitor::resolveEnumMember(const QString& parent, const QString
                 foreach (const EnumMember& member, e.members()) {
                     if (member.name() == name) {
                         QString ret = n;
-                        if (!n.isEmpty())
-                            n += "::";
-                        return n + name;
+                        if (!ret.isEmpty())
+                            ret += "::";
+                        return ret + name;
                     }
                 }
             }
@@ -572,21 +575,16 @@ void GeneratorVisitor::visitParameterDeclaration(ParameterDeclarationAST* node)
                 // enum - try to resolve that
                 nc->run(primary->name);
                 
-                if (nc->qualifiedName().count() > 1) {
-                    QString name;
-                    // build the name of the containing class/namespace
-                    for (int i = 0; i < nc->qualifiedName().count() - 1; i++) {
-                        if (i > 0) name.append("::");
-                        name.append(nc->qualifiedName()[i]);
-                    }
-                    
-                    defaultValue = resolveEnumMember(name, nc->qualifiedName().last());
-                    if (defaultValue.isEmpty()) {
-                        defaultValue = nc->qualifiedName().join("::");
-                    }
-                    
-                } else {
-                    defaultValue = nc->qualifiedName().last();
+                QString name;
+                // build the name of the containing class/namespace
+                for (int i = 0; i < nc->qualifiedName().count() - 1; i++) {
+                    if (i > 0) name.append("::");
+                    name.append(nc->qualifiedName()[i]);
+                }
+                
+                defaultValue = resolveEnumMember(name, nc->qualifiedName().last());
+                if (defaultValue.isEmpty()) {
+                    defaultValue = nc->qualifiedName().join("::");
                 }
             }
         }
