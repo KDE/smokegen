@@ -229,7 +229,11 @@ void SmokeDataFile::write()
     out << "// Name, external, index into inheritanceList, method dispatcher, enum dispatcher, class flags\n";
     out << "static Smoke::Class classes[] = {\n";
     out << "    { 0L, false, 0, 0, 0, 0 },\t// 0 (no class)\n";
+    int classCount = 0;
     for (QMap<QString, int>::const_iterator iter = classIndex.constBegin(); iter != classIndex.constEnd(); iter++) {
+        if (!iter.value())
+            continue;
+        
         Class* klass = &classes[iter.key()];
         if (klass->isTemplate())
             continue;
@@ -251,6 +255,7 @@ void SmokeDataFile::write()
             out << flags;
             out << " },\t//" << iter.value() << "\n";
         }
+        classCount = iter.value();
     }
     out << "};\n\n";
     
@@ -603,7 +608,7 @@ void SmokeDataFile::write()
     out << "    if (initialized) return;\n";
     out << "    " << Options::module << "_Smoke = new Smoke(\n";
     out << "        \"" << Options::module << "\",\n";
-    out << "        " << smokeNamespaceName << "::classes, " << classIndex.count() << ",\n";
+    out << "        " << smokeNamespaceName << "::classes, " << classCount << ",\n";
     out << "        " << smokeNamespaceName << "::methods, " << methodCount << ",\n";
     out << "        " << smokeNamespaceName << "::methodMaps, " << methodMapCount << ",\n";
     out << "        " << smokeNamespaceName << "::methodNames, " << methodNames.count() + 1 << ",\n";
