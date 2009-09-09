@@ -283,8 +283,12 @@ void SmokeDataFile::write()
             // support some of the weird quirks the kalyptus code has
             flags += "|Smoke::t_voidp";
         } else if (t->getClass()) {
-            flags += "|Smoke::t_class";
-            classIdx = classIndex.value(t->getClass()->toString(), 0);
+            if (t->getClass()->isTemplate()) {
+                flags += "|Smoke::t_voidp";
+            } else {
+                flags += "|Smoke::t_class";
+                classIdx = classIndex.value(t->getClass()->toString(), 0);
+            }
         } else if (t->isIntegral() && t->name() != "void" && t->pointerDepth() == 0 && !t->isRef()) {
             flags += "|Smoke::t_";
             QString typeName = t->name();
