@@ -191,6 +191,10 @@ int main(int argc, char **argv)
         qWarning() << "didn't find file" << ParserOptions::definesList.filePath();
     }
     
+    QFile log("generator.log");
+    bool logErrors = log.open(QFile::WriteOnly | QFile::Truncate);
+    QTextStream logOut(&log);
+    
     foreach (QFileInfo file, ParserOptions::headerList) {
         qDebug() << "parsing" << file.absoluteFilePath();
         // this has already been parsed because it was included by some header
@@ -205,7 +209,17 @@ int main(int argc, char **argv)
         // TODO: improve 'header => class' association
         GeneratorVisitor visitor(&session, file.fileName());
         visitor.visit(ast);
+        
+        if (!logErrors)
+            continue;
+        
+        foreach (const Problem* p, c.problems()) {
+            logOut << file.fileName() << ": " << p->file << "(" << p->position.line << ", " << p->position.column << "): "
+                   << p->description << "\n";
+        }
     }
+    
+    log.close();
     
     return generate();
 }
