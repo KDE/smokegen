@@ -122,8 +122,11 @@ KDevVarLengthArray<KDevVarLengthArray<QPair<uint, TOKEN_KIND>, 10 >, index_size 
   KDevVarLengthArray<KDevVarLengthArray<QPair<uint, TOKEN_KIND>, 10 >, index_size > ret;
   ret.resize(index_size);
   #define ADD_TOKEN(string) ret[IndexedString(#string).index() % index_size].append(qMakePair(IndexedString(#string).index(), Token_ ## string));
+  #define ADD_MAPPED_TOKEN(string, token) ret[IndexedString(#string).index() % index_size].append(qMakePair(IndexedString(#string).index(), token));
   ADD_TOKEN(K_DCOP);
   ADD_TOKEN(Q_OBJECT);
+  ADD_MAPPED_TOKEN(Q_SIGNALS, Token_signals);
+  ADD_MAPPED_TOKEN(Q_SLOTS, Token_slots);
   ADD_TOKEN(__attribute__);
   ADD_TOKEN(__typeof);
   ADD_TOKEN(and);

@@ -28,7 +28,8 @@ GeneratorEnvironment::GeneratorEnvironment(rpp::pp * preprocessor) : rpp::Enviro
 void GeneratorEnvironment::setMacro(rpp::pp_macro* macro)
 {
     QString macroName = macro->name.str();
-    if (macroName == "signals" || macroName == "slots" || ParserOptions::dropMacros.contains(macroName)) {
+    if (   macroName == "signals" || macroName == "slots" || macroName == "Q_SIGNALS" || macroName == "Q_SLOTS"
+        || ParserOptions::dropMacros.contains(macroName)) {
         delete macro;
         return;
     }

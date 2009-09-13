@@ -265,7 +265,7 @@ void GeneratorVisitor::visitAccessSpecifier(AccessSpecifierAST* node)
             const Token& t = token(it->element);
             if (t.kind == Token_public)
                 access.top() = Access_public;
-            else if (t.kind == Token_protected)
+            else if (t.kind == Token_protected || t.kind == Token_signals)
                 access.top() = Access_protected;
             else if (t.kind == Token_private)
                 access.top() = Access_private;
