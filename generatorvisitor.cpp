@@ -444,6 +444,13 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
     }
 }
 
+void GeneratorVisitor::visitElaboratedTypeSpecifier(ElaboratedTypeSpecifierAST* node)
+{
+    tc->run(node);
+    createType = true;
+    DefaultVisitor::visitElaboratedTypeSpecifier(node);
+}
+
 void GeneratorVisitor::visitEnumSpecifier(EnumSpecifierAST* node)
 {
     nc->run(node->name);

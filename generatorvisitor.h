@@ -50,6 +50,7 @@ protected:
     virtual void visitBaseSpecifier(BaseSpecifierAST* node);
     virtual void visitClassSpecifier(ClassSpecifierAST* node);
     virtual void visitDeclarator(DeclaratorAST* node);
+    virtual void visitElaboratedTypeSpecifier(ElaboratedTypeSpecifierAST* node);
     virtual void visitEnumSpecifier(EnumSpecifierAST *);
     virtual void visitEnumerator(EnumeratorAST *);
     virtual void visitFunctionDefinition(FunctionDefinitionAST* );
