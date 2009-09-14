@@ -69,6 +69,9 @@ Preprocessor::Preprocessor(const QList<QDir>& includeDirs, const QStringList& de
     exportMacro->name = IndexedString("__APPLE__");
 #elif defined(Q_OS_SOLARIS)
     exportMacro->name = IndexedString("__sun");
+#else
+    // fall back to linux if nothing matches
+    exportMacro->name = IndexedString("__linux__");
 #endif
     exportMacro->function_like = false;
     exportMacro->variadics = false;
