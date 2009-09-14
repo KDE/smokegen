@@ -92,6 +92,15 @@ QString Method::toString(bool withAccess, bool withClass, bool withInitializer) 
 
 const Type* Type::Void = Type::registerType(Type("void"));
 
+#ifdef Q_OS_WIN
+Type* Type::registerType(const Type& type)
+{
+    QString typeString = type.toString();
+    QHash<QString, Type>::iterator iter = types.insert(typeString, type);
+    return &iter.value();
+}
+#endif
+
 Type Typedef::resolve() const {
     bool isRef = false, isConst = false, isVolatile = false;
     QList<bool> pointerDepth;

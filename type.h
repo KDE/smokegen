@@ -434,11 +434,17 @@ public:
 
     QString toString(const QString& fnPtrName = QString()) const;
 
-    static Type* registerType(const Type& type) {
+    // on windows, we can't reference 'types' here, because it's marked __declspec(dllexport) above.
+    static Type* registerType(const Type& type)
+#ifndef Q_OS_WIN
+    {
         QString typeString = type.toString();
         QHash<QString, Type>::iterator iter = types.insert(typeString, type);
         return &iter.value();
     }
+#else
+    ;
+#endif
 
     static const Type* Void;
 

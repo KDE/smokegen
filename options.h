@@ -16,6 +16,9 @@
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
+#ifndef GENERATOR_OPTIONS_H
+#define GENERATOR_OPTIONS_H
+
 #include "generator_export.h"
 
 class QDir;
@@ -40,3 +43,5 @@ struct GENERATOR_EXPORT ParserOptions
 };
 
 extern GENERATOR_EXPORT QSet<const Typedef*> flagTypes;
+
+#endif
