@@ -3366,11 +3366,16 @@ bool Parser::parseDeclarationInternal(DeclarationAST *&node)
   const ListNode<std::size_t> *storageSpec = 0;
   bool hasStorageSpec = parseStorageClassSpecifier(storageSpec);
 
+  // needed here for 'friend __declspec(dllimport) inline ...'
+  if (!winDeclSpec)
+    parseWinDeclSpec(winDeclSpec);
+
   if (hasStorageSpec && !hasFunSpec)
     hasFunSpec = parseFunctionSpecifier(funSpec);
 
   // that is for the case 'friend __declspec(dllexport) ....'
-  parseWinDeclSpec(winDeclSpec);
+  if (!winDeclSpec)
+    parseWinDeclSpec(winDeclSpec);
 
   if (!cv)
     parseCvQualify(cv);
