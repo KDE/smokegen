@@ -68,6 +68,7 @@ int main(int argc, char **argv)
     QFileInfo configFile;
     QString generator;
     bool addHeaders = false;
+    bool hasCommandLineGenerator = false;
     QStringList classes;
 
     for (int i = 1; i < args.count(); i++) {
@@ -87,6 +88,7 @@ int main(int argc, char **argv)
             ParserOptions::dropMacros = args[++i].split(',');
         } else if (args[i] == "-g") {
             generator = args[++i];
+            hasCommandLineGenerator = true;
         } else if ((args[i] == "-h" || args[i] == "--help") && argc == 2) {
             showUsage();
             return EXIT_SUCCESS;
@@ -119,7 +121,7 @@ int main(int argc, char **argv)
                 ParserOptions::resolveTypedefs = (elem.text() == "true");
             } else if (elem.tagName() == "qtMode") {
                 ParserOptions::qtMode = (elem.text() == "true");
-            } else if (elem.tagName() == "generator") {
+            } else if (!hasCommandLineGenerator && elem.tagName() == "generator") {
                 generator = elem.text();
             } else if (elem.tagName() == "includeDirs") {
                 QDomNode dir = elem.firstChild();
