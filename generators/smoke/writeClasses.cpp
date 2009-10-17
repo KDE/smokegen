@@ -273,6 +273,7 @@ void SmokeClassFiles::generateVirtualMethod(QTextStream& out, const QString& cla
     out << "{\n";
     out << QString("        Smoke::StackItem x[%1];\n").arg(meth.parameters().count() + 1);
     out << x_params;
+    
     if (meth.flags() & Method::PureVirtual) {
         out << QString("        this->_binding->callMethod(%1, (void*)this, x, true /*pure virtual*/);\n").arg(m_smokeData->methodIdx[&meth]);
         if (meth.type() != Type::Void) {
@@ -476,9 +477,7 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
             const Method* m = 0;
             if ((m = Util::isVirtualOverriden(*meth, klass))) {
                 if (m->access() != Access_private) {
-                    Method virt = *m;
-                    virt.setFlag(Method::Virtual);
-                    generateVirtualMethod(out, className, virt, includes);
+                    generateVirtualMethod(out, className, *m, includes);
                 }
                 virtMeths.insert(methString);
             } else {
