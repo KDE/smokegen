@@ -201,7 +201,7 @@ void SmokeDataFile::write()
             continue;
         if (it.value().parent() && !externalClasses.contains(it.value().parent()) && it.value().access() != Access_private) {
             QString smokeClassName = it.value().parent()->toString();
-            if (enumClassesHandled.contains(smokeClassName))
+            if (enumClassesHandled.contains(smokeClassName) || Options::voidpTypes.contains(smokeClassName))
                 continue;
             enumClassesHandled << smokeClassName;
             smokeClassName.replace("::", "__");
