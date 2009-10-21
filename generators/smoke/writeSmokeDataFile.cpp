@@ -595,7 +595,7 @@ void SmokeDataFile::write()
     }
 
     for (int j = 0; j < Options::parentModules.count(); j++) {
-        out << "void init_" << Options::parentModules[j] << "_Smoke();\n";
+        out << "SMOKE_IMPORT void init_" << Options::parentModules[j] << "_Smoke();\n";
         if (j == Options::parentModules.count() - 1)
             out << "\n";
     }
