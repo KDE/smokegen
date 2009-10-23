@@ -430,7 +430,7 @@ QString Util::mungedName(const Method& meth) {
     QString ret = meth.name();
     foreach (const Parameter& param, meth.parameters()) {
         const Type* type = param.type();
-        if (type->pointerDepth() > 1 ||
+        if (type->pointerDepth() > 1 || (type->getClass() && type->getClass()->isTemplate()) ||
             (Options::voidpTypes.contains(type->name()) && !Options::scalarTypes.contains(type->name())) )
         {
             // QString and QStringList are both mapped to Smoke::t_voidp, but QString is a scalar as well
