@@ -322,7 +322,7 @@ void GeneratorVisitor::visitClassSpecifier(ClassSpecifierAST* node)
         Class* parent = klass[klass.count() - 2];
         parent->appendChild(klass.top());
     }
-    
+    q_properties.clear();
     DefaultVisitor::visitClassSpecifier(node);
     access.pop();
     inClass--;
@@ -379,6 +379,28 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
     // only run this if we're not in a method. only checking for parameter_declaration_clause
     // won't be enough because function pointer types also have that.
     if (node->parameter_declaration_clause && !inMethod && inClass) {
+        if (ParserOptions::qtMode && declName == "__q_property") {
+            // this should _always_ work
+            PrimaryExpressionAST* primary = ast_cast<PrimaryExpressionAST*>(node->parameter_declaration_clause->parameter_declarations->at(0)->element->expression);
+            QByteArray literals;
+            const ListNode<std::size_t> *it = primary->literal->literals->toFront(), *end = it;
+            do {
+                if (it->element) {
+                    literals.append(token(it->element).symbolByteArray());
+                }
+                it = it->next;
+            } while (end != it);
+            literals.replace("\"", "");
+            // this monster only matches "type name READ getMethod WRITE setMethod"
+            QRegExp regexp("^([a-zA-Z]+)(\\s*\\*\\s*)?\\s+([a-zA-Z]+)\\s+READ\\s+([a-zA-Z0-9]+)(\\s+WRITE\\s+[a-zA-Z0-9]+)?");
+            if (regexp.indexIn(literals) != -1) {
+                QProperty prop = { regexp.cap(1), !regexp.cap(2).isEmpty(), regexp.cap(3),
+                                   regexp.cap(4), regexp.cap(5).replace(QRegExp("\\s+WRITE\\s+"), QString()) };
+                q_properties.append(prop);
+            }
+            return;
+        }
+
         bool isConstructor = (declName == klass.top()->name());
         bool isDestructor = (declName == "~" + klass.top()->name());
         Type* returnType = currentTypeRef;
@@ -402,6 +424,21 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
         QPair<bool, bool> cv = parseCv(node->fun_cv);
         // const & volatile modifiers
         currentMethod.setIsConst(cv.first);
+        
+        // Q_PROPERTY accessor?
+        if (ParserOptions::qtMode) {
+            foreach (const QProperty& prop, q_properties) {
+                if (   (currentMethod.parameters().count() == 0 && prop.read == currentMethod.name() && prop.type == currentMethod.type()->name()
+                       && (currentMethod.type()->pointerDepth() == 1) == prop.isPtr)    // READ accessor?
+                    || (currentMethod.parameters().count() == 1 && prop.write == currentMethod.name()
+                       && prop.type == currentMethod.parameters()[0].type()->name()     // or WRITE accessor?
+                       && (currentMethod.parameters()[0].type()->pointerDepth() == 1) == prop.isPtr))
+                {
+                    currentMethod.setIsQPropertyAccessor(true);
+                }
+            }
+        }
+        
         if (isVirtual) currentMethod.setFlag(Method::Virtual);
         if (hasInitializer) currentMethod.setFlag(Method::PureVirtual);
         if (isStatic) currentMethod.setFlag(Method::Static);

@@ -31,6 +31,15 @@
 class NameCompiler;
 class TypeCompiler;
 
+struct QProperty
+{
+    QString type;
+    bool isPtr;
+    QString name;
+    QString read;
+    QString write;
+};
+
 class GeneratorVisitor : public DefaultVisitor
 {
 public:
@@ -100,6 +109,8 @@ private:
     QStack<QStringList> usingNamespaces;
     
     QStringList nspace;
+    
+    QList<QProperty> q_properties;
 };
 
 #endif // PARSERVISITOR_H
