@@ -288,7 +288,7 @@ public:
     bool isConst() const { return m_isConst; }
 
     void setIsQPropertyAccessor(bool isAccessor) { m_is_accessor = isAccessor; }
-    bool isQPropertyAccessor() { return m_is_accessor; }
+    bool isQPropertyAccessor() const { return m_is_accessor; }
 
     // TODO: This actually doesn't belong here. Better add a dynamic property system to Member subclasses.
     //       Then we can also get rid of the various method => foo maps in the 'Util' struct.
