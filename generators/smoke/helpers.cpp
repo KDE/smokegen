@@ -130,11 +130,11 @@ void Util::preparse(QSet<Type*> *usedTypes, QSet<const Class*> *superClasses, co
         // map this method to the function, so we can later retrieve the header it was defined in
         globalFunctionMap[&parent->methods().last()] = &fn;
         
-	int methIndex = parent->methods().length() - 1;
+        int methIndex = parent->methods().length() - 1;
         addOverloads(meth);
-	// handle the methods appended by addOverloads()
-	for (int i = parent->methods().length() - 1; i > methIndex; --i)
-		globalFunctionMap[&parent->methods()[i]] = &fn;
+        // handle the methods appended by addOverloads()
+        for (int i = parent->methods().length() - 1; i > methIndex; --i)
+            globalFunctionMap[&parent->methods()[i]] = &fn;
 
         (*usedTypes) << meth.type();
         foreach (const Parameter& param, meth.parameters())
@@ -544,8 +544,8 @@ void Util::addAccessorMethods(const Field& field, QSet<Type*> *usedTypes)
         Type newType = *type;
         newType.setIsRef(true);
         type = Type::registerType(newType);
-        (*usedTypes) << type;
     }
+    (*usedTypes) << type;
     Method getter = Method(klass, field.name(), type, field.access());
     getter.setIsConst(true);
     if (field.flags() & Field::Static)
@@ -572,8 +572,8 @@ void Util::addAccessorMethods(const Field& field, QSet<Type*> *usedTypes)
         newType.setIsRef(true);
         newType.setIsConst(true);
         type = Type::registerType(newType);
-        (*usedTypes) << type;
     }
+    (*usedTypes) << type;
     setter.appendParameter(Parameter(QString(), type));
     if (klass->methods().contains(setter))
         return;

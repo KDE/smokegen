@@ -364,6 +364,9 @@ void SmokeDataFile::write()
             QStringList comment;
             for (int i = 0; i < indices.size(); i++) {
                 Type* t = meth.parameters()[i].type();
+                if (!typeIndex.contains(t)) {
+                    qFatal("missing type: %s in method %s", qPrintable(t->toString()), qPrintable(meth.toString(false, true)));
+                }
                 indices[i] = typeIndex[t];
                 comment << t->toString();
             }
@@ -448,7 +451,13 @@ void SmokeDataFile::write()
                 flags += "|Smoke::mf_copyctor";
             flags.replace("0|", "");
             out << flags;
-            out << ", " << typeIndex[meth.type()];
+            if (meth.type() == Type::Void) {
+                out << ", 0";
+            } else if (!typeIndex.contains(meth.type())) {
+                qFatal("missing type: %s in method %s", qPrintable(meth.type()->toString()), qPrintable(meth.toString(false, true)));
+            } else {
+                out << ", " << typeIndex[meth.type()];
+            }
             out << ", " << xcall_index << "},";
             
             // comment
@@ -502,7 +511,7 @@ void SmokeDataFile::write()
             out << "    {" << iter.value() << ", " << methodNames[destructor->name()] << ", 0, 0, Smoke::mf_dtor";
             if (destructor->access() == Access_private)
                 out << "|Smoke::mf_protected";
-            out << ", " << typeIndex[destructor->type()] << ", " << xcall_index << " },\t//" << i << " " << klass->toString()
+            out << ", 0, " << xcall_index << " },\t//" << i << " " << klass->toString()
                 << "::" << destructor->name() << "()\n";
             methodIdx[destructor] = i;
             xcall_index++;
