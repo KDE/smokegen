@@ -727,6 +727,8 @@ void GeneratorVisitor::visitSimpleTypeSpecifier(SimpleTypeSpecifierAST* node)
 
 void GeneratorVisitor::visitTemplateDeclaration(TemplateDeclarationAST* node)
 {
+    if (!node->declaration)
+        return;
     int kind = token(node->declaration->start_token).kind;
     if (kind == Token_class || kind == Token_struct) {
         inTemplate = true;
