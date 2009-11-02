@@ -75,6 +75,7 @@ struct SmokeDataFile
     QSet<Class*> externalClasses;
     QSet<Type*> usedTypes;
     QStringList includedClasses;
+    QHash<const Class*, QSet<const Method*> > declaredVirtualMethods;
 };
 
 struct SmokeClassFiles
@@ -97,6 +98,9 @@ private:
     
 struct Util
 {
+    typedef QPair<const Method*, QString> MethodStringPair;
+    typedef QList<MethodStringPair> VirtualMethodList;
+    
     static QHash<QString, QString> typeMap;
     static QHash<const Method*, const Function*> globalFunctionMap;
     static QHash<const Method*, const Field*> fieldAccessors;
@@ -127,6 +131,7 @@ struct Util
     static QString assignmentString(const Type* type, const QString& var);
     static QList<const Method*> collectVirtualMethods(const Class* klass);
     static const Method* isVirtualOverriden(const Method& meth, const Class* klass);
+    static VirtualMethodList virtualMethodsForClass(const Class* klass);
 };
 
 #endif

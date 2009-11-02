@@ -50,12 +50,30 @@ SmokeDataFile::SmokeDataFile()
     includedClasses = classIndex.keys();
     Util::preparse(&usedTypes, &superClasses, includedClasses);  // collect all used types, add c'tors.. etc.
     
+    // Collect the classes that are inherited by classes in this smoke module and provide virtual methods.
+    // These classes need to be indexed as well.
+    foreach (const QString& className, includedClasses) {
+        const Class* klass = &classes[className];
+        Util::VirtualMethodList list = Util::virtualMethodsForClass(klass);
+        foreach (const Util::MethodStringPair& pair, list) {
+            const Method* meth = pair.first;
+            usedTypes << meth->type();
+            foreach (const Parameter& param, meth->parameters()) {
+                usedTypes << param.type();
+            }
+            declaredVirtualMethods[meth->getClass()] << meth;
+        }
+    }
+    
     // if a class is used somewhere but not listed in the class list, mark it external
     for (QHash<QString, Class>::iterator iter = ::classes.begin(); iter != ::classes.end(); iter++) {
         if (iter.value().isTemplate() || Options::voidpTypes.contains(iter.key()))
             continue;
         
-        if ((isClassUsed(&iter.value()) && iter.value().access() != Access_private) || superClasses.contains(&iter.value())) {
+        if (   (isClassUsed(&iter.value()) && iter.value().access() != Access_private)
+            || superClasses.contains(&iter.value())
+            || declaredVirtualMethods.contains(&iter.value()))
+        {
             classIndex[iter.key()] = 1;
             
             if (!Options::classList.contains(iter.key()) || iter.value().isForwardDecl())
@@ -344,17 +362,23 @@ void SmokeDataFile::write()
     currentIdx = 1;
     for (QMap<QString, int>::const_iterator iter = classIndex.constBegin(); iter != classIndex.constEnd(); iter++) {
         Class* klass = &classes[iter.key()];
-        if (externalClasses.contains(klass))
+        bool isExternal = externalClasses.contains(klass);
+        bool isDeclaredVirtual = declaredVirtualMethods.contains(klass);
+        if (isExternal && !isDeclaredVirtual)
             continue;
         QMap<QString, QList<const Member*> >& map = classMungedNames[klass];
         foreach (const Method& meth, klass->methods()) {
             if (meth.access() == Access_private)
                 continue;
+            if (isExternal && !declaredVirtualMethods[klass].contains(&meth))
+                continue;
             
             methodNames[meth.name()] = 1;
-            QString mungedName = Util::mungedName(meth);
-            methodNames[mungedName] = 1;
-            map[mungedName].append(&meth);
+            if (!isExternal) {
+                QString mungedName = Util::mungedName(meth);
+                methodNames[mungedName] = 1;
+                map[mungedName].append(&meth);
+            }
             
             if (!meth.parameters().count()) {
                 parameterIndices[&meth] = 0;
@@ -418,10 +442,16 @@ void SmokeDataFile::write()
     for (QMap<QString, int>::const_iterator iter = classIndex.constBegin(); iter != classIndex.constEnd(); iter++) {
         Class* klass = &classes[iter.key()];
         const Method* destructor = 0;
+        bool isExternal = false;
         if (externalClasses.contains(klass))
+            isExternal = true;
+        if (isExternal && !declaredVirtualMethods.contains(klass))
             continue;
+        
         int xcall_index = 1;
         foreach (const Method& meth, klass->methods()) {
+            if (isExternal && !declaredVirtualMethods[klass].contains(&meth))
+                continue;
             if (meth.access() == Access_private)
                 continue;
             if (meth.isDestructor()) {
@@ -458,7 +488,7 @@ void SmokeDataFile::write()
             } else {
                 out << ", " << typeIndex[meth.type()];
             }
-            out << ", " << xcall_index << "},";
+            out << ", " << (isExternal ? 0 : xcall_index) << "},";
             
             // comment
             out << "\t//" << i << " " << klass->toString() << "::";

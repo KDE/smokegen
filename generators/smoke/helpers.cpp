@@ -646,6 +646,99 @@ const Method* Util::isVirtualOverriden(const Method& meth, const Class* klass)
     return 0;
 }
 
+Util::VirtualMethodList Util::virtualMethodsForClass(const Class* klass)
+{
+    static QHash<const Class*, Util::VirtualMethodList > cache;
+    
+    // virtual method callbacks for classes that can't be instanciated aren't useful
+    if (!Util::canClassBeInstanciated(klass))
+        return Util::VirtualMethodList();
+    
+    if (cache.contains(klass))
+        return cache[klass];
+    
+    Util::VirtualMethodList ret;
+    
+    QSet<QString> virtMeths;    // virtual methods that already have been taken care of
+    QList<const Method*> pureVirtuals;
+    foreach (const Method& meth, klass->methods()) {
+        // if there are default parameters, it's not the 'original' method.. skip it
+        if (!meth.remainingDefaultValues().isEmpty())
+            continue;
+        // first, generate all virtual methods of this class. inherited ones come after that.
+        if (((meth.flags() & Method::Virtual) || (meth.flags() & Method::PureVirtual)) && !meth.isDestructor()) {
+            if (meth.access() != Access_private) {
+                ret << qMakePair(&meth, klass->toString());
+            }
+            virtMeths.insert(meth.toString(false, false, false));
+        }
+    }
+    
+    QList<const Method*> inheritedVirtuals;
+    foreach (const Class::BaseClassSpecifier& bspec, klass->baseClasses()) {
+        // now collect all virtual methods of the base classes
+        inheritedVirtuals += Util::collectVirtualMethods(bspec.baseClass);
+    }
+    
+    foreach (const Method* meth, inheritedVirtuals) {
+        if (!meth->remainingDefaultValues().isEmpty())
+            continue;
+        if (meth->flags() & Method::PureVirtual) {
+            // postpone pure virtuals to see if they have been overridden
+            pureVirtuals << meth;
+            continue;
+        }
+        
+        QString methString = meth->toString(false, false, false);
+        if (virtMeths.contains(methString))
+            continue;
+        const Method *m = 0;
+        if ((m = Util::isVirtualOverriden(*meth, klass)) && m->access() == Access_private) {
+            // if the method was overriden and put under private access, skip it.
+            virtMeths.insert(methString);
+            continue;
+        }
+        /* If the method was overridden, use the overriding method for getting the classname - else use the virtual method itself
+            Don't use className here, as this won't work with hidden methods. Imagine:
+            
+            struct A {
+                virtual void foo() {}
+            };
+            
+            struct B : public A {
+                virtual void foo(int) {}
+            };
+            
+            B::foo(int) hides A::foo(). So if we have an instance of B, we can't call this->B::foo(), but have to use this->A::foo()
+            */
+        ret << qMakePair(meth, m ? m->getClass()->toString() : meth->getClass()->toString());
+        virtMeths.insert(methString);
+    }
+    foreach (const Method* meth, pureVirtuals) {
+        QString methString = meth->toString(false, false, false);
+        // Check if the pure virtual was overriden somewhere - then we shouldn't generate a callback with the pure virtual flag set
+        // (as it isn't, anymore).
+        // If the overriding method was declared virtual, too, we find it in virtMeths. Then it's already generated and we can continue.
+        // If it hasn't, we have to go looking for it. If we find it, generate a normal virtual method for it.
+        if (virtMeths.contains(methString))
+            continue;
+        const Method* m = 0;
+        if ((m = Util::isVirtualOverriden(*meth, klass))) {
+            if (m->access() != Access_private) {
+                ret << qMakePair(m, klass->toString());
+            }
+            virtMeths.insert(methString);
+        } else {
+            // we didn't find any overriding method - generate a pure virtual one
+            ret << qMakePair(meth, klass->toString());
+            virtMeths.insert(methString);
+        }
+    }
+    
+    cache[klass] = ret;
+    return ret;
+}
+
 bool Options::typeExcluded(const QString& typeName)
 {
     foreach (const QRegExp& exp, Options::excludeExpressions) {
