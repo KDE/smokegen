@@ -158,9 +158,15 @@ int main(int argc, char **argv)
     } else {
         qWarning() << "Couldn't find config file" << configFile.filePath();
     }
-    
-    QLibrary lib("generator_" + generator);
+
+    // first try to load plugins from the executable's directory
+    QLibrary lib(app.applicationDirPath() + "/generator_" + generator);
     lib.load();
+    if (!lib.isLoaded()) {
+        lib.unload();
+        lib.setFileName("generator_" + generator);
+        lib.load();
+    }
     if (!lib.isLoaded()) {
         qCritical() << lib.errorString();
         return EXIT_FAILURE;
