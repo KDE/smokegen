@@ -244,9 +244,9 @@ void SmokeDataFile::write()
     
     // classes table
     out << "\n// List of all classes\n";
-    out << "// Name, external, index into inheritanceList, method dispatcher, enum dispatcher, class flags\n";
+    out << "// Name, external, index into inheritanceList, method dispatcher, enum dispatcher, class flags, size\n";
     out << "static Smoke::Class classes[] = {\n";
-    out << "    { 0L, false, 0, 0, 0, 0 },\t// 0 (no class)\n";
+    out << "    { 0L, false, 0, 0, 0, 0, 0 },\t// 0 (no class)\n";
     int classCount = 0;
     for (QMap<QString, int>::const_iterator iter = classIndex.constBegin(); iter != classIndex.constEnd(); iter++) {
         if (!iter.value())
@@ -255,7 +255,7 @@ void SmokeDataFile::write()
         Class* klass = &classes[iter.key()];
         
         if (externalClasses.contains(klass)) {
-            out << "    { \""  << iter.key() << "\", true, 0, 0, 0, 0 },\t//" << iter.value() << "\n";
+            out << "    { \""  << iter.key() << "\", true, 0, 0, 0, 0, 0 },\t//" << iter.value() << "\n";
         } else {
             QString smokeClassName = QString(iter.key()).replace("::", "__");
             out << "    { \"" << iter.key() << "\", false" << ", "
@@ -268,7 +268,11 @@ void SmokeDataFile::write()
                 if (Util::hasClassVirtualDestructor(klass)) flags += "|Smoke::cf_virtual";
                 flags.replace("0|", ""); // beautify
             }
-            out << flags;
+            out << flags << ", ";
+            if (!klass->isNameSpace())
+                out << "sizeof(" << iter.key() << ")";
+            else
+                out << '0';
             out << " },\t//" << iter.value() << "\n";
         }
         classCount = iter.value();
@@ -479,6 +483,10 @@ void SmokeDataFile::write()
                 meth.parameters()[0].type()->isConst() &&
                 meth.parameters()[0].type()->getClass() == klass)
                 flags += "|Smoke::mf_copyctor";
+            if (Util::fieldAccessors.contains(&meth))
+                flags += "|Smoke::mf_attribute";
+            if (meth.isQPropertyAccessor())
+                flags += "|Smoke::mf_property";
             flags.replace("0|", "");
             out << flags;
             if (meth.type() == Type::Void) {
@@ -633,6 +641,8 @@ void SmokeDataFile::write()
         out << "std::map<std::string, Smoke*> Smoke::classMap;\n\n";
     }
 
+    out << "extern \"C\" {\n\n";
+
     for (int j = 0; j < Options::parentModules.count(); j++) {
         out << "SMOKE_IMPORT void init_" << Options::parentModules[j] << "_Smoke();\n";
         if (j == Options::parentModules.count() - 1)
@@ -659,6 +669,8 @@ void SmokeDataFile::write()
     out << "        " << smokeNamespaceName << "::ambiguousMethodList,\n";
     out << "        " << smokeNamespaceName << "::cast );\n";
     out << "    initialized = true;\n";
+    out << "}\n\n";
+    out << "void delete_" << Options::module << "_Smoke() { delete " << Options::module << "_Smoke; }\n\n";
     out << "}\n";
 
     smokedata.close();
