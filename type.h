@@ -372,16 +372,16 @@ class GENERATOR_EXPORT Type
 public:
     Type(Class* klass = 0, bool isConst = false, bool isVolatile = false, int pointerDepth = 0, bool isRef = false)
         : m_class(klass), m_typedef(0), m_enum(0), m_isConst(isConst), m_isVolatile(isVolatile), 
-          m_pointerDepth(pointerDepth), m_isRef(isRef), m_isIntegral(false), m_isFunctionPointer(false), m_dimensions(0) {}
+          m_pointerDepth(pointerDepth), m_isRef(isRef), m_isIntegral(false), m_isFunctionPointer(false) {}
     Type(Typedef* tdef, bool isConst = false, bool isVolatile = false, int pointerDepth = 0, bool isRef = false)
         : m_class(0), m_typedef(tdef), m_enum(0), m_isConst(isConst), m_isVolatile(isVolatile), 
-          m_pointerDepth(pointerDepth), m_isRef(isRef), m_isIntegral(false), m_isFunctionPointer(false), m_dimensions(0) {}
+          m_pointerDepth(pointerDepth), m_isRef(isRef), m_isIntegral(false), m_isFunctionPointer(false) {}
     Type(Enum* e, bool isConst = false, bool isVolatile = false, int pointerDepth = 0, bool isRef = false)
         : m_class(0), m_typedef(0), m_enum(e), m_isConst(isConst), m_isVolatile(isVolatile), 
-          m_pointerDepth(pointerDepth), m_isRef(isRef), m_isIntegral(false), m_isFunctionPointer(false), m_dimensions(0) {}    
+          m_pointerDepth(pointerDepth), m_isRef(isRef), m_isIntegral(false), m_isFunctionPointer(false) {}
     Type(const QString& name, bool isConst = false, bool isVolatile = false, int pointerDepth = 0, bool isRef = false)
         : m_class(0), m_typedef(0), m_enum(0), m_name(name), m_isConst(isConst), m_isVolatile(isVolatile), 
-          m_pointerDepth(pointerDepth), m_isRef(isRef), m_isIntegral(false), m_isFunctionPointer(false), m_dimensions(0) {}
+          m_pointerDepth(pointerDepth), m_isRef(isRef), m_isIntegral(false), m_isFunctionPointer(false) {}
 
     void setClass(Class* klass) { m_class = klass; m_typedef = 0; m_enum = 0; }
     Class* getClass() const { return m_class; }
@@ -424,8 +424,12 @@ public:
     void setIsIntegral(bool isIntegral) { m_isIntegral = isIntegral; }
     bool isIntegral() const { return m_isIntegral; }
 
-    void setArrayDimensions(int dim) { m_dimensions = dim; }
-    bool isArray() const { return m_dimensions; }
+    void setArrayDimensions(int dim) { m_arrayLengths.resize(dim); }
+    int arrayDimensions() const { return m_arrayLengths.size(); }
+    bool isArray() const { return m_arrayLengths.size(); }
+
+    void setArrayLength(int dim, int length) { m_arrayLengths[dim] = length; }
+    int arrayLength(int dim) const { return m_arrayLengths[dim]; }
 
     const QList<Type>& templateArguments() const { return m_templateArgs; }
     void appendTemplateArgument(const Type& type) { m_templateArgs.append(type); }
@@ -465,7 +469,7 @@ protected:
     QList<Type> m_templateArgs;
     bool m_isFunctionPointer;
     ParameterList m_params;
-    int m_dimensions;
+    QVector<int> m_arrayLengths;
 };
 
 #endif // TYPE_H
