@@ -75,6 +75,17 @@ BasicTypeDeclaration* GeneratorVisitor::resolveTypeInSuperClasses(const Class* k
     foreach (const Class::BaseClassSpecifier& bclass, klass->baseClasses()) {
         QString _name = bclass.baseClass->toString() + "::" + name;
         returnOnExistence(_name);
+        QStringList nspace = klass->nameSpace().split("::");
+        if (!klass->nameSpace().isEmpty() && nspace != this->nspace) {
+            do {
+                nspace.push_back(name);
+                QString n = nspace.join("::");
+                returnOnExistence(n);
+                nspace.pop_back();
+                if (!nspace.isEmpty())
+                    nspace.pop_back();
+            } while (!nspace.isEmpty());
+        }
         if (!bclass.baseClass->baseClasses().count())
             continue;
         BasicTypeDeclaration* decl = resolveTypeInSuperClasses(bclass.baseClass, name);
