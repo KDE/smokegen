@@ -389,7 +389,7 @@ void Util::addCopyConstructor(Class* klass)
         if (meth.isConstructor() && meth.parameters().count() == 1) {
             const Type* type = meth.parameters()[0].type();
             // found a copy c'tor? then there's nothing to do
-            if (type->isConst() && type->isRef() && type->getClass() == klass)
+            if (type->isRef() && type->getClass() == klass)
                 return;
         } else if (meth.isDestructor() && meth.access() == Access_private) {
             // private destructor, so we can't create instances of that class
