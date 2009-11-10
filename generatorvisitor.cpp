@@ -104,15 +104,6 @@ BasicTypeDeclaration* GeneratorVisitor::resolveType(const QString & name)
 // TODO: this might have to be improved for cases like 'Typedef::Nested foo'
 BasicTypeDeclaration* GeneratorVisitor::resolveType(QString & name)
 {
-    // check for nested classes
-    for (int i = klass.count() - 1; i >= 0; i--) {
-        QString _name = klass[i]->toString() + "::" + name;
-        returnOnExistence(_name);
-        BasicTypeDeclaration* decl = resolveTypeInSuperClasses(klass[i], name);
-        if (decl)
-            return decl;
-    }
-    
     // check for 'using type;'
     // if we use 'type', we can also access type::nested, take care of that
     int index = name.indexOf("::");
@@ -140,6 +131,15 @@ BasicTypeDeclaration* GeneratorVisitor::resolveType(QString & name)
         if (!nspace.isEmpty())
             nspace.pop_back();
     } while (!nspace.isEmpty());
+
+    // check for nested classes
+    for (int i = klass.count() - 1; i >= 0; i--) {
+        QString _name = klass[i]->toString() + "::" + name;
+        returnOnExistence(_name);
+        BasicTypeDeclaration* decl = resolveTypeInSuperClasses(klass[i], name);
+        if (decl)
+            return decl;
+    }
 
     // maybe it's just 'there'
     returnOnExistence(name);
