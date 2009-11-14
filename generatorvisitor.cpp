@@ -620,7 +620,17 @@ void GeneratorVisitor::visitParameterDeclaration(ParameterDeclarationAST* node)
             BasicTypeDeclaration* decl = resolveType(className.join("::"));
             if (decl)
                 className = decl->toString().split("::");
-            
+
+            if (!decl && className.count() > 1) {
+                // Resolving failed, so this might also be a some static method (like Cursor::start() in KTextEditor).
+                // Pop the last element (probably the method name) and resolve the rest.
+                QString last = className.takeLast();
+                BasicTypeDeclaration* decl = resolveType(className.join("::"));
+                if (decl)
+                    className = decl->toString().split("::");
+                className.append(last);
+            }
+
             QMap<int, QList<Type> > map = nc->templateArguments();
             for (QMap<int, QList<Type> >::const_iterator it = map.begin(); it != map.end(); it++) {
                 QString str("< ");
