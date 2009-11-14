@@ -525,9 +525,8 @@ QList<const Method*> Util::collectVirtualMethods(const Class* klass)
 // don't make this public - it's just a utility function for the next method and probably not what you would expect it to be
 static bool operator==(const Method& rhs, const Method& lhs)
 {
-    // these have to be equal for methods to be the same
-    bool ok = (rhs.name() == lhs.name() && rhs.isConst() == lhs.isConst() &&
-               rhs.parameters().count() == lhs.parameters().count() && rhs.type() == lhs.type());
+    // These have to be equal for methods to be the same. Return types don't have an effect, ignore them.
+    bool ok = (rhs.name() == lhs.name() && rhs.isConst() == lhs.isConst() && rhs.parameters().count() == lhs.parameters().count());
     if (!ok)
         return false;
     
@@ -650,95 +649,48 @@ const Method* Util::isVirtualOverriden(const Method& meth, const Class* klass)
     return 0;
 }
 
-Util::VirtualMethodList Util::virtualMethodsForClass(const Class* klass)
+static bool qListContainsMethodPointer(const QList<const Method*> list, const Method* ptr) {
+    foreach (const Method* meth, list) {
+        if (*meth == *ptr)
+            return true;
+    }
+    return false;
+}
+
+QList<const Method*> Util::virtualMethodsForClass(const Class* klass)
 {
-    static QHash<const Class*, Util::VirtualMethodList > cache;
+    static QHash<const Class*, QList<const Method*> > cache;
     
     // virtual method callbacks for classes that can't be instanciated aren't useful
     if (!Util::canClassBeInstanciated(klass))
-        return Util::VirtualMethodList();
+        return QList<const Method*>();
     
     if (cache.contains(klass))
         return cache[klass];
     
-    Util::VirtualMethodList ret;
-    
-    QSet<QString> virtMeths;    // virtual methods that already have been taken care of
-    QList<const Method*> pureVirtuals;
-    foreach (const Method& meth, klass->methods()) {
-        // if there are default parameters, it's not the 'original' method.. skip it
-        if (!meth.remainingDefaultValues().isEmpty())
-            continue;
-        // first, generate all virtual methods of this class. inherited ones come after that.
-        if (((meth.flags() & Method::Virtual) || (meth.flags() & Method::PureVirtual)) && !meth.isDestructor()) {
-            if (meth.access() != Access_private) {
-                ret << qMakePair(&meth, klass->toString());
-            }
-            virtMeths.insert(meth.toString(false, false, false));
-        }
-    }
-    
-    QList<const Method*> inheritedVirtuals;
-    foreach (const Class::BaseClassSpecifier& bspec, klass->baseClasses()) {
-        // now collect all virtual methods of the base classes
-        inheritedVirtuals += Util::collectVirtualMethods(bspec.baseClass);
-    }
-    
-    foreach (const Method* meth, inheritedVirtuals) {
+    QList<const Method*> ret;
+
+    foreach (const Method* meth, Util::collectVirtualMethods(klass)) {
+        // this is a synthesized overload, skip it.
         if (!meth->remainingDefaultValues().isEmpty())
             continue;
-        if (meth->flags() & Method::PureVirtual) {
-            // postpone pure virtuals to see if they have been overridden
-            pureVirtuals << meth;
+        if (meth->getClass() == klass) {
+            // this method can't be overriden, because it's defined in the class for which this method was called
+            ret << meth;
             continue;
         }
-        
-        QString methString = meth->toString(false, false, false);
-        if (virtMeths.contains(methString))
-            continue;
-        const Method *m = 0;
-        if ((m = Util::isVirtualOverriden(*meth, klass)) && m->access() == Access_private) {
-            // if the method was overriden and put under private access, skip it.
-            virtMeths.insert(methString);
-            continue;
-        }
-        /* If the method was overridden, use the overriding method for getting the classname - else use the virtual method itself
-            Don't use className here, as this won't work with hidden methods. Imagine:
-            
-            struct A {
-                virtual void foo() {}
-            };
-            
-            struct B : public A {
-                virtual void foo(int) {}
-            };
-            
-            B::foo(int) hides A::foo(). So if we have an instance of B, we can't call this->B::foo(), but have to use this->A::foo()
-            */
-        ret << qMakePair(meth, m ? m->getClass()->toString() : meth->getClass()->toString());
-        virtMeths.insert(methString);
-    }
-    foreach (const Method* meth, pureVirtuals) {
-        QString methString = meth->toString(false, false, false);
-        // Check if the pure virtual was overriden somewhere - then we shouldn't generate a callback with the pure virtual flag set
-        // (as it isn't, anymore).
-        // If the overriding method was declared virtual, too, we find it in virtMeths. Then it's already generated and we can continue.
-        // If it hasn't, we have to go looking for it. If we find it, generate a normal virtual method for it.
-        if (virtMeths.contains(methString))
-            continue;
-        const Method* m = 0;
-        if ((m = Util::isVirtualOverriden(*meth, klass))) {
-            if (m->access() != Access_private) {
-                ret << qMakePair(m, klass->toString());
-            }
-            virtMeths.insert(methString);
-        } else {
-            // we didn't find any overriding method - generate a pure virtual one
-            ret << qMakePair(meth, klass->toString());
-            virtMeths.insert(methString);
+        // Check if the method is overriden, so the callback will always point to the latest definition of the virtual method.
+        const Method* override = 0;
+        if ((override = Util::isVirtualOverriden(*meth, klass))) {
+            // If the method was overriden and put under private access, skip it. If we already have the method, skip it as well.
+            if (override->access() == Access_private || qListContainsMethodPointer(ret, override))
+                continue;
+            ret << override;
+        } else if (!qListContainsMethodPointer(ret, meth)) {
+            ret << meth;
         }
     }
-    
+
     cache[klass] = ret;
     return ret;
 }

@@ -54,9 +54,8 @@ SmokeDataFile::SmokeDataFile()
     // These classes need to be indexed as well.
     foreach (const QString& className, includedClasses) {
         const Class* klass = &classes[className];
-        Util::VirtualMethodList list = Util::virtualMethodsForClass(klass);
-        foreach (const Util::MethodStringPair& pair, list) {
-            const Method* meth = pair.first;
+        QList<const Method*> list = Util::virtualMethodsForClass(klass);
+        foreach (const Method* meth, list) {
             usedTypes << meth->type();
             foreach (const Parameter& param, meth->parameters()) {
                 usedTypes << param.type();

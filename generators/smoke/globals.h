@@ -89,7 +89,7 @@ private:
     void generateGetAccessor(QTextStream& out, const QString& className, const Field& field, const Type* type, int index);
     void generateSetAccessor(QTextStream& out, const QString& className, const Field& field, const Type* type, int index);
     void generateEnumMemberCall(QTextStream& out, const QString& className, const QString& member, int index);
-    void generateVirtualMethod(QTextStream& out, const QString& className, const Method& meth, QSet<QString>& includes);
+    void generateVirtualMethod(QTextStream& out, const Method& meth, QSet<QString>& includes);
     
     void writeClass(QTextStream& out, const Class* klass, const QString& className, QSet<QString>& includes);
     
@@ -98,9 +98,6 @@ private:
     
 struct Util
 {
-    typedef QPair<const Method*, QString> MethodStringPair;
-    typedef QList<MethodStringPair> VirtualMethodList;
-    
     static QHash<QString, QString> typeMap;
     static QHash<const Method*, const Function*> globalFunctionMap;
     static QHash<const Method*, const Field*> fieldAccessors;
@@ -131,7 +128,7 @@ struct Util
     static QString assignmentString(const Type* type, const QString& var);
     static QList<const Method*> collectVirtualMethods(const Class* klass);
     static const Method* isVirtualOverriden(const Method& meth, const Class* klass);
-    static VirtualMethodList virtualMethodsForClass(const Class* klass);
+    static QList<const Method*> virtualMethodsForClass(const Class* klass);
 };
 
 #endif

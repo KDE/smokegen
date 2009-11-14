@@ -246,7 +246,7 @@ void SmokeClassFiles::generateEnumMemberCall(QTextStream& out, const QString& cl
         << "    }\n";
 }
 
-void SmokeClassFiles::generateVirtualMethod(QTextStream& out, const QString& className, const Method& meth, QSet<QString>& includes)
+void SmokeClassFiles::generateVirtualMethod(QTextStream& out, const Method& meth, QSet<QString>& includes)
 {
     QString x_params, x_list;
     QString type = meth.type()->toString();
@@ -313,7 +313,7 @@ void SmokeClassFiles::generateVirtualMethod(QTextStream& out, const QString& cla
         out << "        ";
         if (meth.type() != Type::Void)
             out << "return ";
-        out << QString("this->%1::%2(%3);\n").arg(className).arg(meth.name()).arg(x_list);
+        out << QString("this->%1::%2(%3);\n").arg(meth.getClass()->toString()).arg(meth.name()).arg(x_list);
     }
     out << "    }\n";
 }
@@ -409,8 +409,8 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
         enumOut << "            break;\n";
     }
     
-    foreach (const Util::MethodStringPair& pair, Util::virtualMethodsForClass(klass)) {
-        generateVirtualMethod(out, pair.second, *pair.first, includes);
+    foreach (const Method* meth, Util::virtualMethodsForClass(klass)) {
+        generateVirtualMethod(out, *meth, includes);
     }
     
     // this class contains enums, write out an xenum_operation method
