@@ -616,23 +616,22 @@ void GeneratorVisitor::visitParameterDeclaration(ParameterDeclarationAST* node)
             expression = postfix->sub_expressions->at(0)->element;
             
             nc->run(primary->name);
-            QString className = nc->qualifiedName().join("::");
-            BasicTypeDeclaration* decl = resolveType(className);
+            QStringList className = nc->qualifiedName();
+            BasicTypeDeclaration* decl = resolveType(className.join("::"));
             if (decl)
-                className = decl->toString();
+                className = decl->toString().split("::");
             
-            // TODO: This only works if the last part of the name has the template parameters.
-            // Maybe create a special "Identifier" class for names that has a proper toString() method.
-            int templatePos = nc->qualifiedName().count() - 1;
-            if (nc->templateArguments().contains(templatePos)) {
-                className.append("< ");
-                for (int i = 0; i < nc->templateArguments()[templatePos].count(); i++) {
-                    if (i > 0) className.append(',');
-                    className.append(nc->templateArguments()[templatePos][i].toString());
+            QMap<int, QList<Type> > map = nc->templateArguments();
+            for (QMap<int, QList<Type> >::const_iterator it = map.begin(); it != map.end(); it++) {
+                QString str("< ");
+                for (int i = 0; i < it.value().count(); i++) {
+                    if (i > 0) str.append(',');
+                    str.append(it.value()[i].toString());
                 }
-                className.append(" >");
+                str.append(" >");
+                className[it.key()].append(str);
             }
-            defaultValue.append(className);
+            defaultValue.append(className.join("::"));
         } else if ((primary = ast_cast<PrimaryExpressionAST*>(node->expression))) {
             if (primary->name) {
                 // don't build the default value twice

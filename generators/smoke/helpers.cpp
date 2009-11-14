@@ -462,8 +462,12 @@ QString Util::stackItemField(const Type* type)
         return "s_uint";
     }
 
-    if (type->pointerDepth() > 0 || type->isRef() || type->isFunctionPointer() || (!type->isIntegral() && !type->getEnum()))
+    if (type->pointerDepth() > 0 || type->isRef() || type->isFunctionPointer() || type->isArray()
+        || (!type->isIntegral() && !type->getEnum()))
+    {
         return "s_class";
+    }
+    
     if (type->getEnum())
         return "s_enum";
     
