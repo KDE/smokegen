@@ -346,6 +346,28 @@ bool Util::hasClassPublicDestructor(const Class* klass)
     return publicDtorFound;
 }
 
+const Method* Util::findDestructor(const Class* klass)
+{
+    static QHash<const Class*, const Method*> cache;
+    if (cache.contains(klass))
+        return cache[klass];
+    
+    foreach (const Method& meth, klass->methods()) {
+        if (meth.isDestructor()) {
+            cache[klass] = &meth;
+            return &meth;
+        }
+    }
+    const Method* dtor = 0;
+    foreach (const Class::BaseClassSpecifier& bspec, klass->baseClasses()) {
+        if ((dtor = findDestructor(bspec.baseClass))) {
+            cache[klass] = dtor;
+            return dtor;
+        }
+    }
+    return 0;
+}
+
 void Util::checkForAbstractClass(Class* klass)
 {
     QList<const Method*> list;
@@ -420,9 +442,18 @@ void Util::addDestructor(Class* klass)
         if (meth.isDestructor())
             return;
     }
-    
+
     Method meth = Method(klass, "~" + klass->name(), const_cast<Type*>(Type::Void));
     meth.setIsDestructor(true);
+    
+    const Method* dtor = findDestructor(klass);
+    if (dtor && dtor->hasExceptionSpec()) {
+        meth.setHasExceptionSpec(true);
+        foreach (const Type& t, dtor->exceptionTypes()) {
+            meth.appendExceptionType(t);
+        }
+    }
+    
     klass->appendMethod(meth);
 }
 

@@ -112,6 +112,7 @@ struct Util
     static bool canClassBeCopied(const Class* klass);
     static bool hasClassVirtualDestructor(const Class* klass);
     static bool hasClassPublicDestructor(const Class* klass);
+    static const Method* findDestructor(const Class* klass);
 
     static bool derivesFromInvalid(const Class* klass);
 

@@ -463,6 +463,18 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
             }
         }
 
+        if (node->exception_spec) {
+            currentMethod.setHasExceptionSpec(true);
+            if (node->exception_spec->type_ids) {
+                const ListNode<TypeIdAST*>* it = node->exception_spec->type_ids->toFront(), *end = it;
+                do {
+                    tc->run(it->element->type_specifier, it->element->declarator);
+                    currentMethod.appendExceptionType(tc->type());
+                    it = it->next;
+                } while (it != end);
+            }
+        }
+
         klass.top()->appendMethod(currentMethod);
         return;
     }

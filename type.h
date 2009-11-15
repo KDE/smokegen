@@ -269,7 +269,7 @@ class GENERATOR_EXPORT Method : public Member
 {
 public:
     Method(Class* klass = 0, const QString& name = QString(), Type* type = 0, Access access = Access_public, ParameterList params = ParameterList())
-        : Member(klass, name, type, access), m_params(params), m_isConstructor(false), m_isDestructor(false), m_isConst(false), m_is_accessor(false) {}
+        : Member(klass, name, type, access), m_params(params), m_isConstructor(false), m_isDestructor(false), m_isConst(false), m_is_accessor(false), m_hasExceptionSpec(false) {}
     virtual ~Method() {}
 
     Class* getClass() const { return static_cast<Class*>(m_typeDecl); }
@@ -295,6 +295,12 @@ public:
     const QStringList& remainingDefaultValues() const { return m_remainingValues; }
     void setRemainingDefaultValues(const QStringList& params) { m_remainingValues = params; }
 
+    void setHasExceptionSpec(bool hasSpec) { m_hasExceptionSpec = hasSpec; }
+    bool hasExceptionSpec() const { return m_hasExceptionSpec; }
+
+    void appendExceptionType(const Type& type) { m_exceptionTypes.append(type); }
+    const QList<Type>& exceptionTypes() const { return m_exceptionTypes; }
+
     virtual QString toString(bool withAccess = false, bool withClass = false, bool withInitializer = true) const;
 
 protected:
@@ -303,6 +309,8 @@ protected:
     bool m_isDestructor;
     bool m_isConst;
     bool m_is_accessor;
+    bool m_hasExceptionSpec;
+    QList<Type> m_exceptionTypes;
     QStringList m_remainingValues;
 };
 
