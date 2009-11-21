@@ -348,20 +348,14 @@ bool Util::hasClassPublicDestructor(const Class* klass)
 
 const Method* Util::findDestructor(const Class* klass)
 {
-    static QHash<const Class*, const Method*> cache;
-    if (cache.contains(klass))
-        return cache[klass];
-    
     foreach (const Method& meth, klass->methods()) {
         if (meth.isDestructor()) {
-            cache[klass] = &meth;
             return &meth;
         }
     }
     const Method* dtor = 0;
     foreach (const Class::BaseClassSpecifier& bspec, klass->baseClasses()) {
         if ((dtor = findDestructor(bspec.baseClass))) {
-            cache[klass] = dtor;
             return dtor;
         }
     }
