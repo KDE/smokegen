@@ -451,6 +451,8 @@ void SmokeDataFile::write()
         if (isExternal && !declaredVirtualMethods.contains(klass))
             continue;
         
+        QList<const Method*> virtualMethods = Util::virtualMethodsForClass(klass);
+        
         int xcall_index = 1;
         foreach (const Method& meth, klass->methods()) {
             if (isExternal && !declaredVirtualMethods[klass].contains(&meth))
@@ -486,6 +488,14 @@ void SmokeDataFile::write()
                 flags += "|Smoke::mf_attribute";
             if (meth.isQPropertyAccessor())
                 flags += "|Smoke::mf_property";
+            
+            // Simply checking for flags() & Method::Virtual won't be enough, because methods can override virtuals without being
+            // declared 'virtual' themselves (and they're still virtual, then).
+            if (virtualMethods.contains(&meth))
+                flags += "|Smoke::mf_virtual";
+            if (meth.flags() & Method::PureVirtual)
+                flags += "|Smoke::mf_purevirtual";
+            
             flags.replace("0|", "");
             out << flags;
             if (meth.type() == Type::Void) {
