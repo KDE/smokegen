@@ -269,17 +269,28 @@ void GeneratorVisitor::visitAccessSpecifier(AccessSpecifierAST* node)
         DefaultVisitor::visitAccessSpecifier(node);
         return;
     }
-    
+
+    inSignals.top() = false;
+    inSlots.top() = false;
+
     const ListNode<std::size_t> *it = node->specs->toFront(), *end = it;
     do {
         if (it->element) {
             const Token& t = token(it->element);
             if (t.kind == Token_public)
                 access.top() = Access_public;
-            else if (t.kind == Token_protected || t.kind == Token_signals)
+            else if (t.kind == Token_protected)
                 access.top() = Access_protected;
             else if (t.kind == Token_private)
                 access.top() = Access_private;
+
+            // signal/slot handling
+            if (t.kind == Token_signals) {
+                access.top() = Access_protected;
+                inSignals.top() = true;
+            } else if (t.kind == Token_slots) {
+                inSlots.top() = true;
+            }
         }
         it = it->next;
     } while (end != it);
@@ -324,6 +335,8 @@ void GeneratorVisitor::visitClassSpecifier(ClassSpecifierAST* node)
         access.push(Access_private);
     else
         access.push(Access_public);
+    inSignals.push(false);
+    inSlots.push(false);
     inClass++;
     
     klass.top()->setFileName(m_header);
@@ -336,6 +349,8 @@ void GeneratorVisitor::visitClassSpecifier(ClassSpecifierAST* node)
     q_properties.clear();
     DefaultVisitor::visitClassSpecifier(node);
     access.pop();
+    inSignals.pop();
+    inSlots.pop();
     inClass--;
 }
 
@@ -432,6 +447,8 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
         currentMethod = Method(klass.top(), declName, returnType, access.top());
         currentMethod.setIsConstructor(isConstructor);
         currentMethod.setIsDestructor(isDestructor);
+        currentMethod.setIsSignal(inSignals.top());
+        currentMethod.setIsSlot(inSlots.top());
         // build parameter list
         inMethod = true;
         visit(node->parameter_declaration_clause);

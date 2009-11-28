@@ -495,7 +495,11 @@ void SmokeDataFile::write()
                 flags += "|Smoke::mf_virtual";
             if (meth.flags() & Method::PureVirtual)
                 flags += "|Smoke::mf_purevirtual";
-            
+            if (meth.isSignal())
+                flags += "|Smoke::mf_signal";
+            else if (meth.isSlot())
+                flags += "|Smoke::mf_slot";
+
             flags.replace("0|", "");
             out << flags;
             if (meth.type() == Type::Void) {

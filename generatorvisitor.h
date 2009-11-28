@@ -104,6 +104,8 @@ private:
     Class::Kind kind;
     QStack<Class*> klass;
     QStack<Access> access;
+    QStack<bool> inSignals;
+    QStack<bool> inSlots;
     
     QStack<QStringList> usingTypes;
     QStack<QStringList> usingNamespaces;

@@ -269,7 +269,8 @@ class GENERATOR_EXPORT Method : public Member
 {
 public:
     Method(Class* klass = 0, const QString& name = QString(), Type* type = 0, Access access = Access_public, ParameterList params = ParameterList())
-        : Member(klass, name, type, access), m_params(params), m_isConstructor(false), m_isDestructor(false), m_isConst(false), m_is_accessor(false), m_hasExceptionSpec(false) {}
+        : Member(klass, name, type, access), m_params(params), m_isConstructor(false), m_isDestructor(false), m_isConst(false), m_is_accessor(false),
+          m_hasExceptionSpec(false), m_isSignal(false), m_isSlot(false) {}
     virtual ~Method() {}
 
     Class* getClass() const { return static_cast<Class*>(m_typeDecl); }
@@ -289,6 +290,12 @@ public:
 
     void setIsQPropertyAccessor(bool isAccessor) { m_is_accessor = isAccessor; }
     bool isQPropertyAccessor() const { return m_is_accessor; }
+
+    void setIsSignal(bool isSignal) { m_isSignal = isSignal; }
+    bool isSignal() const { return m_isSignal; }
+    
+    void setIsSlot(bool isSlot) { m_isSlot = isSlot; }
+    bool isSlot() const { return m_isSlot; }
 
     // TODO: This actually doesn't belong here. Better add a dynamic property system to Member subclasses.
     //       Then we can also get rid of the various method => foo maps in the 'Util' struct.
@@ -310,6 +317,8 @@ protected:
     bool m_isConst;
     bool m_is_accessor;
     bool m_hasExceptionSpec;
+    bool m_isSignal;
+    bool m_isSlot;
     QList<Type> m_exceptionTypes;
     QStringList m_remainingValues;
 };
