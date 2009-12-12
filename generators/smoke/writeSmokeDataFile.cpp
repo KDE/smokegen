@@ -651,7 +651,7 @@ void SmokeDataFile::write()
     out << "}\n\n";
 
     if (Options::parentModules.isEmpty()) {
-        out << "std::map<std::string, Smoke*> Smoke::classMap;\n\n";
+        out << "Smoke::ClassMap Smoke::classMap;\n\n";
     }
 
     out << "extern \"C\" {\n\n";
