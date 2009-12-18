@@ -675,7 +675,7 @@ void SmokeDataFile::write()
     out << "        " << smokeNamespaceName << "::classes, " << classCount << ",\n";
     out << "        " << smokeNamespaceName << "::methods, " << methodCount << ",\n";
     out << "        " << smokeNamespaceName << "::methodMaps, " << methodMapCount << ",\n";
-    out << "        " << smokeNamespaceName << "::methodNames, " << methodNames.count() + 1 << ",\n";
+    out << "        " << smokeNamespaceName << "::methodNames, " << methodNames.count() << ",\n";
     out << "        " << smokeNamespaceName << "::types, " << typeIndex.count() << ",\n";
     out << "        " << smokeNamespaceName << "::inheritanceList,\n";
     out << "        " << smokeNamespaceName << "::argumentList,\n";
