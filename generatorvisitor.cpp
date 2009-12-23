@@ -257,7 +257,22 @@ QString GeneratorVisitor::resolveEnumMember(const QString& parent, const QString
         if (!nspace.isEmpty())
             nspace.pop_back();
     } while (!nspace.isEmpty());
-    
+
+    QStack<Class*> parentStack = klass;
+    while (!parentStack.isEmpty()) {
+        const Class* clazz = parentStack.pop();
+        foreach (const BasicTypeDeclaration* decl, clazz->children()) {
+            const Enum *e = 0;
+            if (!(e = dynamic_cast<const Enum*>(decl)))
+                continue;
+            foreach (const EnumMember& member, e->members()) {
+                if (member.name() == name) {
+                    return clazz->toString() + "::" + name;
+                }
+            }
+        }
+    }
+
     return QString();
 }
 
