@@ -484,10 +484,10 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
         // Q_PROPERTY accessor?
         if (ParserOptions::qtMode) {
             foreach (const QProperty& prop, q_properties) {
-                if (   (currentMethod.parameters().count() == 0 && prop.read == currentMethod.name() && prop.type == currentMethod.type()->name()
+                if (   (currentMethod.parameters().count() == 0 && prop.read == currentMethod.name() && currentMethod.type()->name().endsWith(prop.type)
                        && (currentMethod.type()->pointerDepth() == 1) == prop.isPtr)    // READ accessor?
                     || (currentMethod.parameters().count() == 1 && prop.write == currentMethod.name()
-                       && prop.type == currentMethod.parameters()[0].type()->name()     // or WRITE accessor?
+                       && currentMethod.parameters()[0].type()->name().endsWith(prop.type)     // or WRITE accessor?
                        && (currentMethod.parameters()[0].type()->pointerDepth() == 1) == prop.isPtr))
                 {
                     currentMethod.setIsQPropertyAccessor(true);
