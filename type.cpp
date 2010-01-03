@@ -157,12 +157,12 @@ QString Type::toString(const QString& fnPtrName) const
     if (m_isConst) ret += "const ";
     ret += name();
     if (!m_templateArgs.isEmpty()) {
-        ret += "< ";
+        ret += "<";
         for (int i = 0; i < m_templateArgs.count(); i++) {
             if (i > 0) ret += ',';
             ret += m_templateArgs[i].toString();
         }
-        ret += " >";
+        ret += ">";
     }
     
     // FIXME: This won't work for an array of function pointers!
@@ -190,5 +190,6 @@ QString Type::toString(const QString& fnPtrName) const
         }
         ret += ')';
     }
-    return ret;
+    // the compiler would misinterpret ">>" as the operator - replace it with "> >"
+    return ret.replace(">>", "> >");
 }

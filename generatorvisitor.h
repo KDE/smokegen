@@ -112,7 +112,7 @@ private:
     
     QStringList nspace;
     
-    QList<QProperty> q_properties;
+    QStack<QList<QProperty> > q_properties;
 };
 
 #endif // PARSERVISITOR_H

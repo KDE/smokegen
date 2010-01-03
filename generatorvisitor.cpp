@@ -353,6 +353,7 @@ void GeneratorVisitor::visitClassSpecifier(ClassSpecifierAST* node)
     inSignals.push(false);
     inSlots.push(false);
     inClass++;
+    q_properties.push(QList<QProperty>());
     
     klass.top()->setFileName(m_header);
     klass.top()->setIsForwardDecl(false);
@@ -361,8 +362,8 @@ void GeneratorVisitor::visitClassSpecifier(ClassSpecifierAST* node)
         Class* parent = klass[klass.count() - 2];
         parent->appendChild(klass.top());
     }
-    q_properties.clear();
     DefaultVisitor::visitClassSpecifier(node);
+    q_properties.pop();
     access.pop();
     inSignals.pop();
     inSlots.pop();
@@ -437,11 +438,12 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
             } while (end != it);
             literals.replace("\"", "");
             // this monster only matches "type name READ getMethod WRITE setMethod"
-            QRegExp regexp("^([a-zA-Z]+)(\\s*\\*\\s*)?\\s+([a-zA-Z]+)\\s+READ\\s+([a-zA-Z0-9]+)(\\s+WRITE\\s+[a-zA-Z0-9]+)?");
+            static QRegExp regexp("^([\\w:<>\\*]+)\\s+(\\w+)\\s+READ\\s+(\\w+)(\\s+WRITE\\s+\\w+)?");
+            static QRegExp typePtr(".*\\*$");
             if (regexp.indexIn(literals) != -1) {
-                QProperty prop = { regexp.cap(1), !regexp.cap(2).isEmpty(), regexp.cap(3),
-                                   regexp.cap(4), regexp.cap(5).replace(QRegExp("\\s+WRITE\\s+"), QString()) };
-                q_properties.append(prop);
+                QProperty prop = { QMetaObject::normalizedType(regexp.cap(1).toLatin1()), (typePtr.indexIn(regexp.cap(1)) !=  -1), regexp.cap(2),
+                                   regexp.cap(3), regexp.cap(4).replace(QRegExp("\\s+WRITE\\s+"), QString()) };
+                q_properties.top().append(prop);
             }
             return;
         }
@@ -483,11 +485,11 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
 
         // Q_PROPERTY accessor?
         if (ParserOptions::qtMode) {
-            foreach (const QProperty& prop, q_properties) {
-                if (   (currentMethod.parameters().count() == 0 && prop.read == currentMethod.name() && currentMethod.type()->name().endsWith(prop.type)
+            foreach (const QProperty& prop, q_properties.top()) {
+                if (   (currentMethod.parameters().count() == 0 && prop.read == currentMethod.name() && currentMethod.type()->toString().endsWith(prop.type)
                        && (currentMethod.type()->pointerDepth() == 1) == prop.isPtr)    // READ accessor?
                     || (currentMethod.parameters().count() == 1 && prop.write == currentMethod.name()
-                       && currentMethod.parameters()[0].type()->name().endsWith(prop.type)     // or WRITE accessor?
+                       && currentMethod.parameters()[0].type()->toString().endsWith(prop.type)     // or WRITE accessor?
                        && (currentMethod.parameters()[0].type()->pointerDepth() == 1) == prop.isPtr))
                 {
                     currentMethod.setIsQPropertyAccessor(true);
