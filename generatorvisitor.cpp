@@ -489,8 +489,8 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
                 if (   (currentMethod.parameters().count() == 0 && prop.read == currentMethod.name() && currentMethod.type()->toString().endsWith(prop.type)
                        && (currentMethod.type()->pointerDepth() == 1) == prop.isPtr)    // READ accessor?
                     || (currentMethod.parameters().count() == 1 && prop.write == currentMethod.name()
-                       && currentMethod.parameters()[0].type()->toString().endsWith(prop.type)     // or WRITE accessor?
-                       && (currentMethod.parameters()[0].type()->pointerDepth() == 1) == prop.isPtr))
+                       && currentMethod.parameters()[0].type()->toString().remove(QRegExp("^const ")).remove(QRegExp("\\&$")).endsWith(prop.type)
+                       && (currentMethod.parameters()[0].type()->pointerDepth() == 1) == prop.isPtr))   // or WRITE accessor?
                 {
                     currentMethod.setIsQPropertyAccessor(true);
                 }
