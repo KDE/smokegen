@@ -439,9 +439,10 @@ void SmokeDataFile::write()
     out << "// (classId, name (index in methodNames), argumentList index, number of args, method flags, "
         << "return type (index in types), xcall() index)\n";
     out << "static Smoke::Method methods[] = {\n";
+    out << "    { 0, 0, 0, 0, 0, 0, 0 },\t// (no method)\n";
     
-    i = 0;
-    int methodCount = 0;
+    i = 1;
+    int methodCount = 1;
     for (QMap<QString, int>::const_iterator iter = classIndex.constBegin(); iter != classIndex.constEnd(); iter++) {
         Class* klass = &classes[iter.key()];
         const Method* destructor = 0;
