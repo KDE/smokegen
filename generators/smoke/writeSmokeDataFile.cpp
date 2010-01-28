@@ -132,7 +132,7 @@ void SmokeDataFile::write()
         foreach (const Class* base, Util::superClassList(&klass)) {
             QString className = base->toString();
             
-            if (includedClasses.contains(className)) {
+            if (includedClasses.contains(className) || externalClasses.contains((Class *) base)) {
                 int index = classIndex[className];
                 if (indices.contains(index))
                     continue;
