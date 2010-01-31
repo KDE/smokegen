@@ -266,6 +266,8 @@ void SmokeDataFile::write()
                 if (Util::canClassBeCopied(klass)) flags += "|Smoke::cf_deepcopy";
                 if (Util::hasClassVirtualDestructor(klass)) flags += "|Smoke::cf_virtual";
                 flags.replace("0|", ""); // beautify
+            } else {
+                flags = "Smoke::cf_namespace";
             }
             out << flags << ", ";
             if (!klass->isNameSpace())
