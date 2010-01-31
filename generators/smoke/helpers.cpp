@@ -107,7 +107,8 @@ void Util::preparse(QSet<Type*> *usedTypes, QSet<const Class*> *superClasses, co
         
         // gcc doesn't like this function... for whatever reason
         if (fn.name() == "_IO_ftrylockfile"
-            || (!Options::functionNameIncluded(fn.qualifiedName()) && !Options::functionSignatureIncluded(fnString))
+            // functions in named namespaces are covered by the class list - only check for top-level functions here
+            || (fn.nameSpace().isEmpty() && !Options::functionNameIncluded(fn.qualifiedName()) && !Options::functionSignatureIncluded(fnString))
             || Options::typeExcluded(fnString))
         {
             // we don't want that function...
