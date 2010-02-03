@@ -43,10 +43,11 @@ typedef int (*GenerateFn)();
 static void showUsage()
 {
     std::cout << 
-    "Usage: generator [options] -- <header files>" << std::endl <<
+    "Usage: smokegen [options] -- <header files>" << std::endl <<
     "Possible command line options are:" << std::endl <<
     "    -I <include dir>" << std::endl <<
     "    -d <path to file containing #defines>" << std::endl <<
+    "    -dm <list of macros that should be ignored>" << std::endl <<
     "    -g <generator to use>" << std::endl <<
     "    -qt enables Qt-mode (special treatment of QFlags)" << std::endl <<
     "    -t resolve typedefs" << std::endl <<
@@ -73,7 +74,7 @@ int main(int argc, char **argv)
 
     for (int i = 1; i < args.count(); i++) {
         if ((args[i] == "-I" || args[i] == "-d" || args[i] == "-dm" ||
-             args[i] == "-g" || args[i] == "--config") && i + 1 >= args.count())
+             args[i] == "-g" || args[i] == "-config") && i + 1 >= args.count())
         {
             qCritical() << "not enough parameters for option" << args[i];
             return EXIT_FAILURE;
@@ -162,6 +163,11 @@ int main(int argc, char **argv)
     // first try to load plugins from the executable's directory
     QLibrary lib(app.applicationDirPath() + "/generator_" + generator);
     lib.load();
+    if (!lib.isLoaded()) {
+        lib.unload();
+        lib.setFileName(app.applicationDirPath() + "/../lib/smokegen/generator_" + generator);
+        lib.load();
+    }
     if (!lib.isLoaded()) {
         lib.unload();
         lib.setFileName("generator_" + generator);
