@@ -24,6 +24,10 @@ set(generator_SRC
     type.cpp
 )
 
+# force RPATH so that the binary is usable from within the build tree
+set (CMAKE_SKIP_BUILD_RPATH FALSE)
+set (CMAKE_SKIP_RPATH FALSE)
+
 add_executable(smokegen ${generator_SRC})
 target_link_libraries(smokegen ${QT_QTCORE_LIBRARY} ${QT_QTXML_LIBRARY} cppparser)
 set_target_properties(smokegen PROPERTIES COMPILE_DEFINITIONS __GENERATOR_BUILDING ENABLE_EXPORTS TRUE)
