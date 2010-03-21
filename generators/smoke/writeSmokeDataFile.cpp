@@ -329,8 +329,13 @@ void SmokeDataFile::write()
             flags += typeName;
         } else if (t->getEnum()) {
             flags += "|Smoke::t_enum";
-            if (t->getEnum()->parent())
+            if (t->getEnum()->parent()) {
                 classIdx = classIndex.value(t->getEnum()->parent()->toString(), 0);
+            } else if (t->getEnum()->toString().contains("::")) {
+                QStringList parts = t->getEnum()->toString().split("::");
+                parts.removeLast();
+                classIdx = classIndex.value(parts.join("::"), 0);
+            }
         } else if (Options::qtMode && !t->isRef() && t->pointerDepth() == 0 && t->getTypedef() &&
                    flagTypes.contains(t->getTypedef()))
         {
