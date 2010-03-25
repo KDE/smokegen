@@ -622,6 +622,11 @@ void Util::addOverloads(const Method& meth)
             continue;
         }
         Method overload = meth;
+        if (meth.flags() & Method::PureVirtual) {
+            overload.setFlag(Method::DynamicDispatch);
+        }
+        overload.removeFlag(Method::Virtual);
+        overload.removeFlag(Method::PureVirtual);
         overload.setParameterList(params);
         if (klass->methods().contains(overload)) {
             // we already have that, skip it
