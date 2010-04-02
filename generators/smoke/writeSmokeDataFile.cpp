@@ -216,14 +216,21 @@ void SmokeDataFile::write()
     for (QHash<QString, Enum>::const_iterator it = enums.constBegin(); it != enums.constEnd(); it++) {
         if (!it.value().isValid())
             continue;
-        if (it.value().parent() && !externalClasses.contains(it.value().parent()) && it.value().access() != Access_private) {
-            QString smokeClassName = it.value().parent()->toString();
+        
+        QString smokeClassName;
+        if (it.value().parent()) {
+            smokeClassName = it.value().parent()->toString();
+        } else {
+            smokeClassName = it.value().nameSpace();
+        }
+        
+        if (!smokeClassName.isEmpty() && includedClasses.contains(smokeClassName) && it.value().access() != Access_private) {
             if (enumClassesHandled.contains(smokeClassName) || Options::voidpTypes.contains(smokeClassName))
                 continue;
             enumClassesHandled << smokeClassName;
             smokeClassName.replace("::", "__");
             out << "void xenum_" << smokeClassName << "(Smoke::EnumOperation, Smoke::Index, void*&, long&);\n";
-        } else if (!it.value().parent() && it.value().access() != Access_private) {
+        } else if (smokeClassName.isEmpty() && it.value().access() != Access_private) {
             if (enumClassesHandled.contains("QGlobalSpace"))
                 continue;
             out << "void xenum_QGlobalSpace(Smoke::EnumOperation, Smoke::Index, void*&, long&);\n";
