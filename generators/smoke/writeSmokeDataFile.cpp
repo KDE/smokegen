@@ -184,10 +184,14 @@ void SmokeDataFile::write()
         QVector<int> indices;
         QStringList comment;
         foreach (const Class::BaseClassSpecifier& base, klass.baseClasses()) {
+            if (base.access == Access_private)
+                continue;
             QString className = base.baseClass->toString();
             indices << classIndex[className];
             comment << className;
         }
+        if (indices.count() == 0)
+            continue;
         int idx = 0;
         
         if (!inheritanceList.contains(indices)) {
@@ -406,7 +410,7 @@ void SmokeDataFile::write()
             for (int i = 0; i < indices.size(); i++) {
                 Type* t = meth.parameters()[i].type();
                 if (!typeIndex.contains(t)) {
-                    qFatal("missing type: %s in method %s", qPrintable(t->toString()), qPrintable(meth.toString(false, true)));
+                    qFatal("missing type: %s in method %s (while building munged names map)", qPrintable(t->toString()), qPrintable(meth.toString(false, true)));
                 }
                 indices[i] = typeIndex[t];
                 comment << t->toString();
@@ -520,7 +524,7 @@ void SmokeDataFile::write()
             if (meth.type() == Type::Void) {
                 out << ", 0";
             } else if (!typeIndex.contains(meth.type())) {
-                qFatal("missing type: %s in method %s", qPrintable(meth.type()->toString()), qPrintable(meth.toString(false, true)));
+                qFatal("missing type: %s in method %s (while writing out methods table)", qPrintable(meth.type()->toString()), qPrintable(meth.toString(false, true)));
             } else {
                 out << ", " << typeIndex[meth.type()];
             }
