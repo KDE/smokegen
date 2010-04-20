@@ -836,6 +836,13 @@ void GeneratorVisitor::visitTypedef(TypedefAST* node)
 {
     createTypedef = true;
     DefaultVisitor::visitTypedef(node);
+
+    // TODO: probably has to be extended to cover structs and classes, too
+    // makes something like 'typedef enum { Bar } Foo;' look like a proper enum.
+    if (ast_cast<EnumSpecifierAST*>(node->type_specifier)) {
+        nc->run(node->init_declarators->at(0)->element->declarator->id);
+        currentEnumRef->setName(nc->name());
+    }
 }
 
 // don't make this public - it's just a utility function for the next method and probably not what you would expect it to be
