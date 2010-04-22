@@ -104,6 +104,19 @@ BasicTypeDeclaration* GeneratorVisitor::resolveType(const QString & name)
 // TODO: this might have to be improved for cases like 'Typedef::Nested foo'
 BasicTypeDeclaration* GeneratorVisitor::resolveType(QString & name)
 {
+    if (ParserOptions::qtMode && name.endsWith("::enum_type")) {
+        // strip off "::enum_type"
+        QString flags = name.left(name.length() - 11);
+        QHash<QString, Typedef>::iterator it = typedefs.find(flags);
+        if (it != typedefs.end()) {
+            QString enumType = it.value().resolve().toString().replace(QRegExp("QFlags<(.*)>"), "\\1");
+            QHash<QString, Enum>::iterator it = enums.find(enumType);
+            if (it != enums.end()) {
+                return &it.value();
+            }
+        }
+    }
+
     // check for 'using type;'
     // if we use 'type', we can also access type::nested, take care of that
     int index = name.indexOf("::");

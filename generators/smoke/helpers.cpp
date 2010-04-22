@@ -456,7 +456,7 @@ QString Util::mungedName(const Method& meth) {
     QString ret = meth.name();
     foreach (const Parameter& param, meth.parameters()) {
         const Type* type = param.type();
-        if (type->pointerDepth() > 1 || (type->getClass() && type->getClass()->isTemplate()) ||
+        if (type->pointerDepth() > 1 || (type->getClass() && type->getClass()->isTemplate() && (!Options::qtMode || (Options::qtMode && type->getClass()->name() != "QFlags"))) ||
             (Options::voidpTypes.contains(type->name()) && !Options::scalarTypes.contains(type->name())) )
         {
             // QString and QStringList are both mapped to Smoke::t_voidp, but QString is a scalar as well
@@ -465,7 +465,9 @@ QString Util::mungedName(const Method& meth) {
             // reference to array or hash or unknown
             ret += "?";
         } else if (type->isIntegral() || type->getEnum() || Options::scalarTypes.contains(type->name()) ||
-                   (Options::qtMode && !type->isRef() && type->getTypedef() && flagTypes.contains(type->getTypedef())) )
+                   (Options::qtMode && !type->isRef() && type->pointerDepth() == 0 &&
+                    (type->getTypedef() && flagTypes.contains(type->getTypedef())) ||
+                    (type->getClass() && type->getClass()->isTemplate() && type->getClass()->name() == "QFlags")))
         {
             // plain scalar
             ret += "$";
@@ -483,7 +485,8 @@ QString Util::mungedName(const Method& meth) {
 QString Util::stackItemField(const Type* type)
 {
     if (Options::qtMode && !type->isRef() && type->pointerDepth() == 0 &&
-        type->getTypedef() && flagTypes.contains(type->getTypedef()))
+           ((type->getTypedef() && flagTypes.contains(type->getTypedef()))
+        || (type->getClass() && type->getClass()->isTemplate() && type->getClass()->name() == "QFlags")))
     {
         return "s_uint";
     }
@@ -522,7 +525,9 @@ QString Util::assignmentString(const Type* type, const QString& var)
         return var;
     } else if (type->getEnum()) {
         return var;
-    } else if (Options::qtMode && type->getTypedef() && flagTypes.contains(type->getTypedef())) {
+    } else if (Options::qtMode && (  (type->getTypedef() && flagTypes.contains(type->getTypedef()))
+                                  || (type->getClass() && type->getClass()->isTemplate() && type->getClass()->name() == "QFlags")))
+    {
         return "(uint)" + var;
     } else {
         QString ret = "(void*)new " + type->toString();

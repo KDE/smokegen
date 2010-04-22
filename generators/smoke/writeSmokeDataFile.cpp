@@ -316,7 +316,11 @@ void SmokeDataFile::write()
             flags += "|Smoke::t_voidp";
         } else if (t->getClass()) {
             if (t->getClass()->isTemplate()) {
-                flags += "|Smoke::t_voidp";
+                if (Options::qtMode && t->getClass()->name() == "QFlags") {
+                    flags += "|Smoke::t_uint";
+                } else {
+                    flags += "|Smoke::t_voidp";
+                }
             } else {
                 flags += "|Smoke::t_class";
                 classIdx = classIndex.value(t->getClass()->toString(), 0);
