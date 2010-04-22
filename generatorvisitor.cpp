@@ -293,6 +293,8 @@ QString GeneratorVisitor::resolveEnumMember(const QString& parent, const QString
 
 void GeneratorVisitor::visitAccessSpecifier(AccessSpecifierAST* node)
 {
+    static bool oldResolveTypedefs = ParserOptions::resolveTypedefs;
+
     if (!inClass) {
         DefaultVisitor::visitAccessSpecifier(node);
         return;
@@ -300,6 +302,7 @@ void GeneratorVisitor::visitAccessSpecifier(AccessSpecifierAST* node)
 
     inSignals.top() = false;
     inSlots.top() = false;
+    ParserOptions::resolveTypedefs = oldResolveTypedefs;
 
     const ListNode<std::size_t> *it = node->specs->toFront(), *end = it;
     do {
@@ -312,12 +315,14 @@ void GeneratorVisitor::visitAccessSpecifier(AccessSpecifierAST* node)
             else if (t.kind == Token_private)
                 access.top() = Access_private;
 
-            // signal/slot handling
+            // signal/slot handling; don't resolve typedefs in signals and slots
             if (t.kind == Token_signals) {
                 access.top() = Access_protected;
                 inSignals.top() = true;
+                ParserOptions::resolveTypedefs = false;
             } else if (t.kind == Token_slots) {
                 inSlots.top() = true;
+                ParserOptions::resolveTypedefs = false;
             }
         }
         it = it->next;
@@ -418,13 +423,6 @@ void GeneratorVisitor::visitDeclarator(DeclaratorAST* node)
             QHash<QString, Typedef>::iterator it = typedefs.insert(name, tdef);
             if (parent)
                 parent->appendChild(&it.value());
-            
-            if (ParserOptions::qtMode && currentTypeRef->name() == "QFlags" &&
-                !currentTypeRef->templateArguments().isEmpty())
-            {
-                // in Qt-mode, store that this is a QFlags-typedef
-                flagTypes.insert(&it.value());
-            }
         }
         createTypedef = false;
         return;

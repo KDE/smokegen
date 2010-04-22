@@ -452,41 +452,53 @@ void Util::addDestructor(Class* klass)
     klass->appendMethod(meth);
 }
 
+QChar Util::munge(const Type *type) {
+    if (type->getTypedef()) {
+        Type resolved = type->getTypedef()->resolve();
+        return munge(&resolved);
+    }
+
+    if (type->pointerDepth() > 1 || (type->getClass() && type->getClass()->isTemplate() && (!Options::qtMode || (Options::qtMode && type->getClass()->name() != "QFlags"))) ||
+        (Options::voidpTypes.contains(type->name()) && !Options::scalarTypes.contains(type->name())) )
+    {
+        // QString and QStringList are both mapped to Smoke::t_voidp, but QString is a scalar as well
+        // TODO: fix this - neither QStringList nor QString should be mapped to Smoke::t_voidp or munged as ? or $
+
+        // reference to array or hash or unknown
+        return '?';
+    } else if (type->isIntegral() || type->getEnum() || Options::scalarTypes.contains(type->name()) ||
+                (Options::qtMode && !type->isRef() && type->pointerDepth() == 0 &&
+                (type->getClass() && type->getClass()->isTemplate() && type->getClass()->name() == "QFlags")))
+    {
+        // plain scalar
+        return '$';
+    } else if (type->getClass()) {
+        // object
+        return '#';
+    } else {
+        // unknown
+        return '?';
+    }
+}
+
 QString Util::mungedName(const Method& meth) {
     QString ret = meth.name();
     foreach (const Parameter& param, meth.parameters()) {
         const Type* type = param.type();
-        if (type->pointerDepth() > 1 || (type->getClass() && type->getClass()->isTemplate() && (!Options::qtMode || (Options::qtMode && type->getClass()->name() != "QFlags"))) ||
-            (Options::voidpTypes.contains(type->name()) && !Options::scalarTypes.contains(type->name())) )
-        {
-            // QString and QStringList are both mapped to Smoke::t_voidp, but QString is a scalar as well
-            // TODO: fix this - neither QStringList nor QString should be mapped to Smoke::t_voidp or munged as ? or $
-            
-            // reference to array or hash or unknown
-            ret += "?";
-        } else if (type->isIntegral() || type->getEnum() || Options::scalarTypes.contains(type->name()) ||
-                   (Options::qtMode && !type->isRef() && type->pointerDepth() == 0 &&
-                    (type->getTypedef() && flagTypes.contains(type->getTypedef())) ||
-                    (type->getClass() && type->getClass()->isTemplate() && type->getClass()->name() == "QFlags")))
-        {
-            // plain scalar
-            ret += "$";
-        } else if (type->getClass()) {
-            // object
-            ret += "#";
-        } else {
-            // unknown
-            ret += "?";
-        }
-    }
+        ret += munge(type);
+   }
     return ret;
 }
 
 QString Util::stackItemField(const Type* type)
 {
+    if (type->getTypedef()) {
+        Type resolved = type->getTypedef()->resolve();
+        return stackItemField(&resolved);
+    }
+
     if (Options::qtMode && !type->isRef() && type->pointerDepth() == 0 &&
-           ((type->getTypedef() && flagTypes.contains(type->getTypedef()))
-        || (type->getClass() && type->getClass()->isTemplate() && type->getClass()->name() == "QFlags")))
+        type->getClass() && type->getClass()->isTemplate() && type->getClass()->name() == "QFlags")
     {
         return "s_uint";
     }
@@ -517,6 +529,11 @@ QString Util::stackItemField(const Type* type)
 
 QString Util::assignmentString(const Type* type, const QString& var)
 {
+    if (type->getTypedef()) {
+        Type resolved = type->getTypedef()->resolve();
+        return assignmentString(&resolved, var);
+    }
+
     if (type->pointerDepth() > 0 || type->isFunctionPointer()) {
         return "(void*)" + var;
     } else if (type->isRef()) {
@@ -525,8 +542,7 @@ QString Util::assignmentString(const Type* type, const QString& var)
         return var;
     } else if (type->getEnum()) {
         return var;
-    } else if (Options::qtMode && (  (type->getTypedef() && flagTypes.contains(type->getTypedef()))
-                                  || (type->getClass() && type->getClass()->isTemplate() && type->getClass()->name() == "QFlags")))
+    } else if (Options::qtMode && type->getClass() && type->getClass()->isTemplate() && type->getClass()->name() == "QFlags")
     {
         return "(uint)" + var;
     } else {

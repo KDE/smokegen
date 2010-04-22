@@ -102,6 +102,71 @@ bool SmokeDataFile::isClassUsed(const Class* klass)
     return false;
 }
 
+QString SmokeDataFile::getTypeFlags(const Type *t, int *classIdx)
+{
+    if (t->getTypedef()) {
+        Type resolved = t->getTypedef()->resolve();
+        return getTypeFlags(&resolved, classIdx);
+    }
+
+    QString flags = "0";
+    if (Options::voidpTypes.contains(t->name())) {
+        // support some of the weird quirks the kalyptus code has
+        flags += "|Smoke::t_voidp";
+    } else if (t->getClass()) {
+        if (t->getClass()->isTemplate()) {
+            if (Options::qtMode && t->getClass()->name() == "QFlags") {
+                flags += "|Smoke::t_uint";
+            } else {
+                flags += "|Smoke::t_voidp";
+            }
+        } else {
+            flags += "|Smoke::t_class";
+            *classIdx = classIndex.value(t->getClass()->toString(), 0);
+        }
+    } else if (t->isIntegral() && t->name() != "void" && t->pointerDepth() == 0 && !t->isRef()) {
+        flags += "|Smoke::t_";
+        QString typeName = t->name();
+
+        // replace the unsigned stuff, look the type up in Util::typeMap and if
+        // necessary, add a 'u' for unsigned types at the beginning again
+        bool _unsigned = false;
+        if (typeName.startsWith("unsigned ")) {
+            typeName.replace("unsigned ", "");
+            _unsigned = true;
+        }
+        typeName.replace("signed ", "");
+        typeName = Util::typeMap.value(typeName, typeName);
+        if (_unsigned)
+            typeName.prepend('u');
+
+        flags += typeName;
+    } else if (t->getEnum()) {
+        flags += "|Smoke::t_enum";
+        if (t->getEnum()->parent()) {
+            *classIdx = classIndex.value(t->getEnum()->parent()->toString(), 0);
+        } else if (!t->getEnum()->nameSpace().isEmpty()) {
+            *classIdx = classIndex.value(t->getEnum()->nameSpace(), 0);
+        } else {
+            *classIdx = classIndex.value("QGlobalSpace", 0);
+        }
+    } else {
+        flags += "|Smoke::t_voidp";
+    }
+
+    if (t->isRef())
+        flags += "|Smoke::tf_ref";
+    if (t->pointerDepth() > 0)
+        flags += "|Smoke::tf_ptr";
+    if (!t->isRef() && t->pointerDepth() == 0)
+        flags += "|Smoke::tf_stack";
+    if (t->isConst())
+        flags += "|Smoke::tf_const";
+    flags.replace("0|", "");
+
+    return flags;
+}
+
 void SmokeDataFile::write()
 {
     qDebug("writing out smokedata.cpp [%s]", qPrintable(Options::module));
@@ -310,64 +375,7 @@ void SmokeDataFile::write()
         if (t == Type::Void)
             continue;
         int classIdx = 0;
-        QString flags = "0";
-        if (Options::voidpTypes.contains(t->name())) {
-            // support some of the weird quirks the kalyptus code has
-            flags += "|Smoke::t_voidp";
-        } else if (t->getClass()) {
-            if (t->getClass()->isTemplate()) {
-                if (Options::qtMode && t->getClass()->name() == "QFlags") {
-                    flags += "|Smoke::t_uint";
-                } else {
-                    flags += "|Smoke::t_voidp";
-                }
-            } else {
-                flags += "|Smoke::t_class";
-                classIdx = classIndex.value(t->getClass()->toString(), 0);
-            }
-        } else if (t->isIntegral() && t->name() != "void" && t->pointerDepth() == 0 && !t->isRef()) {
-            flags += "|Smoke::t_";
-            QString typeName = t->name();
-            
-            // replace the unsigned stuff, look the type up in Util::typeMap and if
-            // necessary, add a 'u' for unsigned types at the beginning again
-            bool _unsigned = false;
-            if (typeName.startsWith("unsigned ")) {
-                typeName.replace("unsigned ", "");
-                _unsigned = true;
-            }
-            typeName.replace("signed ", "");
-            typeName = Util::typeMap.value(typeName, typeName);
-            if (_unsigned)
-                typeName.prepend('u');
-            
-            flags += typeName;
-        } else if (t->getEnum()) {
-            flags += "|Smoke::t_enum";
-            if (t->getEnum()->parent()) {
-                classIdx = classIndex.value(t->getEnum()->parent()->toString(), 0);
-            } else if (!t->getEnum()->nameSpace().isEmpty()) {
-                classIdx = classIndex.value(t->getEnum()->nameSpace(), 0);
-            } else {
-                classIdx = classIndex.value("QGlobalSpace", 0);
-            }
-        } else if (Options::qtMode && !t->isRef() && t->pointerDepth() == 0 && t->getTypedef() &&
-                   flagTypes.contains(t->getTypedef()))
-        {
-            flags += "|Smoke::t_uint";
-        } else {
-            flags += "|Smoke::t_voidp";
-        }
-        
-        if (t->isRef())
-            flags += "|Smoke::tf_ref";
-        if (t->pointerDepth() > 0)
-            flags += "|Smoke::tf_ptr";
-        if (!t->isRef() && t->pointerDepth() == 0)
-            flags += "|Smoke::tf_stack";
-        if (t->isConst())
-            flags += "|Smoke::tf_const";
-        flags.replace("0|", "");
+        QString flags = getTypeFlags(t, &classIdx);
         typeIndex[t] = i;
         out << "    { \"" << it.key() << "\", " << classIdx << ", " << flags << " },\t//" << i++ << "\n";
     }
