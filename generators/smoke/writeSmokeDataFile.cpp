@@ -543,15 +543,25 @@ void SmokeDataFile::write()
             if ((e = dynamic_cast<Enum*>(decl))) {
                 if (e->access() == Access_private)
                     continue;
+
+                Type *enumType;
+                if (e->name().isEmpty()) {
+                    // unnamed enum
+                    enumType = &types["long"];
+                } else {
+                    enumType = &types[e->toString()];
+                }
+
+                int index = 0;
+                QHash<Type*, int>::const_iterator typeIt;
+                if ((typeIt = typeIndex.find(enumType)) == typeIndex.end()) {
+                    // this enum doesn't have an index, so we don't want it here
+                    continue;
+                } else {
+                    index = *typeIt;
+                }
+
                 foreach (const EnumMember& member, e->members()) {
-                    int index = 0;
-                    if (e->name().isEmpty()) {
-                        // unnamed enum
-                        index = typeIndex[&types["long"]];
-                    } else {
-                        index = typeIndex[&types[e->toString()]];
-                    }
-                    
                     out << "    {" << iter.value() << ", " << methodNames[member.name()]
                         << ", 0, 0, Smoke::mf_static|Smoke::mf_enum, " << index
                         << ", " << xcall_index << "},";
