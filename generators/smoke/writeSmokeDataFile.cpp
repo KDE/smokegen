@@ -691,11 +691,6 @@ void SmokeDataFile::write()
 
     out << "}\n\n";
 
-    if (Options::parentModules.isEmpty()) {
-        out << "Smoke::ClassMap Smoke::classMap;\n\n";
-        out << "Smoke::ModuleIndex Smoke::NullModuleIndex;\n\n";
-    }
-
     out << "extern \"C\" {\n\n";
 
     for (int j = 0; j < Options::parentModules.count(); j++) {
