@@ -508,6 +508,8 @@ void SmokeDataFile::write()
                 flags += "|Smoke::mf_static";
             if (meth.isConstructor())
                 flags += "|Smoke::mf_ctor";
+            if (meth.flags() & Method::Explicit)
+                flags += "|Smoke::mf_explicit";
             if (meth.access() == Access_protected)
                 flags += "|Smoke::mf_protected";
             if (meth.isConstructor() &&
