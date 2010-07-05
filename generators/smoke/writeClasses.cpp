@@ -80,6 +80,8 @@ void SmokeClassFiles::write(const QList<QString>& keys)
 
         fileOut << "\n#include <smoke.h>\n#include <" << Options::module << "_smoke.h>\n";
 
+        fileOut << "\nclass __internal_SmokeClass { public: virtual ~__internal_SmokeClass() {} };\n";
+
         fileOut << "\nnamespace __smoke" << Options::module << " {\n\n";
 
         // now the class code
@@ -194,7 +196,7 @@ void SmokeClassFiles::generateMethod(QTextStream& out, const QString& className,
     } else {
         // This is a virtual method. To know whether we should call with dynamic dispatch, we need a bit of RTTI magic.
         includes.insert("typeinfo");
-        out << "        if (typeid(*this) == typeid(" << smokeClassName << ")) {\n";   //
+        out << "        if (dynamic_cast<__internal_SmokeClass*>(static_cast<" << className << "*>(this))) {\n";   //
         out << generateMethodBody("            ",   // indent
                                   className, smokeClassName, meth, index, false, includes);
         out << "        } else {\n";
@@ -363,8 +365,9 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
     QTextStream switchOut(&switchCode);
 
     out << QString("class %1").arg(smokeClassName);
-    if (!klass->isNameSpace())
-        out << QString(" : public %1").arg(className);
+    if (!klass->isNameSpace()) {
+        out << QString(" : public %1, public __internal_SmokeClass").arg(className);
+    }
     out << " {\n";
     if (Util::canClassBeInstanciated(klass)) {
         out << "    SmokeBinding* _binding;\n";
