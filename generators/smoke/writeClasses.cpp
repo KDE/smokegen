@@ -80,7 +80,7 @@ void SmokeClassFiles::write(const QList<QString>& keys)
 
         fileOut << "\n#include <smoke.h>\n#include <" << Options::module << "_smoke.h>\n";
 
-        fileOut << "\nclass __internal_SmokeClass { public: virtual ~__internal_SmokeClass() {} };\n";
+        fileOut << "\nclass __internal_SmokeClass {};\n";
 
         fileOut << "\nnamespace __smoke" << Options::module << " {\n\n";
 
@@ -366,7 +366,10 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
 
     out << QString("class %1").arg(smokeClassName);
     if (!klass->isNameSpace()) {
-        out << QString(" : public %1, public __internal_SmokeClass").arg(className);
+        out << QString(" : public %1").arg(className);
+        if (Util::hasClassVirtualDestructor(klass) && Util::hasClassPublicDestructor(klass)) {
+            out << ", public __internal_SmokeClass";
+        }
     }
     out << " {\n";
     if (Util::canClassBeInstanciated(klass)) {
