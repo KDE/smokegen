@@ -131,10 +131,10 @@ void Util::preparse(QSet<Type*> *usedTypes, QSet<const Class*> *superClasses, co
         // map this method to the function, so we can later retrieve the header it was defined in
         globalFunctionMap[&parent->methods().last()] = &fn;
         
-        int methIndex = parent->methods().length() - 1;
+        int methIndex = parent->methods().size() - 1;
         addOverloads(meth);
         // handle the methods appended by addOverloads()
-        for (int i = parent->methods().length() - 1; i > methIndex; --i)
+        for (int i = parent->methods().size() - 1; i > methIndex; --i)
             globalFunctionMap[&parent->methods()[i]] = &fn;
 
         (*usedTypes) << meth.type();
