@@ -617,12 +617,13 @@ void Util::addAccessorMethods(const Field& field, QSet<Type*> *usedTypes)
     // reset
     type = field.type();
     // to avoid copying around more stuff than necessary, convert setFoo(Bar) to setFoo(const Bar&)
-    if (type->pointerDepth() == 0 && type->getClass()) {
+    if (type->pointerDepth() == 0 && type->getClass() && !(ParserOptions::qtMode && type->getClass()->name() == "QFlags")) {
         Type newType = *type;
         newType.setIsRef(true);
         newType.setIsConst(true);
         type = Type::registerType(newType);
     }
+
     (*usedTypes) << type;
     setter.appendParameter(Parameter(QString(), type));
     if (klass->methods().contains(setter))
