@@ -458,7 +458,11 @@ QChar Util::munge(const Type *type) {
         return munge(&resolved);
     }
 
-    if (type->pointerDepth() > 1 || (type->getClass() && type->getClass()->isTemplate() && (!Options::qtMode || (Options::qtMode && type->getClass()->name() != "QFlags"))) ||
+    if (type->name().contains("long long") || type->name() == "size_t") {
+        // Special case 'long long' types as '$'.
+        // Hack: 'size_t' isn't being fully resolved for some reason.
+        return '$';
+    } else if (type->pointerDepth() > 1 || (type->getClass() && type->getClass()->isTemplate() && (!Options::qtMode || (Options::qtMode && type->getClass()->name() != "QFlags"))) ||
         (Options::voidpTypes.contains(type->name()) && !Options::scalarTypes.contains(type->name())) )
     {
         // QString and QStringList are both mapped to Smoke::t_voidp, but QString is a scalar as well
