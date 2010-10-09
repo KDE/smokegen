@@ -131,10 +131,10 @@ void Util::preparse(QSet<Type*> *usedTypes, QSet<const Class*> *superClasses, co
         // map this method to the function, so we can later retrieve the header it was defined in
         globalFunctionMap[&parent->methods().last()] = &fn;
         
-        int methIndex = parent->methods().length() - 1;
+        int methIndex = parent->methods().size() - 1;
         addOverloads(meth);
         // handle the methods appended by addOverloads()
-        for (int i = parent->methods().length() - 1; i > methIndex; --i)
+        for (int i = parent->methods().size() - 1; i > methIndex; --i)
             globalFunctionMap[&parent->methods()[i]] = &fn;
 
         (*usedTypes) << meth.type();
@@ -458,7 +458,11 @@ QChar Util::munge(const Type *type) {
         return munge(&resolved);
     }
 
-    if (type->pointerDepth() > 1 || (type->getClass() && type->getClass()->isTemplate() && (!Options::qtMode || (Options::qtMode && type->getClass()->name() != "QFlags"))) ||
+    if (type->name().contains("long long") || type->name() == "size_t") {
+        // Special case 'long long' types as '$'.
+        // Hack: 'size_t' isn't being fully resolved for some reason.
+        return '$';
+    } else if (type->pointerDepth() > 1 || (type->getClass() && type->getClass()->isTemplate() && (!Options::qtMode || (Options::qtMode && type->getClass()->name() != "QFlags"))) ||
         (Options::voidpTypes.contains(type->name()) && !Options::scalarTypes.contains(type->name())) )
     {
         // QString and QStringList are both mapped to Smoke::t_voidp, but QString is a scalar as well
