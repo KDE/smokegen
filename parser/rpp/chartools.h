@@ -73,7 +73,11 @@ inline bool isNumber(unsigned int c) {
 }
 
 inline bool isNewline(unsigned int c) {
-  return isCharacter(c) && QChar(characterFromIndex(c)).toLatin1() == '\n';
+  return isCharacter(c) && characterFromIndex(c) == '\n';
+}
+
+inline bool isCarriageReturn(unsigned int c) {
+  return isCharacter(c) && characterFromIndex(c) == '\r';
 }
 
 ///Opposite of convertFromByteArray

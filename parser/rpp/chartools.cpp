@@ -42,14 +42,18 @@ QByteArray lineFromContents(const uint* contents, int lineNumber) {
   int a1 = 0;
   int lineCount = 0;
   while (lineCount < lineNumber) {
-    if (isNewline(contents[a1])) {
+    if (isCarriageReturn(contents[a1])) {
+        lineCount++;
+        if (isNewline(contents[a1 + 1]))
+            a1++;
+    } else if (isNewline(contents[a1])) {
         lineCount++;
     }
     a1++;
   }
 
   int a2 = a1;
-  while (!isNewline(contents[a2])) {
+  while (!isNewline(contents[a2]) && !isCarriageReturn(contents[a2])) {
     a2++;
   }
 
