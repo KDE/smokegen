@@ -1,6 +1,14 @@
 project(smokegenerator)
+cmake_minimum_required(VERSION 2.6)
 
 find_package(Qt4 REQUIRED)
+
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake )
+set(SMOKE_VERSION_MAJOR 3)
+set(SMOKE_VERSION_MINOR 0)
+set(SMOKE_VERSION_PATCH 0)
+set(SMOKE_VERSION ${SMOKE_VERSION_MAJOR}.${SMOKE_VERSION_MINOR}.${SMOKE_VERSION_PATCH})
+
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
@@ -36,6 +44,7 @@ install(TARGETS smokegen DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 install(FILES generatorenvironment.h  generator_export.h  generatorpreprocessor.h  generatorvisitor.h  name_compiler.h  options.h  type_compiler.h  type.h DESTINATION ${CMAKE_INSTALL_PREFIX}/include/smokegen)
 install( FILES  smoke.h DESTINATION ${CMAKE_INSTALL_PREFIX}/include )
 
+add_subdirectory(cmake)
 add_subdirectory(generators)
 add_subdirectory(smokeapi)
 add_subdirectory(smokebase)
