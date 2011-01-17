@@ -17,7 +17,7 @@ if (NOT LIB_INSTALL_DIR)
     set (LIB_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX})
 endif (NOT LIB_INSTALL_DIR)
 
-include_directories(${QT_INCLUDES} parser)
+include_directories(${QT_INCLUDES} parser ${CMAKE_BINARY_DIR})
 
 add_subdirectory(parser)
 
@@ -35,6 +35,8 @@ set(generator_SRC
 # force RPATH so that the binary is usable from within the build tree
 set (CMAKE_SKIP_BUILD_RPATH FALSE)
 set (CMAKE_SKIP_RPATH FALSE)
+
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/config.h.in config.h @ONLY )
 
 add_executable(smokegen ${generator_SRC})
 target_link_libraries(smokegen ${QT_QTCORE_LIBRARY} ${QT_QTXML_LIBRARY} cppparser)
