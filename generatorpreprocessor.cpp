@@ -175,6 +175,10 @@ PreprocessedContents Preprocessor::preprocess()
 
 rpp::Stream* Preprocessor::sourceNeeded(QString& fileName, rpp::Preprocessor::IncludeType type, int sourceLine, bool skipCurrentPath)
 {
+#ifdef Q_WS_MAC
+    static QRegExp frameworkExpr("([^/]+)/(.*)");
+#endif
+
     if (m_fileStack.top().fileName() == fileName && type == rpp::Preprocessor::IncludeGlobal) {
 #ifdef DEBUG
         qDebug("prevented possible endless loop because of #include<%s>", qPrintable(fileName));
@@ -200,12 +204,33 @@ rpp::Stream* Preprocessor::sourceNeeded(QString& fileName, rpp::Preprocessor::In
             path = info.absoluteFilePath();
     }
     if (path.isEmpty()) {
-        foreach (QDir dir, m_includeDirs) {
+#ifdef Q_WS_MAC
+        QString framework;
+        QString header;
+        if (frameworkExpr.exactMatch(fileName)) {
+            framework = frameworkExpr.cap(1);
+            header = frameworkExpr.cap(2);
+        }
+#endif
+
+        Q_FOREACH (const QDir& dir, m_includeDirs) {
             info.setFile(dir, fileName);
             if (info.isFile()) {
                 path = info.absoluteFilePath();
                 break;
             }
+
+#ifdef Q_WS_MAC
+            QDir parentDir = dir;
+            parentDir.cdUp();
+            if (parentDir.dirName() == framework + ".framework" && dir.dirName() == "Headers") {
+                info.setFile(dir, header);
+                if (info.isFile()) {
+                    path = info.absoluteFilePath();
+                    break;
+                }
+            }
+#endif
         }
     }
     
