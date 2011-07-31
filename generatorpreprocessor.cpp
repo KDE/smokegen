@@ -22,6 +22,8 @@
 #include <rpp/pp-environment.h>
 #include <rpp/pp-macro.h>
 
+#include <QCoreApplication>
+
 #include <QtDebug>
 
 QList<QString> parsedHeaders;
@@ -97,6 +99,32 @@ Preprocessor::Preprocessor(const QList<QDir>& includeDirs, const QStringList& de
     exportMacro = new rpp::pp_macro;
     exportMacro->name = IndexedString("__STDC__");
     exportMacro->function_like = false;
+    exportMacro->variadics = false;
+    m_topBlock->setMacro(exportMacro);
+
+    // the following macros are gcc specialties
+    exportMacro = new rpp::pp_macro;
+    exportMacro->name = IndexedString("__extension__");
+    exportMacro->function_like = false;
+    exportMacro->variadics = false;
+    m_topBlock->setMacro(exportMacro);
+
+    exportMacro = new rpp::pp_macro;
+    exportMacro->name = IndexedString("__restrict");
+    exportMacro->function_like = false;
+    exportMacro->variadics = false;
+    m_topBlock->setMacro(exportMacro);
+
+    exportMacro = new rpp::pp_macro;
+    exportMacro->name = IndexedString("__const");
+    exportMacro->definition.append(IndexedString("const"));
+    exportMacro->function_like = false;
+    exportMacro->variadics = false;
+    m_topBlock->setMacro(exportMacro);
+
+    exportMacro = new rpp::pp_macro;
+    exportMacro->name = IndexedString("__attribute__");
+    exportMacro->function_like = true;
     exportMacro->variadics = false;
     m_topBlock->setMacro(exportMacro);
 
@@ -181,7 +209,7 @@ rpp::Stream* Preprocessor::sourceNeeded(QString& fileName, rpp::Preprocessor::In
 
     if (m_fileStack.top().fileName() == fileName && type == rpp::Preprocessor::IncludeGlobal) {
 #ifdef DEBUG
-        qDebug("prevented possible endless loop because of #include<%s>", qPrintable(fileName));
+        qDebug("prevented possible endless loop because of #include <%s>", qPrintable(fileName));
 #endif
         return 0;
     }
@@ -195,8 +223,12 @@ rpp::Stream* Preprocessor::sourceNeeded(QString& fileName, rpp::Preprocessor::In
     
     QString path;
     QFileInfo info(fileName);
-    
-    if (info.isAbsolute()) {
+
+    // smokegen chokes on gcc's string.h, so use our simplified version here
+    if (type == rpp::Preprocessor::IncludeGlobal && fileName == "string.h") {
+        static QString customStringHPath = qApp->applicationDirPath() + "/../share/smokegen/string.h";
+        path = customStringHPath;
+    } else if (info.isAbsolute()) {
         path = fileName;
     } else if (type == rpp::Preprocessor::IncludeLocal) {
         info.setFile(m_fileStack.last().dir(), fileName);
@@ -234,8 +266,12 @@ rpp::Stream* Preprocessor::sourceNeeded(QString& fileName, rpp::Preprocessor::In
         }
     }
     
-    if (path.isEmpty())
+    if (path.isEmpty()) {
+#ifdef DEBUG
+        qDebug("PP: File not found: %s", qPrintable(fileName));
+#endif
         return 0;
+    }
     
     QFile file(path);
     file.open(QFile::ReadOnly);

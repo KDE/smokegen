@@ -45,6 +45,7 @@ set_target_properties(smokegen PROPERTIES COMPILE_DEFINITIONS __GENERATOR_BUILDI
 install(TARGETS smokegen DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 install(FILES generatorenvironment.h  generator_export.h  generatorpreprocessor.h  generatorvisitor.h  name_compiler.h  options.h  type_compiler.h  type.h DESTINATION ${CMAKE_INSTALL_PREFIX}/include/smokegen)
 install( FILES  smoke.h DESTINATION ${CMAKE_INSTALL_PREFIX}/include )
+install( FILES smokegen_string.h DESTINATION ${CMAKE_INSTALL_PREFIX}/share/smokegen RENAME string.h )
 
 add_subdirectory(cmake)
 add_subdirectory(generators)
