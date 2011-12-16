@@ -18,5 +18,11 @@ macro_write_basic_cmake_version_file(
     ${SMOKE_VERSION_PATCH}
 )
 
-install(TARGETS smokebase DESTINATION ${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX})
+install(TARGETS smokebase LIBRARY DESTINATION ${LIB_INSTALL_DIR}
+    ARCHIVE DESTINATION ${LIB_INSTALL_DIR}
+    RUNTIME DESTINATION bin)
+if (WIN32)
+    # Get rid of the "lib" prefix on archives/DLLs in Windows.
+    set_target_properties(smokebase PROPERTIES PREFIX "" IMPORT_PREFIX "")
+endif (WIN32)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/SmokeVersionConfig.cmake DESTINATION ${CMAKE_INSTALL_PREFIX}/share/smoke/cmake)

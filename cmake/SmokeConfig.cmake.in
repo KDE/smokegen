@@ -48,10 +48,18 @@ macro (find_smoke_component name)
             PATH ${SMOKE_INCLUDE_DIR}
             NO_DEFAULT_PATH
             )
-        find_library(SMOKE_${uppercase}_LIBRARY
-            smoke${lowercase}
-            PATHS @SMOKE_LIBRARY_PREFIX@ 
-            NO_DEFAULT_PATH)
+        if(WIN32)
+		    # DLLs are in the bin directory.
+            find_library(SMOKE_${uppercase}_LIBRARY
+                smoke${lowercase}
+                PATHS "@CMAKE_INSTALL_PREFIX@/bin"
+                NO_DEFAULT_PATH)
+        else(WIN32)
+            find_library(SMOKE_${uppercase}_LIBRARY
+                smoke${lowercase}
+                PATHS "@SMOKE_LIBRARY_PREFIX@"
+                NO_DEFAULT_PATH)
+        endif(WIN32)
 
         if (NOT SMOKE_${uppercase}_INCLUDE_DIR OR NOT SMOKE_${uppercase}_LIBRARY)
             if (Smoke_FIND_REQUIRED)
@@ -71,17 +79,17 @@ endmacro (find_smoke_component)
 ################
 # find smoke.h #
 ################
-set(SMOKE_INCLUDE_DIR @SMOKE_INCLUDE_DIR@)
-set(SMOKE_CMAKE_MODULE_DIR @SMOKE_CMAKE_MODULE_DIR@)
-set(SMOKE_INSTALL_PREFIX @CMAKE_INSTALL_PREFIX@)
-set(SMOKE_GENERATOR_SMOKE_LIB @SMOKE_GENERATOR_SMOKE_LIB@)
-set(SMOKE_GENERATOR_DUMP_LIB @SMOKE_GENERATOR_DUMP_LIB@)
-set(SMOKE_GEN_BIN @SMOKE_GEN_BIN@)
-set(SMOKE_GEN_SHARED @SMOKE_GEN_SHARED@)
-set(SMOKE_API_BIN @SMOKE_API_BIN@)
+set(SMOKE_INCLUDE_DIR "@SMOKE_INCLUDE_DIR@")
+set(SMOKE_CMAKE_MODULE_DIR "@SMOKE_CMAKE_MODULE_DIR@")
+set(SMOKE_INSTALL_PREFIX "@CMAKE_INSTALL_PREFIX@")
+set(SMOKE_GENERATOR_SMOKE_LIB "@SMOKE_GENERATOR_SMOKE_LIB@")
+set(SMOKE_GENERATOR_DUMP_LIB "@SMOKE_GENERATOR_DUMP_LIB@")
+set(SMOKE_GEN_BIN "@SMOKE_GEN_BIN@")
+set(SMOKE_GEN_SHARED "@SMOKE_GEN_SHARED@")
+set(SMOKE_API_BIN "@SMOKE_API_BIN@")
 
 find_library(SMOKE_BASE_LIBRARY smokebase 
-              PATHS @SMOKE_LIBRARY_PREFIX@ 
+              PATHS "@SMOKE_LIBRARY_PREFIX@"
               NO_DEFAULT_PATH)
 
 if (NOT SMOKE_BASE_LIBRARY)

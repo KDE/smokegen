@@ -42,7 +42,13 @@ add_executable(smokegen ${generator_SRC})
 target_link_libraries(smokegen ${QT_QTCORE_LIBRARY} ${QT_QTXML_LIBRARY} cppparser)
 set_target_properties(smokegen PROPERTIES COMPILE_DEFINITIONS __GENERATOR_BUILDING ENABLE_EXPORTS TRUE)
 
-install(TARGETS smokegen DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+install(TARGETS smokegen LIBRARY DESTINATION ${LIB_INSTALL_DIR}
+    ARCHIVE DESTINATION ${LIB_INSTALL_DIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+if (WIN32)
+    # Get rid of the "lib" prefix on archives/DLLs in Windows.
+    set_target_properties(smokegen PROPERTIES PREFIX "" IMPORT_PREFIX "")
+endif (WIN32)
 install(FILES generatorenvironment.h  generator_export.h  generatorpreprocessor.h  generatorvisitor.h  name_compiler.h  options.h  type_compiler.h  type.h DESTINATION ${CMAKE_INSTALL_PREFIX}/include/smokegen)
 install( FILES  smoke.h DESTINATION ${CMAKE_INSTALL_PREFIX}/include )
 install( FILES smokegen_string.h DESTINATION ${CMAKE_INSTALL_PREFIX}/share/smokegen RENAME string.h )
