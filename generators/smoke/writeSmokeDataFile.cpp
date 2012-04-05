@@ -176,6 +176,9 @@ void SmokeDataFile::write()
     QFile smokedata(Options::outputDir.filePath("smokedata.cpp"));
     smokedata.open(QFile::ReadWrite | QFile::Truncate);
     QTextStream out(&smokedata);
+    QFile argNames(Options::outputDir.filePath(QString("%1.argnames.txt").arg(Options::module)));
+    argNames.open(QFile::ReadWrite | QFile::Truncate);
+    QTextStream outArgNames(&argNames);
     foreach (const QFileInfo& file, Options::headerList)
         out << "#include <" << file.fileName() << ">\n";
     out << "\n#include <smoke.h>\n";
@@ -406,6 +409,20 @@ void SmokeDataFile::write()
         foreach (const Method& meth, klass->methods()) {
             if (meth.access() == Access_private)
                 continue;
+            if (meth.parameters().size() > 0) {
+                outArgNames << klass->name() << "," << meth.name() << "," << meth.parameters().count() << ";";
+                for (int i = 0; i < meth.parameters().size(); i++) {
+                    QString paramName = meth.parameters()[i].name();
+                    if (paramName == "") {
+                        paramName = "arg" + QString::number(i + 1);
+                    }
+                    outArgNames << paramName;
+                    if (i < meth.parameters().size() - 1) {
+                        outArgNames << ",";
+                    }
+                }
+                outArgNames << "\n";
+            }
             if (isExternal && !declaredVirtualMethods[klass].contains(&meth))
                 continue;
             
@@ -729,4 +746,5 @@ void SmokeDataFile::write()
     out << "}\n";
 
     smokedata.close();
+    argNames.close();
 }
