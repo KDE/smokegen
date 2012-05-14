@@ -139,25 +139,25 @@ public:
 
 class SmokeMethod {
     Smoke::Method *_m;
-    Smoke *_smoke;
-    Smoke::Index _id;
+    Smoke::ModuleIndex _id;
 public:
-    SmokeMethod(Smoke *smoke, Smoke::Index id) : _smoke(smoke), _id(id) {
-        _m = _smoke->methods + _id;
+    SmokeMethod(Smoke *smoke, Smoke::Index id) : _id(Smoke::ModuleIndex(smoke, id)) {
+        _m = smoke->methods + id;
     }
 
-    Smoke *smoke() const { return _smoke; }
+    Smoke *smoke() const { return _id.smoke; }
     const Smoke::Method &m() const { return *_m; }
-    SmokeClass c() const { return SmokeClass(_smoke, _m->classId); }
-    const char *name() const { return _smoke->methodNames[_m->name]; }
+    SmokeClass c() const { return SmokeClass(_id.smoke, _m->classId); }
+    const char *name() const { return _id.smoke->methodNames[_m->name]; }
     int numArgs() const { return _m->numArgs; }
     unsigned short flags() const { return _m->flags; }
     SmokeType arg(int i) const {
         if(i >= numArgs()) return SmokeType();
-        return SmokeType(_smoke, _smoke->argumentList[_m->args + i]);
+        return SmokeType(_id.smoke, _id.smoke->argumentList[_m->args + i]);
     }
-    SmokeType ret() const { return SmokeType(_smoke, _m->ret); }
-    Smoke::Index methodId() const { return _id; }
+    SmokeType ret() const { return SmokeType(_id.smoke, _m->ret); }
+    Smoke::Index methodId() const { return _id.index; }
+    Smoke::ModuleIndex moduleMethodId() const { return _id; }
     Smoke::Index method() const { return _m->method; }
 
     bool isStatic() const { return flags() & Smoke::mf_static; }
