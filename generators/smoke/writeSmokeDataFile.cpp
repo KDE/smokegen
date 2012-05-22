@@ -409,20 +409,6 @@ void SmokeDataFile::write()
         foreach (const Method& meth, klass->methods()) {
             if (meth.access() == Access_private)
                 continue;
-            if (meth.parameters().size() > 0) {
-                outArgNames << klass->name() << "," << meth.name() << "," << meth.parameters().count() << ";";
-                for (int i = 0; i < meth.parameters().size(); i++) {
-                    QString paramName = meth.parameters()[i].name();
-                    if (paramName == "") {
-                        paramName = "arg" + QString::number(i + 1);
-                    }
-                    outArgNames << paramName;
-                    if (i < meth.parameters().size() - 1) {
-                        outArgNames << ",";
-                    }
-                }
-                outArgNames << "\n";
-            }
             if (isExternal && !declaredVirtualMethods[klass].contains(&meth))
                 continue;
             
@@ -439,13 +425,31 @@ void SmokeDataFile::write()
             }
             QVector<int> indices(meth.parameters().count());
             QStringList comment;
+            if (meth.parameters().size() > 0) {
+                outArgNames << klass->name() << "," << meth.name();
+            }
             for (int i = 0; i < indices.size(); i++) {
                 Type* t = meth.parameters()[i].type();
                 if (!typeIndex.contains(t)) {
                     qFatal("missing type: %s in method %s (while building munged names map)", qPrintable(t->toString()), qPrintable(meth.toString(false, true)));
                 }
-                indices[i] = typeIndex[t];
+                outArgNames << ",";
+                outArgNames << (indices[i] = typeIndex[t]);
                 comment << t->toString();
+            }
+            if (meth.parameters().size() > 0) {
+                outArgNames << ";";
+                for (int i = 0; i < meth.parameters().size(); i++) {
+                    QString paramName = meth.parameters()[i].name();
+                    if (paramName == "") {
+                        paramName = "arg" + QString::number(i + 1);
+                    }
+                    outArgNames << paramName;
+                    if (i < meth.parameters().size() - 1) {
+                        outArgNames << ",";
+                    }
+                }
+                outArgNames << "\n";
             }
             int idx = 0;
             if ((idx = parameterList.value(indices, -1)) == -1) {
