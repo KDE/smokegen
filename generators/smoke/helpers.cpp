@@ -472,7 +472,7 @@ QChar Util::munge(const Type *type) {
         // reference to array or hash or unknown
         return '?';
     } else if (type->isIntegral() || type->getEnum() || Options::scalarTypes.contains(type->name()) ||
-                (Options::qtMode && !type->isRef() && type->pointerDepth() == 0 &&
+                (Options::qtMode && type->pointerDepth() == 0 &&
                 (type->getClass() && type->getClass()->isTemplate() && type->getClass()->name() == "QFlags")))
     {
         // plain scalar
@@ -516,7 +516,7 @@ QString Util::stackItemField(const Type* type)
         return stackItemField(&resolved);
     }
 
-    if (Options::qtMode && !type->isRef() && type->pointerDepth() == 0 &&
+    if (Options::qtMode && type->pointerDepth() == 0 &&
         type->getClass() && type->getClass()->isTemplate() && type->getClass()->name() == "QFlags")
     {
         return "s_uint";
@@ -555,15 +555,14 @@ QString Util::assignmentString(const Type* type, const QString& var)
 
     if (type->pointerDepth() > 0 || type->isFunctionPointer()) {
         return "(void*)" + var;
+    } else if (Options::qtMode && type->getClass() && type->getClass()->isTemplate() && type->getClass()->name() == "QFlags") {
+        return "(uint)" + var;
     } else if (type->isRef()) {
         return "(void*)&" + var;
     } else if (type->isIntegral() && !Options::voidpTypes.contains(type->name())) {
         return var;
     } else if (type->getEnum()) {
         return var;
-    } else if (Options::qtMode && type->getClass() && type->getClass()->isTemplate() && type->getClass()->name() == "QFlags")
-    {
-        return "(uint)" + var;
     } else {
         QString ret = "(void*)new " + type->toString();
         ret += '(' + var + ')';

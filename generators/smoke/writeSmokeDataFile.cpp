@@ -118,7 +118,7 @@ QString SmokeDataFile::getTypeFlags(const Type *t, int *classIdx)
         flags += "|Smoke::t_voidp";
     } else if (t->getClass()) {
         if (t->getClass()->isTemplate()) {
-            if (Options::qtMode && t->getClass()->name() == "QFlags" && !t->isRef() && t->pointerDepth() == 0) {
+            if (Options::qtMode && t->getClass()->name() == "QFlags" && t->pointerDepth() == 0) {
                 flags += "|Smoke::t_uint";
             } else {
                 flags += "|Smoke::t_voidp";
@@ -157,14 +157,21 @@ QString SmokeDataFile::getTypeFlags(const Type *t, int *classIdx)
         flags += "|Smoke::t_voidp";
     }
 
-    if (t->isRef())
-        flags += "|Smoke::tf_ref";
-    if (t->pointerDepth() > 0)
-        flags += "|Smoke::tf_ptr";
-    if (!t->isRef() && t->pointerDepth() == 0)
+    // special case QFlags references
+    if (Options::qtMode && t->pointerDepth() == 0 && t->getClass() && t->getClass()->isTemplate() && t->getClass()->name() == "QFlags") {
         flags += "|Smoke::tf_stack";
+    } else {
+        if (t->isRef())
+            flags += "|Smoke::tf_ref";
+        if (t->pointerDepth() > 0)
+            flags += "|Smoke::tf_ptr";
+        if (!t->isRef() && t->pointerDepth() == 0)
+            flags += "|Smoke::tf_stack";
+    }
+
     if (t->isConst())
         flags += "|Smoke::tf_const";
+
     flags.replace("0|", "");
 
     return flags;
