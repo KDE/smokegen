@@ -609,7 +609,7 @@ void Util::addAccessorMethods(const Field& field, QSet<Type*> *usedTypes)
 {
     Class* klass = field.getClass();
     Type* type = field.type();
-    if (type->getClass() && type->pointerDepth() == 0) {
+    if (type->getClass() && type->pointerDepth() == 0 && !(ParserOptions::qtMode && type->getClass()->name() == "QFlags")) {
         Type newType = *type;
         newType.setIsRef(true);
         type = Type::registerType(newType);
