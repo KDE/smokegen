@@ -54,18 +54,18 @@ public:
     virtual Smoke *smoke() = 0;
     /**
      * For return-values, next() does nothing.
-     * For FromObject, next() calls the method and returns.
-     * For ToObject, next() calls the virtual function and returns.
+     * For FromCrack, next() calls the method and returns.
+     * For ToCrack, next() calls the virtual function and returns.
      *
      * Required to reset Marshall object to the state it was
      * before being called when it returns.
      */
     virtual void next() = 0;
     /**
-     * For FromObject, cleanup() returns false when the handler should free
+     * For FromCrack, cleanup() returns false when the handler should free
      * any allocated memory after next().
      *
-     * For ToObject, cleanup() returns true when the handler should delete
+     * For ToCrack, cleanup() returns true when the handler should delete
      * the pointer passed to it.
      */
     virtual bool cleanup() = 0;
