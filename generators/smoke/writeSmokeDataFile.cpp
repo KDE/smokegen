@@ -66,7 +66,11 @@ SmokeDataFile::SmokeDataFile()
             declaredVirtualMethods[meth->getClass()] << meth;
         }
     }
-    
+
+    foreach (Type* type, usedTypes) {
+        insertTemplateParameters(*type);
+    }
+
     // if a class is used somewhere but not listed in the class list, mark it external
     for (QHash<QString, Class>::iterator iter = ::classes.begin(); iter != ::classes.end(); iter++) {
         if (iter.value().isTemplate() || Options::voidpTypes.contains(iter.key()))
@@ -93,6 +97,14 @@ SmokeDataFile::SmokeDataFile()
     int i = 1;
     for (QMap<QString, int>::iterator iter = classIndex.begin(); iter != classIndex.end(); iter++) {
         iter.value() = i++;
+    }
+}
+
+void SmokeDataFile::insertTemplateParameters(const Type& type)
+{
+    foreach(const Type& t, type.templateArguments()) {
+        usedTypes << Type::registerType(t);
+        insertTemplateParameters(t);
     }
 }
 

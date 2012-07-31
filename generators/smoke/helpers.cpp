@@ -183,7 +183,7 @@ void Util::preparse(QSet<Type*> *usedTypes, QSet<const Class*> *superClasses, co
             foreach (const Method& m, klass.methods()) {
                 if (m.access() == Access_private)
                     continue;
-                if ((m.type()->getClass() && m.type()->getClass()->access() == Access_private)
+                if (hasTypeNonPublicParts(*m.type())
                     || Options::typeExcluded(m.toString(false, true)))
                 {
                     klass.methodsRef().removeOne(m);
@@ -507,6 +507,21 @@ Type* Util::normalizeType(const Type* type) {
     }
 
     return Type::registerType(normalizedType);
+}
+
+bool Util::hasTypeNonPublicParts(const Type& type)
+{
+    if (type.getClass() && type.getClass()->access() != Access_public) {
+        return true;
+    }
+
+    foreach (const Type& t, type.templateArguments()) {
+        if (hasTypeNonPublicParts(t)) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 QString Util::stackItemField(const Type* type)
