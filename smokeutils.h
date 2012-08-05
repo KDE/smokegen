@@ -67,6 +67,10 @@ public:
     }
 
     void preparse() {
+        if (!typeId()) {
+            return;
+        }
+
         isUnsigned();
         pointerDepth();
 
@@ -81,7 +85,7 @@ public:
     const Smoke::Type &type() const { return *_t; }
     unsigned short flags() const { return _t->flags; }
     unsigned short elem() const { return _t->flags & Smoke::tf_elem; }
-    const char *name() const { return _t->name; }
+    const char *name() const { return _t->name ? _t->name : "void"; }
     Smoke::Index classId() const { return _t->classId; }
 
     // tests
@@ -98,6 +102,7 @@ public:
     }
 
     bool isUnsigned() const {
+        if (!typeId()) return false;
         if (_unsigned > -1) return _unsigned;
 
         switch (elem()) {
@@ -120,6 +125,7 @@ public:
     }
 
     char pointerDepth() const {
+        if (!typeId()) return 0;
         if (_pointerDepth > -1) return _pointerDepth;
 
         const char *n = name();
@@ -149,6 +155,7 @@ public:
     }
 
     std::string plainName() const {
+        if (!typeId()) return "void";
         if (isClass())
             return smoke()->classes[classId()].className;
         if (!_plainName.empty()) return _plainName;
@@ -190,6 +197,8 @@ public:
     // not cached, expensive
     std::vector<SmokeType> templateArguments() const {
         std::vector<SmokeType> ret;
+        if (!typeId()) return ret;
+
         int depth = 0;
 
         const char *begin = 0;
@@ -243,6 +252,7 @@ class SmokeClass {
     Smoke::Class *_c;
     Smoke::ModuleIndex _mi;
 public:
+    SmokeClass() : _c(0), _mi(Smoke::NullModuleIndex) {}
     SmokeClass(const SmokeType &t) {
         _mi = Smoke::ModuleIndex(t.smoke(), t.classId());
         _c = _mi.smoke->classes + _mi.index;
@@ -254,7 +264,7 @@ public:
         _c = _mi.smoke->classes + _mi.index;
     }
 
-    operator bool() const { return _c->className != 0; }
+    operator bool() const { return _c && _c->className != 0; }
 
     Smoke::ModuleIndex moduleIndex() const { return _mi; }
     Smoke *smoke() const { return _mi.smoke; }
@@ -276,6 +286,18 @@ public:
     }
     bool isa(const SmokeClass &sc) const {
         return Smoke::isDerivedFrom(_mi, sc._mi);
+    }
+
+    std::vector<SmokeClass> parents() const {
+        std::vector<SmokeClass> ret;
+
+        Smoke::Index *parentId = _mi.smoke->inheritanceList + _c->parents;
+        while (*parentId) {
+            ret.push_back(SmokeClass(_mi.smoke, *parentId));
+            ++parentId;
+        }
+
+        return ret;
     }
 
     unsigned short flags() const { return _c->flags; }
