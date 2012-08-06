@@ -331,9 +331,21 @@ public:
     Smoke::ModuleIndex moduleMethodId() const { return _mi; }
     Smoke::Index method() const { return _m->method; }
 
+    bool isAttribute() const { return flags() & Smoke::mf_attribute; }
+    bool isProperty() const { return flags() & Smoke::mf_property; }
+    bool isSignal() const { return flags() & Smoke::mf_signal; }
+    bool isSlot() const { return flags() & Smoke::mf_slot; }
+
+    bool isVirtual() const { return flags() & Smoke::mf_virtual; }
+    bool isPureVirtual() const { return flags() & Smoke::mf_purevirtual; }
+
+    bool isProtected() const { return flags() & Smoke::mf_protected; }
     bool isStatic() const { return flags() & Smoke::mf_static; }
     bool isConst() const { return flags() & Smoke::mf_const; }
+
     bool isConstructor() const { return flags() & Smoke::mf_ctor; }
+    bool isCopyConstructor() const { return flags() & Smoke::mf_copyctor; }
+    bool isExplicit() const { return flags() & Smoke::mf_explicit; }
     bool isDestructor() const { return flags() & Smoke::mf_dtor; }
 
     void call(Smoke::Stack args, void *ptr = 0) const {
