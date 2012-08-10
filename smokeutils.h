@@ -37,6 +37,7 @@
 #include <cassert>
 
 #include <string>
+#include <sstream>
 #include <vector>
 
 class SmokeType {
@@ -351,6 +352,25 @@ public:
     void call(Smoke::Stack args, void *ptr = 0) const {
         Smoke::ClassFn fn = c().classFn();
         (*fn)(method(), ptr, args);
+    }
+
+    template<typename OStream>
+    void prettyPrint(OStream& stream) const {
+        stream << ret().name() << " " << c().className() << "::" << name() << '(';
+        for (int i = 0; i < numArgs(); ++i) {
+            if (i != 0) stream << ", ";
+            stream << arg(i).name();
+        }
+        stream << ')';
+        if (isConst()) {
+            stream << " const";
+        }
+    }
+
+    std::string prettyPrint() const {
+        std::ostringstream tmp;
+        prettyPrint(tmp);
+        return tmp.str();
     }
 };
 
