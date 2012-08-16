@@ -337,9 +337,9 @@ void SmokeDataFile::write()
     
     // classes table
     out << "\n// List of all classes\n";
-    out << "// Name, external, index into inheritanceList, method dispatcher, enum dispatcher, class flags, size\n";
+    out << "// Name, index into inheritanceList, method dispatcher, enum dispatcher, class flags, size\n";
     out << "static Smoke::Class classes[] = {\n";
-    out << "    { 0L, false, 0, 0, 0, 0, 0 },\t// 0 (no class)\n";
+    out << "    { 0L, 0, 0, 0, 0, 0 },\t// 0 (no class)\n";
     int classCount = 0;
     for (QMap<QString, int>::const_iterator iter = classIndex.constBegin(); iter != classIndex.constEnd(); iter++) {
         if (!iter.value())
@@ -348,10 +348,10 @@ void SmokeDataFile::write()
         Class* klass = &classes[iter.key()];
         
         if (externalClasses.contains(klass)) {
-            out << "    { \""  << iter.key() << "\", true, 0, 0, 0, 0, 0 },\t//" << iter.value() << "\n";
+            out << "    { \""  << iter.key() << "\", 0, 0, 0, Smoke::cf_undefined, 0 },\t//" << iter.value() << "\n";
         } else {
             QString smokeClassName = QString(iter.key()).replace("::", "__");
-            out << "    { \"" << iter.key() << "\", false" << ", "
+            out << "    { \"" << iter.key() << "\", "
                 << inheritanceIndex.value(klass, 0) << ", xcall_" << smokeClassName << ", "
                 << (enumClassesHandled.contains(iter.key()) ? QString("xenum_").append(smokeClassName) : "0") << ", ";
             QString flags = "0";

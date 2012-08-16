@@ -275,7 +275,7 @@ int main(int argc, char** argv)
         } else {
             foreach (Smoke * smoke, smokeModules) {
                 for (int i = 1; i <= smoke->numClasses; i++) {
-                    if (!smoke->classes[i].external) {
+                    if (!(smoke->classes[i].flags & Smoke::cf_undefined)) {
                         showClass(Smoke::ModuleIndex(smoke, i), 0);
                     }
                 }

@@ -124,11 +124,10 @@ public:
      * Describe one class.
      */
     struct Class {
-	const char *className;	// Name of the class
-	bool external;		// Whether the class is in another module
-	Index parents;		// Index into inheritanceList
-	ClassFn classFn;	// Calls any method in the class
-	EnumFn enumFn;		// Handles enum pointers
+        const char *className;	// Name of the class
+        Index parents;		// Index into inheritanceList
+        ClassFn classFn;	// Calls any method in the class
+        EnumFn enumFn;		// Handles enum pointers
         unsigned short flags;   // ClassFlags
         unsigned int size;
     };
@@ -318,7 +317,7 @@ public:
 		castFn(_castFn)
         {
             for (Index i = 1; i <= numClasses; ++i) {
-                if (!classes[i].external) {
+                if (!(classes[i].flags & cf_undefined)) {
                     classMap[className(i)] = ModuleIndex(this, i);
                 }
             }
@@ -392,7 +391,7 @@ public:
             icur = (imin + imax) / 2;
             icmp = strcmp(classes[icur].className, c);
             if (icmp == 0) {
-                if (classes[icur].external && !external) {
+                if ((classes[icur].flags & cf_undefined) && !external) {
                     return NullModuleIndex;
                 } else {
                     return ModuleIndex(this, icur);
@@ -528,7 +527,7 @@ public:
 	
 	for(Index p = smoke->classes[classId].parents; smoke->inheritanceList[p]; p++) {
 	    Class& cur = smoke->classes[smoke->inheritanceList[p]];
-	    if (cur.external) {
+	    if (cur.flags & cf_undefined) {
 		ModuleIndex mi = findClass(cur.className);
 		if (isDerivedFrom(mi.smoke, mi.index, baseSmoke, baseId))
 		    return true;

@@ -79,7 +79,7 @@ int main(int argc, char** argv)
 
             for (short* idx = iter.key()->inheritanceList + klass->parents; *idx; idx++) {
                 Smoke::Class *parentClass = iter.key()->classes + *idx;
-                if (!parentClass->external)
+                if (!(parentClass->flags & Smoke::cf_undefined))
                     continue;
 
                 Smoke* parentModule = 0;
