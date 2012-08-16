@@ -154,13 +154,16 @@ public:
      * Describe one method of one class.
      */
     struct Method {
-	Index classId;		// Index into classes
-	Index name;		// Index into methodNames; real name
-	Index args;		// Index into argumentList
-	unsigned char numArgs;	// Number of arguments
-	unsigned short flags;	// MethodFlags (const/static/etc...)
-	Index ret;		// Index into types for the return type
-	Index method;		// Passed to Class.classFn, to call method
+        Index classId;         // Index into classes
+        Index name;            // Index into methodNames; real name
+        Index args;            // Index into argumentList
+        unsigned char numArgs; // Number of arguments
+        unsigned short flags;  // MethodFlags (const/static/etc...)
+        Index ret;             // Index into types for the return type
+        Index method;          // Passed to Class.classFn, to call method
+                               // If this is a virtual method, 'method' will call
+                               // the dynamically dispatched method, 'method+1' the
+                               // precise method of the class.
     };
 
     /**

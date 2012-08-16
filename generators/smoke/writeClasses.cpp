@@ -80,8 +80,6 @@ void SmokeClassFiles::write(const QList<QString>& keys)
 
         fileOut << "\n#include <smoke.h>\n#include <" << Options::module << "_smoke.h>\n";
 
-        fileOut << "\nclass __internal_SmokeClass {};\n";
-
         fileOut << "\nnamespace __smoke" << Options::module << " {\n\n";
 
         // now the class code
@@ -178,7 +176,7 @@ QString SmokeClassFiles::generateMethodBody(const QString& indent, const QString
 }
 
 void SmokeClassFiles::generateMethod(QTextStream& out, const QString& className, const QString& smokeClassName,
-                                     const Method& meth, int index, QSet<QString>& includes)
+                                     const Method& meth, int index, bool dynamicDispatch, QSet<QString>& includes)
 {
     out << "    ";
     if ((meth.flags() & Method::Static) || meth.isConstructor())
@@ -186,24 +184,8 @@ void SmokeClassFiles::generateMethod(QTextStream& out, const QString& className,
     out << QString("void x_%1(Smoke::Stack x) {\n").arg(index);
     out << "        // " << meth.toString() << "\n";
 
-    bool dynamicDispatch = ((meth.flags() & Method::PureVirtual) || (meth.flags() & Method::DynamicDispatch));
-
-    if (dynamicDispatch || !Util::virtualMethodsForClass(meth.getClass()).contains(&meth)) {
-        // This is either already flagged as dynamic dispatch or just a normal method. We can generate a normal method call for it.
-
-        out << generateMethodBody("        ",   // indent
-                                  className, smokeClassName, meth, index, dynamicDispatch, includes);
-    } else {
-        // This is a virtual method. To know whether we should call with dynamic dispatch, we need a bit of RTTI magic.
-        includes.insert("typeinfo");
-        out << "        if (dynamic_cast<__internal_SmokeClass*>(static_cast<" << className << "*>(this))) {\n";   //
-        out << generateMethodBody("            ",   // indent
-                                  className, smokeClassName, meth, index, false, includes);
-        out << "        } else {\n";
-        out << generateMethodBody("            ",   // indent
-                                  className, smokeClassName, meth, index, true, includes);
-        out << "        }\n";
-    }
+    out << generateMethodBody("        ",   // indent
+                              className, smokeClassName, meth, index, dynamicDispatch, includes);
 
     out << "    }\n";
     
@@ -367,9 +349,6 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
     out << QString("class %1").arg(smokeClassName);
     if (!klass->isNameSpace()) {
         out << QString(" : public %1").arg(className);
-        if (Util::hasClassVirtualDestructor(klass) && Util::hasClassPublicDestructor(klass)) {
-            out << ", public __internal_SmokeClass";
-        }
     }
     out << " {\n";
     if (Util::canClassBeInstanciated(klass)) {
@@ -385,6 +364,8 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
         out << "public:\n";
     }
     
+    const QList<const Method*> virtualMethods = Util::virtualMethodsForClass(klass);
+
     int xcall_index = 1;
     const Method *destructor = 0;
     foreach (const Method& meth, klass->methods()) {
@@ -406,7 +387,21 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
                 generateGetAccessor(out, className, *field, meth.type(), xcall_index);
             }
         } else {
-            generateMethod(out, className, smokeClassName, meth, xcall_index, includes);
+            bool dynamicDispatch = ((meth.flags() & Method::PureVirtual) || (meth.flags() & Method::DynamicDispatch));
+
+            if (dynamicDispatch || !virtualMethods.contains(&meth)) {
+                // This is either already flagged as dynamic dispatch or just a normal method. We can generate a normal method call for it.
+                generateMethod(out, className, smokeClassName, meth, xcall_index, dynamicDispatch, includes);
+            } else {
+                // We have a virtual method. Generate one call with dynamic dispatch and one without
+                generateMethod(out, className, smokeClassName, meth, xcall_index, true, includes);
+                xcall_index++;
+                generateMethod(out, className, smokeClassName, meth, xcall_index, false, includes);
+
+                // add the additional switch() statement
+                switchOut << "        case " << xcall_index << ": "
+                          << "xself->x_" << xcall_index << "(args);\tbreak;\n";
+            }
         }
         xcall_index++;
     }
@@ -455,7 +450,7 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
         enumOut << "            break;\n";
     }
     
-    foreach (const Method* meth, Util::virtualMethodsForClass(klass)) {
+    foreach (const Method* meth, virtualMethods) {
         generateVirtualMethod(out, *meth, includes);
     }
     

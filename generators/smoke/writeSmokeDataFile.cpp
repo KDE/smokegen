@@ -594,7 +594,7 @@ void SmokeDataFile::write()
                 out << " [pure virtual]";
             out << "\n";
             methodIdx[&meth] = i;
-            xcall_index++;
+            xcall_index += (!(meth.flags() & Method::PureVirtual) && virtualMethods.contains(&meth)) ? 2 : 1;
             i++;
             methodCount++;
         }
