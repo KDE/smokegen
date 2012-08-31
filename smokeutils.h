@@ -40,6 +40,12 @@
 #include <sstream>
 #include <vector>
 
+template <typename CharType, std::size_t N>
+constexpr std::size_t static_strlen(const CharType (&) [N]) {
+    // subtract trailing zero
+    return N - 1;
+}
+
 class SmokeType {
     Smoke::Type *_t;    // derived from _mi, but cached
     Smoke::ModuleIndex _mi;
@@ -101,6 +107,7 @@ public:
             return classId() ? true : false;
         return false;
     }
+    bool isVoid() const { return !typeId(); }
 
     bool isUnsigned() const {
         if (!typeId()) return false;
@@ -114,7 +121,7 @@ public:
                 return true;
         }
 
-        return (!strncmp(isConst() ? name() + 6 : name(), "unsigned ", 9));
+        return (!strncmp(isConst() ? name() + static_strlen("const ") : name(), "unsigned ", static_strlen("unsigned ")));
     }
 
     // cached
@@ -162,8 +169,8 @@ public:
         if (!_plainName.empty()) return _plainName;
 
         char offset = 0;
-        if (isConst()) offset += 6;
-        if (isUnsigned()) offset += 9;
+        if (isConst()) offset += static_strlen("const ");
+        if (isUnsigned()) offset += static_strlen("unsigned ");
 
         const char *start = name() + offset;
         const char *n = start;
