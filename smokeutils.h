@@ -305,13 +305,18 @@ public:
     bool hasConstructor() const { return flags() & Smoke::cf_constructor; }
     bool hasCopy() const { return flags() & Smoke::cf_deepcopy; }
     bool hasVirtual() const { return flags() & Smoke::cf_virtual; }
-    bool isExternal() const { return _c->external; }
+    bool isExternal() const { return flags() & Smoke::cf_undefined; }
 };
 
 class SmokeMethod {
     Smoke::Method *_m;
     Smoke::ModuleIndex _mi;
 public:
+    enum CallMethod {
+        DynamicDispatch = 0,
+        Direct = 1
+    };
+
     SmokeMethod(const Smoke::ModuleIndex& mi) : _mi(mi) {}
     SmokeMethod(Smoke *smoke, Smoke::Index id) : _mi(Smoke::ModuleIndex(smoke, id)) {
         _m = smoke->methods + id;
@@ -349,9 +354,10 @@ public:
     bool isExplicit() const { return flags() & Smoke::mf_explicit; }
     bool isDestructor() const { return flags() & Smoke::mf_dtor; }
 
-    void call(Smoke::Stack args, void *ptr = 0) const {
+    void call(Smoke::Stack args, void *ptr = 0, CallMethod callType = DynamicDispatch) const {
         Smoke::ClassFn fn = c().classFn();
-        (*fn)(method(), ptr, args);
+        unsigned int offset = static_cast<unsigned int>(callType == Direct && !isPureVirtual() && isVirtual());
+        (*fn)(method() + offset, ptr, args);
     }
 
     template<typename OStream>
