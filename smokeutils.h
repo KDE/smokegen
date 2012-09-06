@@ -272,6 +272,12 @@ public:
         _c = _mi.smoke->classes + _mi.index;
     }
 
+    void setBindingForObject(void *obj, SmokeBinding *binding) const {
+        Smoke::StackItem stack[2];
+        stack[1].s_voidp = binding;
+        classFn()(0, obj, stack);
+    }
+
     operator bool() const { return _c && _c->className != 0; }
 
     Smoke::ModuleIndex moduleIndex() const { return _mi; }
