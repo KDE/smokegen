@@ -104,6 +104,10 @@ public:
         inline bool operator!=(const Smoke::ModuleIndex& other) const {
             return index != other.index || smoke != other.smoke;
         }
+
+        inline operator bool() const {
+            return index && smoke;
+        }
     };
     /**
      * A ModuleIndex with both fields set to 0.
