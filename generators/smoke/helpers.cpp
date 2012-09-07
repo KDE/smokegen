@@ -173,6 +173,10 @@ void Util::preparse(QSet<Type*> *usedTypes, QSet<const Class*> *superClasses, co
     foreach (const QString& key, keys) {
         Class& klass = classes[key];
         foreach (const Class::BaseClassSpecifier base, klass.baseClasses()) {
+            // template base classes can't be properly wrapped
+            if (base.baseClass->isTemplate()) {
+                klass.removeBaseClass(base);
+            }
             superClasses->insert(base.baseClass);
         }
         if (!klass.isNameSpace()) {

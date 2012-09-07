@@ -99,6 +99,10 @@ public:
         Class *baseClass;
         Access access;
         bool isVirtual;
+
+        bool operator==(const BaseClassSpecifier& other) {
+            return baseClass == other.baseClass;
+        }
     };
     
     Class(const QString& name = QString(), const QString nspace = QString(), Class* parent = 0, Kind kind = Kind_Class, bool isForward = true)
@@ -124,6 +128,7 @@ public:
     
     const QList<BaseClassSpecifier>& baseClasses() const { return m_bases; }
     void appendBaseClass(const BaseClassSpecifier& baseClass) { m_bases.append(baseClass); }
+    void removeBaseClass(const BaseClassSpecifier& baseClass) { m_bases.removeOne(baseClass); }
     
     const QList<BasicTypeDeclaration*>& children() const { return m_children; }
     void appendChild(BasicTypeDeclaration* child) { m_children.append(child); }
