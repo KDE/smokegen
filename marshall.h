@@ -71,5 +71,6 @@ public:
     virtual bool cleanup() = 0;
 
     virtual ~Marshall() {}
-};    
+};
+
 #endif
