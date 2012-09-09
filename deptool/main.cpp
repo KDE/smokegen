@@ -22,7 +22,7 @@
 
 #include <smoke.h>
 
-typedef void (*InitSmokeFn)();
+typedef Smoke *(*InitSmokeFn)();
 
 Smoke* loadSmokeModule(QFileInfo file) {
     QLibrary lib(file.filePath());
@@ -34,14 +34,9 @@ Smoke* loadSmokeModule(QFileInfo file) {
 
     if (!init)
         qFatal("Couldn't resolve %s: %s", qPrintable(init_name), qPrintable(lib.errorString()));
-    (*init)();
 
-    QString smoke_name = moduleName + "_Smoke";
-    Smoke** smoke = (Smoke**) lib.resolve(smoke_name.toLatin1());
-    if (!smoke)
-        qFatal("Couldn't resolve %s: %s", qPrintable(smoke_name), qPrintable(lib.errorString()));
-
-    return *smoke;
+    Smoke *smoke = (*init)();
+    return smoke;
 }
 
 bool smokeModuleLessThan(Smoke* a, Smoke* b) {

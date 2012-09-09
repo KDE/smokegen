@@ -25,7 +25,7 @@
 
 static QTextStream qOut(stdout);
 
-typedef void (*InitSmokeFn)();
+typedef Smoke *(*InitSmokeFn)();
 typedef QPair<Smoke::ModuleIndex,int> ClassEntry;
 
 static QList<Smoke*> smokeModules;
@@ -46,15 +46,9 @@ loadSmokeModule(QString moduleName) {
 
     if (!init)
         qFatal("Couldn't resolve %s: %s", qPrintable(init_name), qPrintable(lib.errorString()));
-    
-    (*init)();
 
-    QString smoke_name = moduleName + "_Smoke";
-    Smoke** smoke = (Smoke**) lib.resolve(smoke_name.toLatin1());
-    if (!smoke)
-        qFatal("Couldn't resolve %s: %s", qPrintable(smoke_name), qPrintable(lib.errorString()));
-
-    return *smoke;
+    Smoke *smoke = (*init)();
+    return smoke;
 }
 
 static QString

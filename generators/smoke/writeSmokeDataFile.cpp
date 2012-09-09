@@ -732,19 +732,18 @@ void SmokeDataFile::write()
     out << "extern \"C\" {\n\n";
 
     for (int j = 0; j < Options::parentModules.count(); j++) {
-        out << "SMOKE_IMPORT void init_" << Options::parentModules[j] << "_Smoke();\n";
+        out << "SMOKE_IMPORT Smoke *init_" << Options::parentModules[j] << "_Smoke();\n";
         if (j == Options::parentModules.count() - 1)
             out << "\n";
     }
 
-    out << "static bool initialized = false;\n";
     out << "Smoke *" << Options::module << "_Smoke = 0;\n\n";
     out << "// Create the Smoke instance encapsulating all the above.\n";
-    out << "void init_" << Options::module << "_Smoke() {\n";
+    out << "Smoke *init_" << Options::module << "_Smoke() {\n";
     foreach (const QString& str, Options::parentModules) {
         out << "    init_" << str << "_Smoke();\n";
     }
-    out << "    if (initialized) return;\n";
+    out << "    if (" << Options::module << "_Smoke) return;\n";
     out << "    " << Options::module << "_Smoke = new Smoke(\n";
     out << "        \"" << Options::module << "\",\n";
     out << "        " << smokeNamespaceName << "::classes, " << classCount << ",\n";
@@ -756,7 +755,7 @@ void SmokeDataFile::write()
     out << "        " << smokeNamespaceName << "::argumentList,\n";
     out << "        " << smokeNamespaceName << "::ambiguousMethodList,\n";
     out << "        " << smokeNamespaceName << "::cast );\n";
-    out << "    initialized = true;\n";
+    out << "    return " << Options::module << "_Smoke;";
     out << "}\n\n";
     out << "void delete_" << Options::module << "_Smoke() { delete " << Options::module << "_Smoke; }\n\n";
     out << "}\n";
