@@ -76,6 +76,8 @@ SmokeManager::~SmokeManager()
         FreeLibrary(*iter);
 #endif
     }
+
+    delete d;
 }
 
 SmokeManager* SmokeManager::self()
