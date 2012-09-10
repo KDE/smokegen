@@ -52,9 +52,9 @@ class SmokeType {
     Smoke::Type *_t;    // derived from _mi, but cached
     Smoke::ModuleIndex _mi;
 
-    signed char _pointerDepth;
-    signed char _unsigned;
-    std::string _plainName;
+    mutable signed char _pointerDepth;
+    mutable signed char _unsigned;
+    mutable std::string _plainName;
 
 public:
     SmokeType() : _t(0), _mi(Smoke::NullModuleIndex), _pointerDepth(-1), _unsigned(-1) {}
@@ -123,14 +123,7 @@ public:
                 return true;
         }
 
-        return (!strncmp(isConst() ? name() + static_strlen("const ") : name(), "unsigned ", static_strlen("unsigned ")));
-    }
-
-    // cached
-    bool isUnsigned() {
-        if (_unsigned < 0)
-            _unsigned = const_cast<const SmokeType*>(this)->isUnsigned();
-
+        _unsigned = (!strncmp(isConst() ? name() + static_strlen("const ") : name(), "unsigned ", static_strlen("unsigned ")));
         return _unsigned;
     }
 
@@ -153,14 +146,7 @@ public:
                 ++depth;
             ++n;
         }
-        return depth;
-    }
-
-    // cached
-    char pointerDepth() {
-        if (_pointerDepth < 0)
-            _pointerDepth = const_cast<const SmokeType*>(this)->pointerDepth();
-
+        _pointerDepth = depth;
         return _pointerDepth;
     }
 
@@ -185,22 +171,14 @@ public:
                 ++templateDepth;
             if (*n == '>')
                 --templateDepth;
-            if (templateDepth == 0 && (*n == '*' || *n == '&'))
-                return std::string(start, static_cast<std::size_t>(n - start));
+            if (templateDepth == 0 && (*n == '*' || *n == '&')) {
+                _plainName = std::string(start, static_cast<std::size_t>(n - start));
+                return _plainName;
+            }
             ++n;
         }
 
-        return std::string(start);
-    }
-
-    // cached
-    std::string plainName() {
-        if (isClass())
-            return smoke()->classes[classId()].className;
-
-        if (_plainName.empty())
-            _plainName = const_cast<const SmokeType*>(this)->plainName();
-
+        _plainName = std::string(start);
         return _plainName;
     }
 
