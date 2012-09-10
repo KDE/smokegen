@@ -163,7 +163,6 @@ public:
         const char *start = name() + offset;
         const char *n = start;
 
-        // unsigned long long&
         signed char templateDepth = 0;
 
         while (*n) {
@@ -252,6 +251,24 @@ public:
         _c = _mi.smoke->classes + _mi.index;
     }
 
+    // mutators
+    void set(const Smoke::ModuleIndex& mi) {
+        _mi = mi;
+        _c = _mi.smoke->classes + _mi.index;
+    }
+
+    void set(Smoke *s, Smoke::Index id) {
+        set(Smoke::ModuleIndex(s, id));
+    }
+
+    // resolves external classes
+    void resolve() {
+        if (!isExternal()) return;
+        Smoke::ModuleIndex newId = SmokeManager::self()->findClass(_c->className);
+        if (!newId) return;
+        set(newId);
+    }
+
     void setBindingForObject(void *obj, SmokeBinding *binding) const {
         Smoke::StackItem stack[2];
         stack[1].s_voidp = binding;
@@ -282,16 +299,40 @@ public:
         return SmokeManager::self()->isDerivedFrom(_mi, sc._mi);
     }
 
+#define iterateParentsImpl \
+    for (Smoke::Index *p = _mi.smoke->inheritanceList + _c->parents; \
+            *p; ++p) \
+    { \
+        SmokeClass klass(smoke(), *p); \
+        klass.resolve(); \
+        if (func(klass) || klass.iterateParents(func)) { \
+            return true; \
+        } \
+    } \
+    return false;
+
+    // need both overloads, otherwise lambdas might caus a compilation
+    // error
+    template <typename Func>
+    bool iterateParents(const Func& func) const { iterateParentsImpl }
+
+    template <typename Func>
+    bool iterateParents(Func& func) const { iterateParentsImpl }
+#undef iterateParentsImpl
+
     std::vector<SmokeClass> parents() const {
-        std::vector<SmokeClass> ret;
+        struct Collector {
+            std::vector<SmokeClass> val;
 
-        Smoke::Index *parentId = _mi.smoke->inheritanceList + _c->parents;
-        while (*parentId) {
-            ret.push_back(SmokeClass(_mi.smoke, *parentId));
-            ++parentId;
-        }
+            bool operator()(const SmokeClass& klass) {
+                val.push_back(klass);
+            }
+        };
+        Collector c;
 
-        return ret;
+        iterateParents(c);
+
+        return c.val;
     }
 
     unsigned short flags() const { return _c->flags; }
