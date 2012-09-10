@@ -23,7 +23,7 @@
 
 #include <unordered_map>
 
-#include <smoke.h>
+#include "smokemanager.h"
 
 // TODO: see if we can somehow improve/move these helpers without
 //       resorting to subclassing and virtual methods
@@ -92,7 +92,7 @@ void PointerMap<MappedType>::mapPointer(MappedType *instance, Smoke::ModuleIndex
          parent++ )
     {
         if (smoke->classes[*parent].flags & Smoke::cf_undefined) {
-            Smoke::ModuleIndex mi = Smoke::findClass(smoke->classes[*parent].className);
+            Smoke::ModuleIndex mi = SmokeManager::self()->findClass(smoke->classes[*parent].className);
             if (mi) {
                 mapPointer(instance, mi, lastptr);
             }
@@ -122,7 +122,7 @@ void PointerMap<MappedType>::unmapPointer(MappedType * instance, Smoke::ModuleIn
          parent++ )
     {
         if (smoke->classes[*parent].flags & Smoke::cf_undefined) {
-            Smoke::ModuleIndex mi = Smoke::findClass(smoke->classes[*parent].className);
+            Smoke::ModuleIndex mi = SmokeManager::self()->findClass(smoke->classes[*parent].className);
             if (mi) {
                 unmapPointer(instance, mi, lastptr);
             }

@@ -40,6 +40,8 @@
 #include <sstream>
 #include <vector>
 
+#include "smokemanager.h"
+
 template <typename CharType, std::size_t N>
 constexpr std::size_t static_strlen(const CharType (&) [N]) {
     // subtract trailing zero
@@ -299,7 +301,7 @@ public:
         return !(a == b);
     }
     bool isa(const SmokeClass &sc) const {
-        return Smoke::isDerivedFrom(_mi, sc._mi);
+        return SmokeManager::self()->isDerivedFrom(_mi, sc._mi);
     }
 
     std::vector<SmokeClass> parents() const {

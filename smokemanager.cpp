@@ -25,8 +25,6 @@
 #include <sstream>
 #include <vector>
 
-#include <smoke.h>
-
 #ifndef WIN32
     #include <dlfcn.h>
 #else
@@ -159,3 +157,142 @@ Smoke* SmokeManager::load(const std::string& moduleName)
 
     return smoke;
 }
+
+Smoke::ModuleIndex SmokeManager::findClass(const char* className)
+{
+    assert(className);
+
+    // Try to do an 'intelligent' lookup.
+    for (StringSmokeMap::iterator iter = d->moduleNameMap.begin();
+         iter != d->moduleNameMap.end();
+         ++iter)
+    {
+        Smoke *smoke = iter->second;
+        int left = strcmp(className, smoke->classes[1].className);
+        int right = strcmp(className, smoke->classes[smoke->numClasses].className);
+        if (left > 0 && right < 0) {
+            Smoke::ModuleIndex id = smoke->idClass(className);
+            if (id) {
+                return id;
+            }
+        } else if (left == 0) {
+            return Smoke::ModuleIndex(smoke, 1);
+        } else if (right == 0) {
+            return Smoke::ModuleIndex(smoke, smoke->numClasses);
+        }
+    }
+
+    return Smoke::NullModuleIndex;
+}
+
+Smoke::ModuleIndex SmokeManager::findMethodName(const char* methodName)
+{
+    assert(methodName);
+
+    for (StringSmokeMap::iterator iter = d->moduleNameMap.begin();
+         iter != d->moduleNameMap.end();
+         ++iter)
+    {
+        Smoke::ModuleIndex mi = iter->second->idMethodName(methodName);
+        if (mi)
+            return mi;
+    }
+
+    return Smoke::NullModuleIndex;
+}
+
+Smoke::ModuleIndex SmokeManager::findMethodNameImpl(const Smoke::ModuleIndex& classId, const char *methodName, Smoke *last) {
+    assert(methodName);
+
+    Smoke *smoke = classId.smoke;
+
+    // first try to look up 'methodName' in classId's smoke module...
+    Smoke::ModuleIndex mi;
+    if (last != smoke) {
+        mi = smoke->idMethodName(methodName);
+        if (mi)
+            return mi;
+    }
+
+    // if not found, look it up in the smoke modules of the superclasses
+    for (Smoke::Index *p = smoke->inheritanceList + smoke->classes[classId.index].parents; *p; ++p) {
+        if (smoke->classes[*p].flags & Smoke::cf_undefined) {
+            mi = findClass(smoke->classes[*p].className);
+        } else {
+            mi = Smoke::ModuleIndex(classId.smoke, *p);
+        }
+        mi = findMethodNameImpl(mi, methodName, smoke);
+        if (mi)
+            return mi;
+    }
+
+    return Smoke::NullModuleIndex;
+}
+
+Smoke::ModuleIndex SmokeManager::findMethod(const Smoke::ModuleIndex& classId, const Smoke::ModuleIndex& methodName)
+{
+    if (!classId || !methodName)
+        return Smoke::NullModuleIndex;
+
+    Smoke::ModuleIndex tmp;
+
+    // Look if the class or any of its superclasses have a method with the given name.
+    // If classId and methodName are in different modules, we have to walk the inheritance list until
+    // we reach methodName's module.
+    if (classId.smoke != methodName.smoke) {
+        for (Smoke::Index *p = classId.smoke->inheritanceList + classId.smoke->classes[classId.index].parents;
+             *p; ++p)
+        {
+            const Smoke::Class& parent = classId.smoke->classes[*p];
+            if (parent.flags & Smoke::cf_undefined) {
+                tmp = findClass(parent.className);
+            } else {
+                tmp.index = Smoke::ModuleIndex(classId.smoke, *p);
+            }
+
+            tmp = findMethod(tmp, methodName);
+            if (tmp)
+                return tmp;
+        }
+    } else {
+        tmp = classId.smoke->idMethod(classId.index, methodName.index);
+        if (tmp)
+            return tmp;
+
+        for (Smoke::Index *p = classId.smoke->inheritanceList + classId.smoke->classes[classId.index].parents;
+             *p; ++p)
+        {
+            if (classId.smoke->classes[*p].flags & Smoke::cf_undefined)
+                continue;  // smoke modules of class and name are the same; the method can't be somewhere else
+
+            tmp = findMethod(Smoke::ModuleIndex(classId.smoke, *p), methodName);
+            if (tmp)
+                return tmp;
+        }
+    }
+
+    return Smoke::NullModuleIndex;
+}
+
+bool SmokeManager::isDerivedFrom(const Smoke::ModuleIndex& classId, const Smoke::ModuleIndex& baseClassId)
+{
+    if (classId == baseClassId)
+        return true;
+
+    Smoke *smoke = classId.smoke;
+
+    for (Smoke::Index *p = smoke->inheritanceList + smoke->classes[classId.index].parents; *p; ++p) {
+        Smoke::ModuleIndex parent;
+        if (smoke->classes[*p].flags & Smoke::cf_undefined) {
+            parent = findClass(smoke->classes[*p].className);
+        } else {
+            parent = Smoke::ModuleIndex(smoke, *p);
+        }
+
+        if (isDerivedFrom(parent, baseClassId))
+            return true;
+    }
+
+    return false;
+}
+
