@@ -98,7 +98,7 @@ public:
     Smoke::Index classId() const { return _t->classId; }
 
     // tests
-    operator bool() const { return _mi != Smoke::NullModuleIndex; }
+    operator bool() const { return _mi; }
 
     bool isStack() const { return ((flags() & Smoke::tf_ref) == Smoke::tf_stack); }
     bool isPtr() const { return ((flags() & Smoke::tf_ref) == Smoke::tf_ptr); }
@@ -351,10 +351,23 @@ public:
         Direct = 1
     };
 
-    SmokeMethod(const Smoke::ModuleIndex& mi) : _mi(mi) {}
+    SmokeMethod() : _m(0), _mi(Smoke::NullModuleIndex) {}
+    SmokeMethod(const Smoke::ModuleIndex& mi) : _mi(mi) {
+        _m = mi.smoke->methods + mi.index;
+    }
     SmokeMethod(Smoke *smoke, Smoke::Index id) : _mi(Smoke::ModuleIndex(smoke, id)) {
         _m = smoke->methods + id;
     }
+
+    void set(const Smoke::ModuleIndex& mi) {
+        _mi = mi;
+        _m = mi.smoke->methods + mi.index;
+    }
+    void set(Smoke *s, Smoke::Index id) {
+        set(Smoke::ModuleIndex(s, id));
+    }
+
+    operator bool() const { return _mi; }
 
     Smoke *smoke() const { return _mi.smoke; }
     const Smoke::Method &m() const { return *_m; }
