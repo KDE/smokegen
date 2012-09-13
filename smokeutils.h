@@ -427,6 +427,11 @@ public:
     }
 };
 
+inline std::ostream& operator<<(std::ostream& stream, const SmokeMethod& method) {
+    method.prettyPrint(stream);
+    return stream;
+}
+
 /*
  * Type handling by moc is simple.
  *
