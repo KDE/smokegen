@@ -121,9 +121,6 @@ public:
      */
     static ModuleIndex NullModuleIndex; 
     
-    typedef std::map<std::string, ModuleIndex> ClassMap;
-    static ClassMap classMap;
-
     enum ClassFlags {
         cf_constructor = 0x01,  // has a constructor
         cf_deepcopy = 0x02,     // has copy constructor
