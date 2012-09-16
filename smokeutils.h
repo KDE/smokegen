@@ -67,6 +67,11 @@ public:
         _pointerDepth = -1;
         _unsigned = -1;
 
+        if (!mi.smoke) {
+            _t = 0;
+            return;
+        }
+
         if(_mi.index < 0 || _mi.index > _mi.smoke->numTypes) _mi.index = 0;
         _t = _mi.smoke->types + _mi.index;
     }
@@ -98,7 +103,7 @@ public:
     Smoke::Index classId() const { return _t->classId; }
 
     // tests
-    operator bool() const { return _mi; }
+    operator bool() const { return _mi.smoke; }
 
     bool isStack() const { return ((flags() & Smoke::tf_ref) == Smoke::tf_stack); }
     bool isPtr() const { return ((flags() & Smoke::tf_ref) == Smoke::tf_ptr); }
@@ -244,16 +249,20 @@ public:
         _mi = Smoke::ModuleIndex(t.smoke(), t.classId());
         _c = _mi.smoke->classes + _mi.index;
     }
-    SmokeClass(Smoke *smoke, Smoke::Index id) : _mi(Smoke::ModuleIndex(smoke, id)) {
-        _c = _mi.smoke->classes + _mi.index;
+    SmokeClass(Smoke *smoke, Smoke::Index id) {
+        set(smoke, id);
     }
-    SmokeClass(const Smoke::ModuleIndex& mi) : _mi(mi) {
-        _c = _mi.smoke->classes + _mi.index;
+    SmokeClass(const Smoke::ModuleIndex& mi) {
+        set(mi);
     }
 
     // mutators
     void set(const Smoke::ModuleIndex& mi) {
         _mi = mi;
+        if (!mi.smoke) {
+            _c = 0;
+            return;
+        }
         _c = _mi.smoke->classes + _mi.index;
     }
 
@@ -352,15 +361,19 @@ public:
     };
 
     SmokeMethod() : _m(0), _mi(Smoke::NullModuleIndex) {}
-    SmokeMethod(const Smoke::ModuleIndex& mi) : _mi(mi) {
-        _m = mi.smoke->methods + mi.index;
+    SmokeMethod(const Smoke::ModuleIndex& mi) {
+        set(mi);
     }
-    SmokeMethod(Smoke *smoke, Smoke::Index id) : _mi(Smoke::ModuleIndex(smoke, id)) {
-        _m = smoke->methods + id;
+    SmokeMethod(Smoke *smoke, Smoke::Index id) {
+        set(smoke, id);
     }
 
     void set(const Smoke::ModuleIndex& mi) {
         _mi = mi;
+        if (!mi.smoke) {
+            _m = 0;
+            return;
+        }
         _m = mi.smoke->methods + mi.index;
     }
     void set(Smoke *s, Smoke::Index id) {
