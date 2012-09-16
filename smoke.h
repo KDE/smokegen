@@ -84,10 +84,10 @@ public:
     typedef StackItem* Stack;
 
     enum EnumOperation {
-	EnumNew,
-	EnumDelete,
-	EnumFromLong,
-	EnumToLong
+        EnumNew,
+        EnumDelete,
+        EnumFromLong,
+        EnumToLong
     };
 
     typedef short Index;
@@ -103,11 +103,11 @@ public:
         Index index;
         ModuleIndex() : smoke(0), index(0) {}
         ModuleIndex(Smoke * s, Index i) : smoke(s), index(i) {}
-        
+
         inline bool operator==(const Smoke::ModuleIndex& other) const {
             return index == other.index && smoke == other.smoke;
         }
-        
+
         inline bool operator!=(const Smoke::ModuleIndex& other) const {
             return index != other.index || smoke != other.smoke;
         }
@@ -116,11 +116,12 @@ public:
             return index && smoke;
         }
     };
+
     /**
      * A ModuleIndex with both fields set to 0.
      */
     static ModuleIndex NullModuleIndex; 
-    
+
     enum ClassFlags {
         cf_constructor = 0x01,  // has a constructor
         cf_deepcopy = 0x02,     // has copy constructor
@@ -128,6 +129,7 @@ public:
         cf_namespace = 0x08,    // is a namespace
         cf_undefined = 0x10     // defined elsewhere
     };
+
     /**
      * Describe one class.
      */
@@ -157,6 +159,7 @@ public:
         mf_slot = 0x2000,   // method is a slot
         mf_explicit = 0x4000    // method is an 'explicit' constructor
     };
+
     /**
      * Describe one method of one class.
      */
@@ -185,9 +188,9 @@ public:
      * e.g. QApplication(int &, char **) becomes QApplication$?
      */
     struct MethodMap {
-	Index classId;		// Index into classes
-	Index name;		// Index into methodNames; munged name
-	Index method;		// Index into methods
+        Index classId;  // Index into classes
+        Index name;     // Index into methodNames; munged name
+        Index method;   // Index into methods
     };
 
     enum TypeFlags {
@@ -195,61 +198,63 @@ public:
         // of the StackItem union is used.
         tf_elem = 0x0F,
 
-	// Always only one of the next three flags should be set
-	tf_stack = 0x10, 	// Stored on the stack, 'type'
-	tf_ptr = 0x20,   	// Pointer, 'type*'
-	tf_ref = 0x30,   	// Reference, 'type&'
-	// Can | whatever ones of these apply
-	tf_const = 0x40		// const argument
+        // Always only one of the next three flags should be set
+        tf_stack = 0x10,    // Stored on the stack, 'type'
+        tf_ptr = 0x20,      // Pointer, 'type*'
+        tf_ref = 0x30,      // Reference, 'type&'
+        // Can | whatever ones of these apply
+        tf_const = 0x40     // const argument
     };
+
     /**
      * One Type entry is one argument type needed by a method.
      * Type entries are shared, there is only one entry for "int" etc.
      */
     struct Type {
-	const char *name;	// Stringified type name
-	Index classId;		// Index into classes. -1 for none
+        const char *name;       // Stringified type name
+        Index classId;          // Index into classes. -1 for none
         unsigned short flags;   // TypeFlags
     };
 
     // We could just pass everything around using void* (pass-by-reference)
     // I don't want to, though. -aw
     union StackItem {
-	void* s_voidp;
-	bool s_bool;
-	signed char s_char;
-	unsigned char s_uchar;
-	short s_short;
-	unsigned short s_ushort;
-	int s_int;
-	unsigned int s_uint;
-	long s_long;
-	unsigned long s_ulong;
-    longlong s_longlong;
-    ulonglong s_ulonglong;
-	float s_float;
-	double s_double;
-    long double s_longdouble;
+        void* s_voidp;
+        bool s_bool;
+        signed char s_char;
+        unsigned char s_uchar;
+        short s_short;
+        unsigned short s_ushort;
+        int s_int;
+        unsigned int s_uint;
+        long s_long;
+        unsigned long s_ulong;
+        longlong s_longlong;
+        ulonglong s_ulonglong;
+        float s_float;
+        double s_double;
+        long double s_longdouble;
         longlong s_enum;
     };
+
     enum TypeId {
-	t_voidp,
-	t_bool,
-	t_char,
-	t_uchar,
-	t_short,
-	t_ushort,
-	t_int,
-	t_uint,
-	t_long,
-	t_ulong,
-    t_longlong,
-    t_ulonglong,
-	t_float,
-	t_double,
-    t_longdouble,
+        t_voidp,
+        t_bool,
+        t_char,
+        t_uchar,
+        t_short,
+        t_ushort,
+        t_int,
+        t_uint,
+        t_long,
+        t_ulong,
+        t_longlong,
+        t_ulonglong,
+        t_float,
+        t_double,
+        t_longdouble,
         t_enum,
-	t_last		// number of pre-defined types
+        t_last      // number of pre-defined types
     };
 
     // Passed to constructor
@@ -308,61 +313,60 @@ public:
      * Constructor
      */
     Smoke(const char *_moduleName,
-	  Class *_classes, Index _numClasses,
-	  Method *_methods, Index _numMethods,
-	  MethodMap *_methodMaps, Index _numMethodMaps,
-	  const char **_methodNames, Index _numMethodNames,
-	  Type *_types, Index _numTypes,
-	  Index *_inheritanceList,
-	  Index *_argumentList,
-	  Index *_ambiguousMethodList,
-	  CastFn _castFn) :
-		module_name(_moduleName),
-		classes(_classes), numClasses(_numClasses),
-		methods(_methods), numMethods(_numMethods),
-		methodMaps(_methodMaps), numMethodMaps(_numMethodMaps),
-		methodNames(_methodNames), numMethodNames(_numMethodNames),
-		types(_types), numTypes(_numTypes),
-		inheritanceList(_inheritanceList),
-		argumentList(_argumentList),
-		ambiguousMethodList(_ambiguousMethodList),
-		castFn(_castFn)
-        {
-        }
+        Class *_classes, Index _numClasses,
+        Method *_methods, Index _numMethods,
+        MethodMap *_methodMaps, Index _numMethodMaps,
+        const char **_methodNames, Index _numMethodNames,
+        Type *_types, Index _numTypes,
+        Index *_inheritanceList,
+        Index *_argumentList,
+        Index *_ambiguousMethodList,
+        CastFn _castFn) :
+            module_name(_moduleName),
+            classes(_classes), numClasses(_numClasses),
+            methods(_methods), numMethods(_numMethods),
+            methodMaps(_methodMaps), numMethodMaps(_numMethodMaps),
+            methodNames(_methodNames), numMethodNames(_numMethodNames),
+            types(_types), numTypes(_numTypes),
+            inheritanceList(_inheritanceList),
+            argumentList(_argumentList),
+            ambiguousMethodList(_ambiguousMethodList),
+            castFn(_castFn)
+            {}
 
     /**
      * Returns the name of the module (e.g. "qt" or "kde")
      */
     inline const char *moduleName() {
-	return module_name;
+        return module_name;
     }
 
     inline void *cast(void *ptr, const ModuleIndex& from, const ModuleIndex& to) {
         if (castFn == 0) {
             return ptr;
         }
-        
+
         if (from.smoke == to.smoke) {
             return (*castFn)(ptr, from.index, to.index);
         }
-        
+
         const Smoke::Class &klass = to.smoke->classes[to.index];
         return (*castFn)(ptr, from.index, idClass(klass.className, true).index);
     }
-    
+
     inline void *cast(void *ptr, Index from, Index to) {
-    if(!castFn) return ptr;
-    return (*castFn)(ptr, from, to);
+        if(!castFn) return ptr;
+        return (*castFn)(ptr, from, to);
     }
 
     // return classname directly
     inline const char *className(Index classId) {
-	return classes[classId].className;
+        return classes[classId].className;
     }
 
     inline int leg(Index a, Index b) {  // ala Perl's <=>
-	if(a == b) return 0;
-	return (a > b) ? 1 : -1;
+        if(a == b) return 0;
+        return (a > b) ? 1 : -1;
     }
 
     inline Index idType(const char *t) {
