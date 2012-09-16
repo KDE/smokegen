@@ -38,8 +38,7 @@
     THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifdef WIN32
-  // Define this when building a smoke lib that doesn't have any parents - else Smoke::classMap is not exported.
+#ifdef _WIN32
   #ifdef BASE_SMOKE_BUILDING
     #define BASE_SMOKE_EXPORT __declspec(dllexport)
   #else
