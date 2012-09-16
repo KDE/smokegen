@@ -276,7 +276,7 @@ void SmokeClassFiles::generateVirtualMethod(QTextStream& out, const Method& meth
         out << param.type()->toString() << " x" << i + 1;
         x_params += QString("        x[%1].%2 = %3;\n")
             .arg(QString::number(i + 1)).arg(Util::stackItemField(param.type()))
-            .arg(Util::assignmentString(param.type(), "x" + QString::number(i + 1)));
+            .arg(Util::assignmentString(param.type(), "x" + QString::number(i + 1), false /* isReturnValue */));
         x_list += "x" + QString::number(i + 1);
     }
     out << ") ";

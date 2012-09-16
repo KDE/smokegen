@@ -565,11 +565,11 @@ QString Util::stackItemField(const Type* type)
     return "s_" + typeName;
 }
 
-QString Util::assignmentString(const Type* type, const QString& var)
+QString Util::assignmentString(const Type* type, const QString& var, bool isReturnValue)
 {
     if (type->getTypedef()) {
         Type resolved = type->getTypedef()->resolve();
-        return assignmentString(&resolved, var);
+        return assignmentString(&resolved, var, isReturnValue);
     }
 
     if (type->pointerDepth() > 0 || type->isFunctionPointer()) {
@@ -583,6 +583,8 @@ QString Util::assignmentString(const Type* type, const QString& var)
     } else if (Options::qtMode && type->getClass() && type->getClass()->isTemplate() && type->getClass()->name() == "QFlags")
     {
         return "(uint)" + var;
+    } else if (!isReturnValue) {
+        return "(void*)&" + var;
     } else {
         QString ret = "(void*)new " + type->toString();
         ret += '(' + var + ')';

@@ -133,7 +133,7 @@ struct Util
     static bool hasTypeNonPublicParts(const Type& type);
 
     static QString stackItemField(const Type* type);
-    static QString assignmentString(const Type* type, const QString& var);
+    static QString assignmentString(const Type* type, const QString& var, bool isReturnValue = true);
     static QList<const Method*> collectVirtualMethods(const Class* klass);
     static const Method* isVirtualOverriden(const Method& meth, const Class* klass);
     static QList<const Method*> virtualMethodsForClass(const Class* klass);
