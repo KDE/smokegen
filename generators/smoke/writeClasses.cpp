@@ -147,8 +147,8 @@ QString SmokeClassFiles::generateMethodBody(const QString& indent, const QString
             t.setIsRef(false);
             typeName = t.toString();
             out << '*';
-        } else if (field == "s_class" && (param.type()->pointerDepth() == 0 || param.type()->isRef()) && !param.type()->isFunctionPointer()) {
-            // references and classes are passed in s_class
+        } else if (field == "s_voidp" && (param.type()->pointerDepth() == 0 || param.type()->isRef()) && !param.type()->isFunctionPointer()) {
+            // references and classes are passed in s_voidp
             typeName.append('*');
             out << '*';
         }
@@ -238,7 +238,7 @@ void SmokeClassFiles::generateSetAccessor(QTextStream& out, const QString& class
     QString unionField = Util::stackItemField(type);
     QString cast = type->toString();
     cast.replace("&", "");
-    if (unionField == "s_class" && type->pointerDepth() == 0) {
+    if (unionField == "s_voidp" && type->pointerDepth() == 0) {
         out << '*';
         cast += '*';
     }
@@ -298,11 +298,11 @@ void SmokeClassFiles::generateVirtualMethod(QTextStream& out, const Method& meth
         out << QString("        this->_binding->callMethod(%1, (void*)this, x, true /*pure virtual*/);\n").arg(m_smokeData->methodIdx[&meth]);
         if (meth.type() != Type::Void) {
             QString field = Util::stackItemField(meth.type());
-            if (meth.type()->pointerDepth() == 0 && field == "s_class") {
+            if (meth.type()->pointerDepth() == 0 && field == "s_voidp") {
                 QString tmpType = type;
                 if (meth.type()->isRef()) tmpType.replace('&', "");
                 tmpType.append('*');
-                out << "        " << tmpType << " xptr = (" << tmpType << ")x[0].s_class;\n";
+                out << "        " << tmpType << " xptr = (" << tmpType << ")x[0].s_voidp;\n";
                 out << "        " << type << " xret(*xptr);\n";
                 out << "        delete xptr;\n";
                 out << "        return xret;\n";
@@ -316,12 +316,12 @@ void SmokeClassFiles::generateVirtualMethod(QTextStream& out, const Method& meth
             out << "return;\n";
         } else {
             QString field = Util::stackItemField(meth.type());
-            if (meth.type()->pointerDepth() == 0 && field == "s_class") {
+            if (meth.type()->pointerDepth() == 0 && field == "s_voidp") {
                 QString tmpType = type;
                 if (meth.type()->isRef()) tmpType.replace('&', "");
                 tmpType.append('*');
                 out << "{\n";
-                out << "            " << tmpType << " xptr = (" << tmpType << ")x[0].s_class;\n";
+                out << "            " << tmpType << " xptr = (" << tmpType << ")x[0].s_voidp;\n";
                 out << "            " << type << " xret(*xptr);\n";
                 out << "            delete xptr;\n";
                 out << "            return xret;\n";
@@ -356,7 +356,7 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
         out << "public:\n";
         out << "    void x_0(Smoke::Stack x) {\n";
         out << "        // set the smoke binding\n";
-        out << "        _binding = (SmokeBinding*)x[1].s_class;\n";
+        out << "        _binding = (SmokeBinding*)x[1].s_voidp;\n";
         out << "    }\n";
         
         switchOut << "        case 0: xself->x_0(args);\tbreak;\n";

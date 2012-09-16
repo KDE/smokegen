@@ -129,14 +129,12 @@ QString SmokeDataFile::getTypeFlags(const Type *t, int *classIdx)
         // support some of the weird quirks the kalyptus code has
         flags += "|Smoke::t_voidp";
     } else if (t->getClass()) {
-        if (t->getClass()->isTemplate()) {
-            if (Options::qtMode && t->getClass()->name() == "QFlags" && !t->isRef() && t->pointerDepth() == 0) {
+        if (   t->getClass()->isTemplate() && Options::qtMode && t->getClass()->name() == "QFlags"
+            && !t->isRef() && t->pointerDepth() == 0)
+        {
                 flags += "|Smoke::t_uint";
-            } else {
-                flags += "|Smoke::t_voidp";
-            }
         } else {
-            flags += "|Smoke::t_class";
+            flags += "|Smoke::t_voidp";
             *classIdx = classIndex.value(t->getClass()->toString(), 0);
         }
     } else if (t->isIntegral() && t->name() != "void" && t->pointerDepth() == 0 && !t->isRef()) {

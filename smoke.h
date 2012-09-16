@@ -234,8 +234,7 @@ public:
 	float s_float;
 	double s_double;
     long double s_longdouble;
-        long s_enum;
-        void* s_class;
+        longlong s_enum;
     };
     enum TypeId {
 	t_voidp,
@@ -254,7 +253,6 @@ public:
 	t_double,
     t_longdouble,
         t_enum,
-        t_class,
 	t_last		// number of pre-defined types
     };
 

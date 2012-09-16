@@ -544,7 +544,7 @@ QString Util::stackItemField(const Type* type)
     if (type->pointerDepth() > 0 || type->isRef() || type->isFunctionPointer() || type->isArray() || Options::voidpTypes.contains(type->name())
         || (!type->isIntegral() && !type->getEnum()))
     {
-        return "s_class";
+        return "s_voidp";
     }
     
     if (type->getEnum())
