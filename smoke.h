@@ -320,11 +320,6 @@ public:
 		ambiguousMethodList(_ambiguousMethodList),
 		castFn(_castFn)
         {
-            for (Index i = 1; i <= numClasses; ++i) {
-                if (!(classes[i].flags & cf_undefined)) {
-                    classMap[className(i)] = ModuleIndex(this, i);
-                }
-            }
         }
 
     /**
@@ -412,15 +407,6 @@ public:
         return NullModuleIndex;
     }
 
-    static inline ModuleIndex findClass(const char *c) {
-        ClassMap::iterator i = classMap.find(c);
-        if (i == classMap.end()) {
-            return NullModuleIndex;
-        } else {
-            return i->second;
-        }
-    }
-
     inline ModuleIndex idMethodName(const char *m) {
         Index imax = numMethodNames;
         Index imin = 1;
@@ -442,25 +428,6 @@ public:
         }
 
         return NullModuleIndex;
-    }
-
-    inline ModuleIndex findMethodName(const char *c, const char *m) {
-	ModuleIndex mni = idMethodName(m);
-	if (mni.index) return mni;
-
-	ModuleIndex cmi = findClass(c);
-	if (cmi.smoke && cmi.smoke != this) {
-	    return cmi.smoke->findMethodName(c, m);
-	} else if (cmi.smoke == this) {
-	    if (!classes[cmi.index].parents) return NullModuleIndex;
-	    for (Index p = classes[cmi.index].parents; inheritanceList[p]; p++) {
-		Index ci = inheritanceList[p];
-		const char* cName = className(ci);
-		ModuleIndex mi = classMap[cName].smoke->findMethodName(cName, m);
-		if (mi.index) return mi;
-	    }
-	}
-	return NullModuleIndex;
     }
 
     inline ModuleIndex idMethod(Index c, Index name) {
@@ -488,65 +455,6 @@ public:
 
         return NullModuleIndex;
     }
-
-    inline ModuleIndex findMethod(ModuleIndex c, ModuleIndex name) {
-        if (!c.index || !name.index) {
-            return NullModuleIndex;
-        } else if (name.smoke == this && c.smoke == this) {
-            ModuleIndex mi = idMethod(c.index, name.index);
-            if (mi.index) return mi;
-        } else if (c.smoke != this) {
-            return c.smoke->findMethod(c, name);
-        }
-
-        for (Index *i = inheritanceList + classes[c.index].parents; *i; ++i) {
-            const char *cName = className(*i);
-            ModuleIndex ci = findClass(cName);
-            if (!ci.smoke)
-                return NullModuleIndex;
-            ModuleIndex ni = ci.smoke->findMethodName(cName, name.smoke->methodNames[name.index]);
-            ModuleIndex mi = ci.smoke->findMethod(ci, ni);
-            if (mi.index) return mi;
-        }
-        return NullModuleIndex;
-    }
-
-    inline ModuleIndex findMethod(const char *c, const char *name) {
-        ModuleIndex idc = idClass(c);
-        if (!idc.smoke) idc = findClass(c);
-        if (!idc.smoke || !idc.index) return NullModuleIndex;
-        ModuleIndex idname = idc.smoke->findMethodName(c, name);
-        return idc.smoke->findMethod(idc, idname);
-    }
-
-    static inline bool isDerivedFrom(const ModuleIndex& classId, const ModuleIndex& baseClassId) {
-        return isDerivedFrom(classId.smoke, classId.index, baseClassId.smoke, baseClassId.index);
-    }
-    
-    static inline bool isDerivedFrom(Smoke *smoke, Index classId, Smoke *baseSmoke, Index baseId) {
-	if (!classId || !baseId || !smoke || !baseSmoke)
-	    return false;
-	if (smoke == baseSmoke && classId == baseId)
-	    return true;
-	
-	for(Index p = smoke->classes[classId].parents; smoke->inheritanceList[p]; p++) {
-	    Class& cur = smoke->classes[smoke->inheritanceList[p]];
-	    if (cur.flags & cf_undefined) {
-		ModuleIndex mi = findClass(cur.className);
-		if (isDerivedFrom(mi.smoke, mi.index, baseSmoke, baseId))
-		    return true;
-	    }
-	    if (isDerivedFrom(smoke, smoke->inheritanceList[p], baseSmoke, baseId))
-		return true;
-	}
-	return false;
-    }
-
-    static inline bool isDerivedFrom(const char *className, const char *baseClassName) {
-    ModuleIndex classId = findClass(className);
-    ModuleIndex baseId = findClass(baseClassName);
-    return isDerivedFrom(classId.smoke, classId.index, baseId.smoke, baseId.index);
-    }
 };
 
 class SmokeBinding {
@@ -556,7 +464,7 @@ public:
     SmokeBinding(Smoke *s) : smoke(s) {}
     virtual void deleted(Smoke::Index classId, void *obj) = 0;
     virtual bool callMethod(Smoke::Index method, void *obj, Smoke::Stack args, bool isAbstract = false) = 0;
-    virtual char* className(Smoke::Index classId) = 0;
+    virtual const char* className(Smoke::Index classId) = 0;
     virtual ~SmokeBinding() {}
 };
 
