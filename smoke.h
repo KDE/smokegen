@@ -8,7 +8,7 @@
 
 /*
    Copyright (C) 2002, Ashley Winters <qaqortog@nwlink.com>
-   Copyright (C) 2007, Arno Rehn <arno@arnorehn.de>
+   Copyright (C) 2007, 2012 Arno Rehn <arno@arnorehn.de>
 
     BSD License
 
