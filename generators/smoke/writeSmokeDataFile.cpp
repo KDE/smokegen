@@ -743,7 +743,7 @@ void SmokeDataFile::write()
     foreach (const QString& str, Options::parentModules) {
         out << "    init_" << str << "_Smoke();\n";
     }
-    out << "    if (" << Options::module << "_Smoke) return;\n";
+    out << "    if (" << Options::module << "_Smoke) return " << Options::module << "_Smoke;\n";
     out << "    " << Options::module << "_Smoke = new Smoke(\n";
     out << "        \"" << Options::module << "\",\n";
     out << "        " << smokeNamespaceName << "::classes, " << classCount << ",\n";
@@ -755,7 +755,7 @@ void SmokeDataFile::write()
     out << "        " << smokeNamespaceName << "::argumentList,\n";
     out << "        " << smokeNamespaceName << "::ambiguousMethodList,\n";
     out << "        " << smokeNamespaceName << "::cast );\n";
-    out << "    return " << Options::module << "_Smoke;";
+    out << "    return " << Options::module << "_Smoke;\n";
     out << "}\n\n";
     out << "void delete_" << Options::module << "_Smoke() { delete " << Options::module << "_Smoke; }\n\n";
     out << "}\n";
