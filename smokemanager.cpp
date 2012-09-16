@@ -229,9 +229,9 @@ Smoke::ModuleIndex SmokeManager::findMethodNameImpl(const Smoke::ModuleIndex& cl
     return Smoke::NullModuleIndex;
 }
 
-Smoke::ModuleIndex SmokeManager::findMethod(const Smoke::ModuleIndex& classId, const Smoke::ModuleIndex& methodName)
+Smoke::ModuleIndex SmokeManager::findMethodMap(const Smoke::ModuleIndex& classId, const Smoke::ModuleIndex& mungedName)
 {
-    if (!classId || !methodName)
+    if (!classId || !mungedName)
         return Smoke::NullModuleIndex;
 
     Smoke::ModuleIndex tmp;
@@ -239,7 +239,7 @@ Smoke::ModuleIndex SmokeManager::findMethod(const Smoke::ModuleIndex& classId, c
     // Look if the class or any of its superclasses have a method with the given name.
     // If classId and methodName are in different modules, we have to walk the inheritance list until
     // we reach methodName's module.
-    if (classId.smoke != methodName.smoke) {
+    if (classId.smoke != mungedName.smoke) {
         for (Smoke::Index *p = classId.smoke->inheritanceList + classId.smoke->classes[classId.index].parents;
              *p; ++p)
         {
@@ -250,12 +250,12 @@ Smoke::ModuleIndex SmokeManager::findMethod(const Smoke::ModuleIndex& classId, c
                 tmp.index = Smoke::ModuleIndex(classId.smoke, *p);
             }
 
-            tmp = findMethod(tmp, methodName);
+            tmp = findMethodMap(tmp, mungedName);
             if (tmp)
                 return tmp;
         }
     } else {
-        tmp = classId.smoke->idMethod(classId.index, methodName.index);
+        tmp = classId.smoke->idMethod(classId.index, mungedName.index);
         if (tmp)
             return tmp;
 
@@ -265,13 +265,74 @@ Smoke::ModuleIndex SmokeManager::findMethod(const Smoke::ModuleIndex& classId, c
             if (classId.smoke->classes[*p].flags & Smoke::cf_undefined)
                 continue;  // smoke modules of class and name are the same; the method can't be somewhere else
 
-            tmp = findMethod(Smoke::ModuleIndex(classId.smoke, *p), methodName);
+            tmp = findMethodMap(Smoke::ModuleIndex(classId.smoke, *p), mungedName);
             if (tmp)
                 return tmp;
         }
     }
 
     return Smoke::NullModuleIndex;
+}
+
+inline static bool matchesArgs(Smoke *smoke, Smoke::Index id, const char **argTypes)
+{
+    Smoke::Index *argId = smoke->argumentList + smoke->methods[id].args;
+
+    do {
+        const Smoke::Type& type = smoke->types[*argId];
+        if (strcmp(type.name, *argTypes))
+            return false;
+        ++argId; ++argTypes;
+    } while (*argId && *argTypes);
+
+    return !*argId && !*argTypes;
+}
+
+inline static bool matchesArgs(Smoke *smoke, Smoke::Index id, const std::vector<std::string>& argTypes)
+{
+    Smoke::Index *argId = smoke->argumentList + smoke->methods[id].args;
+    std::vector<std::string>::const_iterator iter = argTypes.begin();
+
+    do {
+        const Smoke::Type& type = smoke->types[*argId];
+        if (strcmp(type.name, iter->c_str()))
+            return false;
+        ++argId; ++iter;
+    } while (*argId && iter != argTypes.end());
+
+    return !*argId && iter == argTypes.end();
+}
+
+#define findMethodImpl(argsAssertion) \
+    Smoke::ModuleIndex mi = findMethodMap(classId, mungedName); \
+    if (!mi) \
+        return mi; \
+    const Smoke::MethodMap& map = mi.smoke->methodMaps[mi.index]; \
+    assert(map.method != 0); \
+    if (map.method > 0) { \
+        return Smoke::ModuleIndex(mi.smoke, map.method); \
+    } else { \
+        assert(argsAssertion); \
+        Smoke::Index *candidateId = mi.smoke->ambiguousMethodList - map.method; \
+        do { \
+            if (matchesArgs(mi.smoke, *candidateId, args)) { \
+                return Smoke::ModuleIndex(mi.smoke, *candidateId); \
+            } \
+        } while (*++candidateId); \
+    } \
+    return Smoke::NullModuleIndex;
+
+
+Smoke::ModuleIndex SmokeManager::findMethod(const Smoke::ModuleIndex& classId, const Smoke::ModuleIndex& mungedName,
+                                            const char** args)
+{
+    findMethodImpl(args);
+}
+
+Smoke::ModuleIndex SmokeManager::findMethod(const Smoke::ModuleIndex& classId, const Smoke::ModuleIndex& mungedName,
+                                            const std::vector<std::string>& args)
+{
+    findMethodImpl(!args.empty());
 }
 
 bool SmokeManager::isDerivedFrom(const Smoke::ModuleIndex& classId, const Smoke::ModuleIndex& baseClassId)

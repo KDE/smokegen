@@ -20,6 +20,7 @@
 #define SMOKEMANAGER_H
 
 #include <string>
+#include <vector>
 #include <smoke.h>
 
 class Smoke;
@@ -53,16 +54,33 @@ public:
     inline Smoke::ModuleIndex findMethodName(const Smoke::ModuleIndex& classId, const std::string& methodName)
         { return findMethodName(classId, methodName.c_str()); }
 
-    /// find method map id for method 'methodName' in class 'classId'
-    Smoke::ModuleIndex findMethod(const Smoke::ModuleIndex& classId, const Smoke::ModuleIndex& methodName);
-    inline Smoke::ModuleIndex findMethod(const Smoke::ModuleIndex& classId, const char *methodName)
-        { return findMethod(classId, findMethodName(classId, methodName)); }
-    inline Smoke::ModuleIndex findMethod(const Smoke::ModuleIndex& classId, const std::string& methodName)
-        { return findMethod(classId, methodName.c_str()); }
-    inline Smoke::ModuleIndex findMethod(const char *className, const char *methodName)
-        { return findMethod(findClass(className), methodName); }
-    inline Smoke::ModuleIndex findMethod(const std::string& className, const std::string& methodName)
-        { return findMethod(className.c_str(), methodName.c_str()); }
+    /// find method map id for method 'mungedName' in class 'classId'
+    Smoke::ModuleIndex findMethodMap(const Smoke::ModuleIndex& classId, const Smoke::ModuleIndex& mungedName);
+    inline Smoke::ModuleIndex findMethodMap(const Smoke::ModuleIndex& classId, const char *mungedName)
+        { return findMethodMap(classId, findMethodName(classId, mungedName)); }
+    inline Smoke::ModuleIndex findMethodMap(const Smoke::ModuleIndex& classId, const std::string& mungedName)
+        { return findMethodMap(classId, mungedName.c_str()); }
+    inline Smoke::ModuleIndex findMethodMap(const char *className, const char *mungedName)
+        { return findMethodMap(findClass(className), mungedName); }
+    inline Smoke::ModuleIndex findMethodMap(const std::string& className, const std::string& mungedName)
+        { return findMethodMap(className.c_str(), mungedName.c_str()); }
+
+    /// find method id for method 'mungedName' in 'classId' with 'args' used for ambigious overload resolution
+    Smoke::ModuleIndex findMethod(const Smoke::ModuleIndex& classId, const Smoke::ModuleIndex& mungedName,
+                                  const char **args);
+    inline Smoke::ModuleIndex findMethod(const Smoke::ModuleIndex& classId, const char *mungedName,
+                                         const char **args)
+        { return findMethod(classId, findMethodName(classId, mungedName), args); }
+    inline Smoke::ModuleIndex findMethod(const char *className, const char *mungedName, const char **args)
+        { return findMethod(findClass(className), mungedName, args); }
+    Smoke::ModuleIndex findMethod(const Smoke::ModuleIndex& classId, const Smoke::ModuleIndex& mungedName,
+                                  const std::vector<std::string>& args);
+    inline Smoke::ModuleIndex findMethod(const Smoke::ModuleIndex& classId, const std::string& mungedName,
+                                  const std::vector<std::string>& args)
+        { return findMethod(classId, findMethodName(classId, mungedName.c_str()), args); }
+    inline Smoke::ModuleIndex findMethod(const std::string& className, const std::string& mungedName,
+                                         const std::vector<std::string>& args)
+        { return findMethod(findClass(className.c_str()), mungedName, args); }
 
     bool isDerivedFrom(const Smoke::ModuleIndex& classId, const Smoke::ModuleIndex& baseClassId);
     inline bool isDerivedFrom(const char *klass, const char *baseClass)
