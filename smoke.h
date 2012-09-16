@@ -70,6 +70,14 @@ private:
     const char *module_name;
 
 public:
+#if defined(_MSVC_VER) || defined(__BORLANDC__)
+    typedef __int64 longlong;
+    typedef __uint64 ulonglong;
+#else
+    typedef long long longlong;
+    typedef unsigned long long ulonglong;
+#endif
+
     union StackItem; // defined below
     /**
      * A stack is an array of arguments, passed to a method when calling it.
@@ -221,8 +229,11 @@ public:
 	unsigned int s_uint;
 	long s_long;
 	unsigned long s_ulong;
+    longlong s_longlong;
+    ulonglong s_ulonglong;
 	float s_float;
 	double s_double;
+    long double s_longdouble;
         long s_enum;
         void* s_class;
     };
@@ -237,8 +248,11 @@ public:
 	t_uint,
 	t_long,
 	t_ulong,
+    t_longlong,
+    t_ulonglong,
 	t_float,
 	t_double,
+    t_longdouble,
         t_enum,
         t_class,
 	t_last		// number of pre-defined types
