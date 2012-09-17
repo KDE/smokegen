@@ -109,11 +109,8 @@ public:
     bool isPtr() const { return ((flags() & Smoke::tf_ref) == Smoke::tf_ptr); }
     bool isRef() const { return ((flags() & Smoke::tf_ref) == Smoke::tf_ref); }
     bool isConst() const { return (flags() & Smoke::tf_const); }
-    bool isClass() const {
-        if(elem() == Smoke::t_class)
-            return classId() ? true : false;
-        return false;
-    }
+    bool isClass() const { return classId() ? true : false; }
+
     bool isVoid() const { return !typeId(); }
 
     bool isUnsigned() const {
