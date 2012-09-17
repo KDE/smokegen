@@ -66,13 +66,12 @@ public:
      */
     virtual void next() = 0;
     /**
-     * For FromCrack, cleanup() returns false when the handler should free
-     * any allocated memory after next().
-     *
-     * For ToCrack, cleanup() returns true when the handler should delete
-     * the pointer passed to it.
+     * Indicates whether objects on the stack are deleted by SMOKE or if
+     * the handler has to do it after next().
+     * For example, stack objects from virtual method callbacks are deleted
+     * by SMOKE, stack objects for ordinary method calls are not.
      */
-    virtual bool cleanup() = 0;
+    virtual bool smokeDeletesStackObjects() = 0;
 
     virtual ~Marshall() {}
 };

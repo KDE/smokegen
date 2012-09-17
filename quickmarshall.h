@@ -32,18 +32,18 @@ private:
     Smoke::StackItem _input;
     Smoke::StackItem _output;
     Marshall::Action _action;
-    bool _cleanup;
+    bool _smokeDeletesStackObjects;
 
 public:
-    QuickMarshall(const SmokeType& type, Smoke::StackItem input, Marshall::Action action, bool cleanup)
-        : _type(type), _input(input), _action(action), _cleanup(cleanup) {}
+    QuickMarshall(const SmokeType& type, Smoke::StackItem input, Marshall::Action action, bool smokeDeletesStackObjects)
+        : _type(type), _input(input), _action(action), _smokeDeletesStackObjects(smokeDeletesStackObjects) {}
 
     inline SmokeType type() { return _type; }
     inline Marshall::Action action() { return _action; }
     inline Smoke::StackItem &item() { return _action == FromCrack ? _output : _input; }
     inline Smoke::StackItem &var() { return _action == FromCrack ? _input : _output; }
     inline Smoke *smoke() { return _type.smoke(); }
-    inline bool cleanup() { return _cleanup; }
+    inline bool smokeDeletesStackObjects() { return _smokeDeletesStackObjects; }
 
     inline void unsupported() {
         std::cerr << "QuickMarshall: cannot handle '" << type().name() << '\'' << std::endl;
