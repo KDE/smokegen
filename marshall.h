@@ -48,8 +48,12 @@ public:
     enum Action { FromCrack, ToCrack };
     virtual SmokeType type() = 0;
     virtual Action action() = 0;
+
+    /// contains the StackItem for SMOKE
     virtual Smoke::StackItem &item() = 0;
+    /// contains the StackItem for the binding
     virtual Smoke::StackItem &var() = 0;
+
     virtual void unsupported() = 0;
     virtual Smoke *smoke() = 0;
     /**
