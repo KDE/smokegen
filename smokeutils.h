@@ -80,18 +80,6 @@ public:
         set(Smoke::ModuleIndex(s, i));
     }
 
-    void preparse() {
-        if (!typeId()) {
-            return;
-        }
-
-        isUnsigned();
-        pointerDepth();
-
-        if (!isClass())
-            plainName();
-    }
-
     // accessors
     Smoke *smoke() const { return _mi.smoke; }
     Smoke::Index typeId() const { return _mi.index; }
@@ -102,6 +90,12 @@ public:
     const char *name() const { return _t->name ? _t->name : "void"; }
     Smoke::Index classId() const { return _t->classId; }
 
+    char pointerDepth() const;
+    std::string plainName() const;
+
+    // not cached, expensive
+    std::vector<SmokeType> templateArguments() const;
+
     // tests
     operator bool() const { return _mi.smoke; }
 
@@ -109,119 +103,9 @@ public:
     bool isPtr() const { return ((flags() & Smoke::tf_ref) == Smoke::tf_ptr); }
     bool isRef() const { return ((flags() & Smoke::tf_ref) == Smoke::tf_ref); }
     bool isConst() const { return (flags() & Smoke::tf_const); }
-    bool isClass() const { return classId() ? true : false; }
-
+    bool isClass() const { return classId(); }
     bool isVoid() const { return !typeId(); }
-
-    bool isUnsigned() const {
-        if (!typeId()) return false;
-        if (_unsigned > -1) return _unsigned;
-
-        switch (elem()) {
-            case Smoke::t_uchar:
-            case Smoke::t_ushort:
-            case Smoke::t_uint:
-            case Smoke::t_ulong:
-                return true;
-        }
-
-        _unsigned = (!strncmp(isConst() ? name() + static_strlen("const ") : name(), "unsigned ", static_strlen("unsigned ")));
-        return _unsigned;
-    }
-
-    char pointerDepth() const {
-        if (!typeId()) return 0;
-        if (_pointerDepth > -1) return _pointerDepth;
-
-        const char *n = name();
-        signed char depth = 0;
-        signed char templateDepth = 0;
-
-        while (*n) {
-            if (*n == '<') {
-                ++templateDepth;
-                depth = 0;
-            }
-            if (*n == '>')
-                --templateDepth;
-            if (templateDepth == 0 && *n == '*')
-                ++depth;
-            ++n;
-        }
-        _pointerDepth = depth;
-        return _pointerDepth;
-    }
-
-    std::string plainName() const {
-        if (!typeId()) return "void";
-        if (isClass())
-            return smoke()->classes[classId()].className;
-        if (!_plainName.empty()) return _plainName;
-
-        char offset = 0;
-        if (isConst()) offset += static_strlen("const ");
-        if (isUnsigned()) offset += static_strlen("unsigned ");
-
-        const char *start = name() + offset;
-        const char *n = start;
-
-        signed char templateDepth = 0;
-
-        while (*n) {
-            if (*n == '<')
-                ++templateDepth;
-            if (*n == '>')
-                --templateDepth;
-            if (templateDepth == 0 && (*n == '*' || *n == '&')) {
-                _plainName = std::string(start, static_cast<std::size_t>(n - start));
-                return _plainName;
-            }
-            ++n;
-        }
-
-        _plainName = std::string(start);
-        return _plainName;
-    }
-
-    // not cached, expensive
-    std::vector<SmokeType> templateArguments() const {
-        std::vector<SmokeType> ret;
-        if (!typeId()) return ret;
-
-        int depth = 0;
-
-        const char *begin = 0;
-        const char *n = name();
-
-        while (*n) {
-            if (*n == '<') {
-                if (depth == 0) {
-                    ret.clear();
-                    begin = n + 1;
-                }
-
-                ++depth;
-            }
-
-            if (depth == 1 && (*n == '>' || *n == ',')) {
-                assert(begin);
-                std::string str(begin, static_cast<std::size_t>((*(n-1) == ' ' ? n-1 : n)  - begin));
-
-                Smoke::Index typeId = smoke()->idType(str.c_str());
-                assert(typeId);
-                ret.push_back(SmokeType(smoke(), typeId));
-
-                begin = *n == ',' ? n + 1 : 0;
-            }
-
-            if (*n == '>')
-                --depth;
-
-            ++n;
-        }
-
-        return ret;
-    }
+    bool isUnsigned() const;
 
     bool operator ==(const SmokeType &b) const {
         const SmokeType &a = *this;
@@ -267,13 +151,8 @@ public:
         set(Smoke::ModuleIndex(s, id));
     }
 
-    // resolves external classes
-    void resolve() {
-        if (!isExternal()) return;
-        Smoke::ModuleIndex newId = SmokeManager::self()->findClass(_c->className);
-        if (!newId) return;
-        set(newId);
-    }
+    // resolves external classes, returns true on success
+    bool resolve();
 
     void setBindingForObject(void *obj, SmokeBinding *binding) const {
         Smoke::StackItem stack[2];
@@ -288,6 +167,7 @@ public:
     const Smoke::Class &c() const { return *_c; }
     Smoke::Index classId() const { return _mi.index; }
     const char *className() const { return _c->className; }
+    std::string unqualifiedName() const;
     Smoke::ClassFn classFn() const { return _c->classFn; }
     Smoke::EnumFn enumFn() const { return _c->enumFn; }
     bool operator ==(const SmokeClass &b) const {
@@ -317,7 +197,7 @@ public:
     } \
     return false;
 
-    // need both overloads, otherwise lambdas might caus a compilation
+    // need both overloads, otherwise lambdas might cause a compilation
     // error
     template <typename Func>
     bool iterateParents(const Func& func) const { iterateParentsImpl }
@@ -329,15 +209,11 @@ public:
     std::vector<SmokeClass> parents() const {
         struct Collector {
             std::vector<SmokeClass> val;
-
             bool operator()(const SmokeClass& klass) {
                 val.push_back(klass);
             }
         };
-        Collector c;
-
-        iterateParents(c);
-
+        Collector c; iterateParents(c);
         return c.val;
     }
 
