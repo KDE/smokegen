@@ -185,13 +185,13 @@ public:
         return SmokeManager::self()->isDerivedFrom(_mi, sc._mi);
     }
 
-#define iterateParentsImpl \
+#define iterateAncestorsImpl \
     for (Smoke::Index *p = _mi.smoke->inheritanceList + _c->parents; \
             *p; ++p) \
     { \
         SmokeClass klass(smoke(), *p); \
         klass.resolve(); \
-        if (func(klass) || klass.iterateParents(func)) { \
+        if (func(klass) || (!parentsOnly && klass.iterateAncestors(func))) { \
             return true; \
         } \
     } \
@@ -199,21 +199,26 @@ public:
 
     // need both overloads, otherwise lambdas might cause a compilation
     // error
+    /// Func has to accept a SmokeClass argument and return a bool.
+    /// If it returns true, the iteration is aborted.
     template <typename Func>
-    bool iterateParents(const Func& func) const { iterateParentsImpl }
+    bool iterateAncestors(const Func& func, bool parentsOnly = false) const
+    { iterateAncestorsImpl }
 
     template <typename Func>
-    bool iterateParents(Func& func) const { iterateParentsImpl }
-#undef iterateParentsImpl
+    bool iterateAncestors(Func& func, bool parentsOnly = false) const
+    { iterateAncestorsImpl }
+#undef iterateAncestorsImpl
 
     std::vector<SmokeClass> parents() const {
         struct Collector {
             std::vector<SmokeClass> val;
             bool operator()(const SmokeClass& klass) {
                 val.push_back(klass);
+                return false;
             }
         };
-        Collector c; iterateParents(c);
+        Collector c; iterateAncestors(c, true);
         return c.val;
     }
 
