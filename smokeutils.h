@@ -105,6 +105,7 @@ public:
     bool isConst() const { return (flags() & Smoke::tf_const); }
     bool isClass() const { return classId(); }
     bool isVoid() const { return !typeId(); }
+    bool isFunctionPointer() const { return name() && strstr(name(), "(*)"); }
     bool isUnsigned() const;
 
     bool operator ==(const SmokeType &b) const {
