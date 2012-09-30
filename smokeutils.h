@@ -186,13 +186,20 @@ public:
         return SmokeManager::self()->isDerivedFrom(_mi, sc._mi);
     }
 
+    enum AncestorIterationOptions {
+        NoOptions = 0x0,
+        DoNotResolveExternals = 0x1,
+        ParentsOnly = 0x2,
+    };
+
 #define iterateAncestorsImpl \
     for (Smoke::Index *p = _mi.smoke->inheritanceList + _c->parents; \
             *p; ++p) \
     { \
         SmokeClass klass(smoke(), *p); \
-        klass.resolve(); \
-        if (func(klass) || (!parentsOnly && klass.iterateAncestors(func))) { \
+        if (!(options & DoNotResolveExternals)) \
+            klass.resolve(); \
+        if (func(klass) || (!(options & ParentsOnly) && klass.iterateAncestors(func))) { \
             return true; \
         } \
     } \
@@ -203,11 +210,11 @@ public:
     /// Func has to accept a SmokeClass argument and return a bool.
     /// If it returns true, the iteration is aborted.
     template <typename Func>
-    bool iterateAncestors(const Func& func, bool parentsOnly = false) const
+    bool iterateAncestors(const Func& func, unsigned int options = NoOptions) const
     { iterateAncestorsImpl }
 
     template <typename Func>
-    bool iterateAncestors(Func& func, bool parentsOnly = false) const
+    bool iterateAncestors(Func& func, unsigned int options = NoOptions) const
     { iterateAncestorsImpl }
 #undef iterateAncestorsImpl
 
@@ -219,7 +226,7 @@ public:
                 return false;
             }
         };
-        Collector c; iterateAncestors(c, true);
+        Collector c; iterateAncestors(c, ParentsOnly);
         return c.val;
     }
 
