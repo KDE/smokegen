@@ -49,6 +49,7 @@ constexpr std::size_t static_strlen(const CharType (&) [N]) {
 }
 
 class SmokeType {
+protected:
     Smoke::Type *_t;    // derived from _mi, but cached
     Smoke::ModuleIndex _mi;
 
@@ -72,7 +73,7 @@ public:
             return;
         }
 
-        if(_mi.index < 0 || _mi.index > _mi.smoke->numTypes) _mi.index = 0;
+        if (_mi.index < 0 || _mi.index > _mi.smoke->numTypes) _mi.index = 0;
         _t = _mi.smoke->types + _mi.index;
     }
 
@@ -104,7 +105,7 @@ public:
     bool isRef() const { return ((flags() & Smoke::tf_ref) == Smoke::tf_ref); }
     bool isConst() const { return (flags() & Smoke::tf_const); }
     bool isClass() const { return classId(); }
-    bool isVoid() const { return !typeId(); }
+    bool isVoid() const { return typeId() == 0; }
     bool isFunctionPointer() const { return name() && strstr(name(), "(*)"); }
     bool isUnsigned() const;
 
