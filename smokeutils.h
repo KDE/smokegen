@@ -243,7 +243,7 @@ class SmokeMethod {
 public:
     enum CallMethod {
         DynamicDispatch = 0,
-        Direct = 1
+        DirectCall = 1
     };
 
     SmokeMethod() : _m(0), _mi(Smoke::NullModuleIndex) {}
@@ -302,7 +302,7 @@ public:
 
     void call(Smoke::Stack args, void *ptr = 0, CallMethod callType = DynamicDispatch) const {
         Smoke::ClassFn fn = c().classFn();
-        unsigned int offset = static_cast<unsigned int>(callType == Direct && !isPureVirtual() && isVirtual());
+        unsigned int offset = static_cast<unsigned int>(callType == DirectCall && !isPureVirtual() && isVirtual());
         (*fn)(method() + offset, ptr, args);
     }
 
