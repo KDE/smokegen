@@ -48,6 +48,8 @@ constexpr std::size_t static_strlen(const CharType (&) [N]) {
     return N - 1;
 }
 
+void copyStackItem(Smoke::StackItem &dest, const Smoke::StackItem& src, unsigned short typeId);
+
 class SmokeType {
 protected:
     Smoke::Type *_t;    // derived from _mi, but cached
