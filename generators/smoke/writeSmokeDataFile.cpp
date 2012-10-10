@@ -423,11 +423,9 @@ void SmokeDataFile::write()
                 continue;
             
             methodNames[meth.name()] = 1;
-            if (!isExternal) {
-                QString mungedName = Util::mungedName(meth);
-                methodNames[mungedName] = 1;
-                map[mungedName].append(&meth);
-            }
+            QString mungedName = Util::mungedName(meth);
+            methodNames[mungedName] = 1;
+            map[mungedName].append(&meth);
             
             if (!meth.parameters().count()) {
                 parameterIndices[&meth] = 0;
@@ -699,9 +697,7 @@ void SmokeDataFile::write()
 
     for (QMap<QString, int>::const_iterator iter = classIndex.constBegin(); iter != classIndex.constEnd(); iter++) {
         Class* klass = &classes[iter.key()];
-        if (externalClasses.contains(klass))
-            continue;
-        
+
         QMap<QString, QList<const Member*> >& map = classMungedNames[klass];
         for (QMap<QString, QList<const Member*> >::const_iterator munged_it = map.constBegin(); munged_it != map.constEnd(); munged_it++) {
             
