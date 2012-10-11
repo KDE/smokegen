@@ -159,6 +159,34 @@ std::vector<SmokeType> SmokeType::templateArguments() const {
     return ret;
 }
 
+void *SmokeClass::constructCopy(void *obj, SmokeBinding *binding) const
+{
+    std::string ccSig = unqualifiedName();
+    ccSig.append("#");
+
+    std::string ccArg; ccArg.reserve(ccSig.size() + static_strlen("const &"));
+    ccArg.append("const ").append(className()).push_back('&');
+
+    std::vector<std::string> argTypes; argTypes.push_back(ccArg);
+
+    SmokeMethod ccMeth = SmokeManager::self()->findMethod(moduleIndex(), ccSig, argTypes);
+
+    if(!ccMeth) {
+        return 0;
+    }
+
+    // Okay, ccMeth is the copy constructor. Time to call it.
+    Smoke::StackItem args[2];
+    args[0].s_voidp = 0;
+    args[1].s_voidp = obj;
+    ccMeth.call(args);
+
+    // Initialize the binding for the new instance
+    setBindingForObject(args[0].s_voidp, binding);
+
+    return args[0].s_voidp;
+}
+
 bool SmokeClass::resolve() {
     if (!isExternal()) return false;
     Smoke::ModuleIndex newId = SmokeManager::self()->findClass(_c->className);

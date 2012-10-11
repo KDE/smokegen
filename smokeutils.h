@@ -43,7 +43,12 @@
 #include "smokemanager.h"
 
 template <typename CharType, std::size_t N>
-constexpr std::size_t static_strlen(const CharType (&) [N]) {
+#if __cplusplus >= 201103L
+constexpr
+#else
+inline
+#endif
+std::size_t static_strlen(const CharType (&) [N]) {
     // subtract trailing zero
     return N - 1;
 }
@@ -163,6 +168,8 @@ public:
         stack[1].s_voidp = binding;
         classFn()(0, obj, stack);
     }
+
+    void *constructCopy(void *obj, SmokeBinding *binding) const;
 
     operator bool() const { return _c && _c->className != 0; }
 
