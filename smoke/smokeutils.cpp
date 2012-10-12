@@ -165,7 +165,8 @@ void *SmokeClass::constructCopy(void *obj, SmokeBinding *binding) const
 bool SmokeClass::resolve() {
     if (!isExternal()) return true;
     Smoke::ModuleIndex newId = SmokeManager::self()->findClass(_c->className);
-    if (!newId) return false;
+    if (!newId || (newId.smoke->classes[newId.index].flags & Smoke::cf_undefined))
+        return false;
     set(newId);
     return true;
 }
