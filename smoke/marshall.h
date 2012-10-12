@@ -22,11 +22,11 @@
 #ifndef MARSHALL_H
 #define MARSHALL_H
 
-#include <smoke.h>
+#include "smoke.h"
 
 class SmokeType;
 
-class Marshall {
+class BASE_SMOKE_EXPORT Marshall {
 public:
 
     typedef void (*HandlerFn)(Marshall *);
@@ -39,13 +39,13 @@ public:
     static HandlerFn getMarshallFn(const SmokeType& type);
 
     /**
-     * FromCrack is used for virtual function return values and regular
+     * FromBinding is used for virtual function return values and regular
      * method arguments.
      *
-     * ToCrack is used for method return-values and virtual function
+     * ToBinding is used for method return-values and virtual function
      * arguments.
      */
-    enum Action { FromCrack, ToCrack };
+    enum Action { FromBinding, ToBinding };
     virtual SmokeType type() = 0;
     virtual Action action() = 0;
 
@@ -58,8 +58,8 @@ public:
     virtual Smoke *smoke() = 0;
     /**
      * For return-values, next() does nothing.
-     * For FromCrack, next() calls the method and returns.
-     * For ToCrack, next() calls the virtual function and returns.
+     * For FromBinding, next() calls the method and returns.
+     * For ToBinding, next() calls the virtual function and returns.
      *
      * Required to reset Marshall object to the state it was
      * before being called when it returns.

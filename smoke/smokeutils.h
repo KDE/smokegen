@@ -32,7 +32,7 @@
 #define __USE_XOPEN
 #endif
 
-#include <smoke.h>
+#include "smoke.h"
 
 #include <cassert>
 
@@ -53,9 +53,10 @@ std::size_t static_strlen(const CharType (&) [N]) {
     return N - 1;
 }
 
+BASE_SMOKE_EXPORT
 void copyStackItem(Smoke::StackItem &dest, const Smoke::StackItem& src, unsigned short typeId);
 
-class SmokeType {
+class BASE_SMOKE_EXPORT SmokeType {
 protected:
     Smoke::Type *_t;    // derived from _mi, but cached
     Smoke::ModuleIndex _mi;
@@ -130,7 +131,7 @@ public:
 
 };
 
-class SmokeClass {
+class BASE_SMOKE_EXPORT SmokeClass {
     Smoke::Class *_c;
     Smoke::ModuleIndex _mi;
 public:
@@ -228,14 +229,20 @@ public:
     { iterateAncestorsImpl }
 #undef iterateAncestorsImpl
 
+
+private:
+    // Can only be declared in parents() when using C++11, but I don't want to
+    // depend on that yet.
+    struct Collector {
+        std::vector<SmokeClass> val;
+        bool operator()(const SmokeClass& klass) {
+            val.push_back(klass);
+            return false;
+        }
+    };
+
+public:
     std::vector<SmokeClass> parents() const {
-        struct Collector {
-            std::vector<SmokeClass> val;
-            bool operator()(const SmokeClass& klass) {
-                val.push_back(klass);
-                return false;
-            }
-        };
         Collector c; iterateAncestors(c, ParentsOnly);
         return c.val;
     }
@@ -247,7 +254,7 @@ public:
     bool isExternal() const { return flags() & Smoke::cf_undefined; }
 };
 
-class SmokeMethod {
+class BASE_SMOKE_EXPORT SmokeMethod {
     Smoke::Method *_m;
     Smoke::ModuleIndex _mi;
 public:

@@ -19,13 +19,14 @@
 #ifndef SMOKEMANAGER_H
 #define SMOKEMANAGER_H
 
+#include "smoke.h"
+
 #include <string>
 #include <vector>
-#include <smoke.h>
 
 class Smoke;
 
-class SmokeManager
+class BASE_SMOKE_EXPORT SmokeManager
 {
 public:
     enum LoadOptions {

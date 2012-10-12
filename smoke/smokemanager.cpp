@@ -25,7 +25,7 @@
 #include <sstream>
 #include <vector>
 
-#ifndef WIN32
+#ifndef _WIN32
     #include <dlfcn.h>
 #else
     #include <windows.h>
@@ -35,7 +35,7 @@ static const int SMOKE_VERSION = 3;
 
 typedef std::map<std::string, Smoke*> StringSmokeMap;
 
-#ifndef WIN32
+#ifndef _WIN32
 typedef std::vector<void*> HandleList;
 #else
 typedef std::vector<HMODULE> HandleList;
@@ -68,7 +68,7 @@ SmokeManager::~SmokeManager()
          iter != d->libraryHandles.end();
          ++iter)
     {
-#ifndef WIN32
+#ifndef _WIN32
         dlclose(*iter);
 #else
         FreeLibrary(*iter);
@@ -104,14 +104,14 @@ Smoke* SmokeManager::get(const std::string& moduleName, SmokeManager::LoadOption
 Smoke* SmokeManager::load(const std::string& moduleName)
 {
     std::ostringstream libName;
-#ifndef WIN32
+#ifndef _WIN32
     libName << "lib";
 #endif
     libName << "smoke" << moduleName;
 
 #ifdef __APPLE__
     libName << '.' << SMOKE_VERSION << ".dylib";
-#elif WIN32
+#elif _WIN32
     libName << ".dll";
 #else
     libName << ".so." << SMOKE_VERSION;
@@ -119,7 +119,7 @@ Smoke* SmokeManager::load(const std::string& moduleName)
 
     std::string libNameString = libName.str();
 
-#ifndef WIN32
+#ifndef _WIN32
     void *smokeLib = dlopen(libNameString.c_str(), RTLD_LAZY);
 #else
     HMODULE smokeLib = LoadLibrary(libNameString.c_str());
@@ -140,7 +140,7 @@ Smoke* SmokeManager::load(const std::string& moduleName)
 
     SmokeInitFn initFn;
 
-#ifndef WIN32
+#ifndef _WIN32
     initFn = (SmokeInitFn) dlsym(smokeLib, initSymbolName.c_str());
 #else
     initFn = (SmokeInitFn) GetProcAddress(smokeLib, initSymbolName.c_str());

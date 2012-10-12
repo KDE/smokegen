@@ -1,10 +1,7 @@
 #ifndef SMOKE_H
 #define SMOKE_H
 
-#include <cstddef>
 #include <cstring>
-#include <string>
-#include <map>
 
 /*
    Copyright (C) 2002, Ashley Winters <qaqortog@nwlink.com>

@@ -20,13 +20,13 @@
 #ifndef QUICKMARSHALL_H
 #define QUICKMARSHALL_H
 
-#include <smoke.h>
 #include <iostream>
 
+#include "smoke.h"
 #include "marshall.h"
 #include "smokeutils.h"
 
-class QuickMarshall : public Marshall {
+class BASE_SMOKE_EXPORT QuickMarshall : public Marshall {
 private:
     SmokeType _type;
     Smoke::StackItem _input;
@@ -40,8 +40,8 @@ public:
 
     inline SmokeType type() { return _type; }
     inline Marshall::Action action() { return _action; }
-    inline Smoke::StackItem &item() { return _action == FromCrack ? _output : _input; }
-    inline Smoke::StackItem &var() { return _action == FromCrack ? _input : _output; }
+    inline Smoke::StackItem &item() { return _action == FromBinding ? _output : _input; }
+    inline Smoke::StackItem &var() { return _action == FromBinding ? _input : _output; }
     inline Smoke *smoke() { return _type.smoke(); }
     inline bool smokeDeletesStackObjects() { return _smokeDeletesStackObjects; }
 

@@ -38,7 +38,7 @@ inline void *pointermap_get_smokeobject_helper(X *obj) {
 }
 
 template <class MappedType>
-class PointerMap
+class BASE_SMOKE_EXPORT PointerMap
 {
 public:
     static PointerMap *self() {
