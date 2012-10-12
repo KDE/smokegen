@@ -24,6 +24,11 @@ set (SMOKE_HEADERS marshall.h
 
 add_library(smokebase SHARED ${SMOKEBASE_SRC})
 target_link_libraries(smokebase)
+if (WIN32)
+    target_link_libraries(smokebase kernel32)
+else (WIN32)
+    target_link_libraries(smokebase dl)
+endif (WIN32)
 set_target_properties(smokebase PROPERTIES 
                                 VERSION ${SMOKE_VERSION}
                                 SOVERSION ${SMOKE_VERSION_MAJOR})
