@@ -21,6 +21,7 @@
 
 #include "smoke.h"
 
+#include <map>
 #include <string>
 #include <vector>
 
@@ -29,6 +30,8 @@ class Smoke;
 class BASE_SMOKE_EXPORT SmokeManager
 {
 public:
+    typedef std::map<std::string, Smoke*> StringSmokeMap;
+
     enum LoadOptions {
         DoNotLoad = 0,
         LoadIfRequired = 1,
@@ -39,6 +42,8 @@ public:
     void manage(Smoke *smoke);
     Smoke *load(const std::string& moduleName);
     Smoke *get(const std::string& moduleName, LoadOptions options = DoNotLoad);
+
+    const StringSmokeMap& loadedModules() const;
 
     /// find class id for 'className'
     Smoke::ModuleIndex findClass(const char* className);

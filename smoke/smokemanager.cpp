@@ -33,8 +33,6 @@
 
 static const int SMOKE_VERSION = 3;
 
-typedef std::map<std::string, Smoke*> StringSmokeMap;
-
 #ifndef _WIN32
 typedef std::vector<void*> HandleList;
 #else
@@ -99,6 +97,11 @@ Smoke* SmokeManager::get(const std::string& moduleName, SmokeManager::LoadOption
     }
 
     return smoke;
+}
+
+const SmokeManager::StringSmokeMap& SmokeManager::loadedModules() const
+{
+    return d->moduleNameMap;
 }
 
 Smoke* SmokeManager::load(const std::string& moduleName)

@@ -21,35 +21,18 @@
 #include <QtCore>
 #include <QtDebug>
 
-#include <smoke.h>
+#include <smoke/smoke.h>
+#include <smoke/smokemanager.h>
 
 static QTextStream qOut(stdout);
 
-typedef Smoke *(*InitSmokeFn)();
 typedef QPair<Smoke::ModuleIndex,int> ClassEntry;
-
-static QList<Smoke*> smokeModules;
 
 static bool showClassNamesOnly;
 static bool showParents;
 static bool matchPattern;
 static bool caseInsensitive;
 static QRegExp targetPattern;
-
-static Smoke* 
-loadSmokeModule(QString moduleName) {
-    QFileInfo file(QString("libsmoke") + moduleName);
-    QLibrary lib(file.filePath());
-
-    QString init_name = "init_" + moduleName + "_Smoke";
-    InitSmokeFn init = (InitSmokeFn) lib.resolve(init_name.toLatin1());
-
-    if (!init)
-        qFatal("Couldn't resolve %s: %s", qPrintable(init_name), qPrintable(lib.errorString()));
-
-    Smoke *smoke = (*init)();
-    return smoke;
-}
 
 static QString
 methodToString(Smoke::ModuleIndex methodId)
@@ -126,8 +109,8 @@ getAllParents(const Smoke::ModuleIndex& classId, int indent)
             *parent != 0; 
             parent++ ) 
     {
-        Smoke::ModuleIndex parentId = Smoke::findClass(smoke->classes[*parent].className);
-        Q_ASSERT(parentId != Smoke::NullModuleIndex);
+        Smoke::ModuleIndex parentId = SmokeManager::self()->findClass(smoke->classes[*parent].className);
+        Q_ASSERT(parentId);
         result << getAllParents(parentId, indent + 1);
     }
     
@@ -141,10 +124,10 @@ showClass(const Smoke::ModuleIndex& classId, int indent)
     if (showClassNamesOnly) {
         QString className = QString::fromLatin1(classId.smoke->classes[classId.index].className);    
         if (!matchPattern || targetPattern.indexIn(className) != -1) {
-			while (indent > 0) {
-				qOut << "  ";
-				indent--;
-			}
+            while (indent > 0) {
+                qOut << "  ";
+                indent--;
+            }
             qOut << className << "\n";
         }
         
@@ -232,7 +215,7 @@ int main(int argc, char** argv)
         } else if (arguments[i] == QLatin1String("-r") || arguments[i] == QLatin1String("--require")) {
             i++;
             if (i < arguments.length()) {
-                smokeModules << loadSmokeModule(arguments[i]);
+                SmokeManager::self()->load(arguments[i].toStdString());
             }
             i++;
         } else if (arguments[i] == QLatin1String("-c") || arguments[i] == QLatin1String("--classes")) {
@@ -259,15 +242,15 @@ int main(int argc, char** argv)
     if (caseInsensitive) {
         targetPattern.setCaseSensitivity(Qt::CaseInsensitive);
     }
-    
-    smokeModules << loadSmokeModule("qtcore");
-    
+
     if (i >= arguments.length()) {
         if (targetPattern.isEmpty()) {
             PRINT_USAGE();
             return 0;
         } else {
-            foreach (Smoke * smoke, smokeModules) {
+            typedef std::pair<std::string, Smoke*> StringSmokePair;
+            foreach (const StringSmokePair& pair, SmokeManager::self()->loadedModules()) {
+                Smoke *smoke = pair.second;
                 for (int i = 1; i <= smoke->numClasses; i++) {
                     if (!(smoke->classes[i].flags & Smoke::cf_undefined)) {
                         showClass(Smoke::ModuleIndex(smoke, i), 0);
@@ -282,7 +265,7 @@ int main(int argc, char** argv)
     while (i < arguments.length()) {
         QString className = arguments[i];
 
-        Smoke::ModuleIndex classId = Smoke::findClass(className.toLatin1());
+        Smoke::ModuleIndex classId = SmokeManager::self()->findClass(className.toLatin1());
         if (classId == Smoke::NullModuleIndex) {
             qFatal("Error: class '%s' not found", className.toLatin1().constData());
         }

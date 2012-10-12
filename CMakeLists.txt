@@ -53,5 +53,5 @@ install( FILES smokegen_string.h DESTINATION ${CMAKE_INSTALL_PREFIX}/share/smoke
 add_subdirectory(cmake)
 add_subdirectory(generators)
 add_subdirectory(smoke)
-# add_subdirectory(smokeapi)
+add_subdirectory(smokeapi)
 # add_subdirectory(deptool)
