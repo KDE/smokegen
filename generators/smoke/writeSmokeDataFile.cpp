@@ -191,7 +191,8 @@ void SmokeDataFile::write()
     QTextStream outArgNames(&argNames);
     foreach (const QFileInfo& file, Options::headerList)
         out << "#include <" << file.fileName() << ">\n";
-    out << "\n#include <smoke.h>\n";
+    out << "\n#include <smoke/smoke.h>\n";
+    out << "\n#include <smoke/smokemanager.h>\n";
     out << "#include <" << Options::module << "_smoke.h>\n\n";
     
     QString smokeNamespaceName = "__smoke" + Options::module;
@@ -749,9 +750,9 @@ void SmokeDataFile::write()
     out << "        " << smokeNamespaceName << "::argumentList,\n";
     out << "        " << smokeNamespaceName << "::ambiguousMethodList,\n";
     out << "        " << smokeNamespaceName << "::cast );\n";
+    out << "    SmokeUtils::SmokeManager::self()->manage(" << Options::module <<  "_Smoke);\n";
     out << "    return " << Options::module << "_Smoke;\n";
     out << "}\n\n";
-    out << "void delete_" << Options::module << "_Smoke() { delete " << Options::module << "_Smoke; }\n\n";
     out << "}\n";
 
     smokedata.close();

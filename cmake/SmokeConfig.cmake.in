@@ -6,7 +6,7 @@
 #
 # Defines:
 #
-# SMOKE_INCLUDE_DIR                 Directory in which smoke.h is located
+# SMOKE_INCLUDE_DIR                 Directory in which smoke/smoke.h is located
 # SMOKE_CMAKE_MODULE_DIR            Directory with additional cmake files used by kdebindings
 # SMOKE_GEN_BIN                     The path of the smokegen executable
 # SMOKE_GEN_SHARED                  Directory in which commonly used smokegen files reside

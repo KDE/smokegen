@@ -158,6 +158,7 @@ Smoke* SmokeManager::load(const std::string& moduleName)
 
     Smoke *smoke = initFn();
 
+    // legacy support, this is normally called by init_foo_Smoke();
     manage(smoke);
 
     return smoke;

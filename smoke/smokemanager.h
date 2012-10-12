@@ -41,6 +41,8 @@ public:
 
     static SmokeManager *self();
 
+    // Makes SmokeManager manage 'smoke'. This is automatically called by
+    // init_foo_Smoke(), so you normally don't need to call it again.
     void manage(Smoke *smoke);
     Smoke *load(const std::string& moduleName);
     Smoke *get(const std::string& moduleName, LoadOptions options = DoNotLoad);
