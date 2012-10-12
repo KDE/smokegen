@@ -24,6 +24,8 @@
 #include <smoke/smoke.h>
 #include <smoke/smokemanager.h>
 
+using namespace ::SmokeUtils;
+
 static QTextStream qOut(stdout);
 
 typedef QPair<Smoke::ModuleIndex,int> ClassEntry;

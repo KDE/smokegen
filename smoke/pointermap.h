@@ -25,6 +25,8 @@
 
 #include "smokemanager.h"
 
+namespace SmokeUtils {
+
 // TODO: see if we can somehow improve/move these helpers without
 //       resorting to subclassing and virtual methods
 template <class X>
@@ -131,5 +133,7 @@ void PointerMap<MappedType>::unmapPointer(MappedType * instance, Smoke::ModuleIn
         }
     }
 }
+
+} // namespace SmokeUtils
 
 #endif // POINTERMAP_H

@@ -26,6 +26,8 @@
 #include "marshall.h"
 #include "smokeutils.h"
 
+namespace SmokeUtils {
+
 class BASE_SMOKE_EXPORT QuickMarshall : public Marshall {
 private:
     SmokeType _type;
@@ -62,5 +64,7 @@ public:
 
     inline void next() {}
 };
+
+} // namespace SmokeUtils
 
 #endif // QUICKMARSHALL_H

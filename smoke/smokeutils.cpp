@@ -22,32 +22,7 @@
 #include "smokeutils.h"
 #include "smokemanager.h"
 
-void copyStackItem(Smoke::StackItem& dest, const Smoke::StackItem& src, short unsigned int typeId)
-{
-#define CASE(type) case Smoke::t_##type: dest.s_##type = src.s_##type; break;
-
-    switch (typeId) {
-        CASE(bool);
-        CASE(char);
-        CASE(uchar);
-        CASE(short);
-        CASE(ushort);
-        CASE(int);
-        CASE(uint);
-        CASE(long);
-        CASE(ulong);
-        CASE(longlong);
-        CASE(ulonglong);
-        CASE(float);
-        CASE(double);
-        CASE(longdouble);
-        CASE(enum);
-
-        default: dest.s_voidp = src.s_voidp;
-    }
-
-#undef CASE
-}
+namespace SmokeUtils {
 
 bool SmokeType::isUnsigned() const {
     if (!typeId()) return false;
@@ -205,3 +180,5 @@ std::string SmokeClass::unqualifiedName() const
 
     return name;
 }
+
+} // namespace SmokeUtils

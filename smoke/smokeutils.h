@@ -42,6 +42,8 @@
 
 #include "smokemanager.h"
 
+namespace SmokeUtils {
+
 template <typename CharType, std::size_t N>
 #if __cplusplus >= 201103L
 constexpr
@@ -53,8 +55,24 @@ std::size_t static_strlen(const CharType (&) [N]) {
     return N - 1;
 }
 
-BASE_SMOKE_EXPORT
-void copyStackItem(Smoke::StackItem &dest, const Smoke::StackItem& src, unsigned short typeId);
+inline
+void copyStackItem(Smoke::StackItem &dest, const Smoke::StackItem& src, unsigned short typeId) {
+#define SMOKE_TYPEID_CASE(type) case Smoke::t_##type: dest.s_##type = src.s_##type; break;
+    switch (typeId) {
+        SMOKE_TYPEID_CASE(bool);
+        SMOKE_TYPEID_CASE(char); SMOKE_TYPEID_CASE(uchar);
+        SMOKE_TYPEID_CASE(short); SMOKE_TYPEID_CASE(ushort);
+        SMOKE_TYPEID_CASE(int); SMOKE_TYPEID_CASE(uint);
+        SMOKE_TYPEID_CASE(long); SMOKE_TYPEID_CASE(ulong);
+        SMOKE_TYPEID_CASE(longlong); SMOKE_TYPEID_CASE(ulonglong);
+        SMOKE_TYPEID_CASE(float); SMOKE_TYPEID_CASE(double);
+        SMOKE_TYPEID_CASE(longdouble);
+        SMOKE_TYPEID_CASE(enum);
+
+        default: dest.s_voidp = src.s_voidp;
+    }
+#undef SMOKE_TYPEID_CASE
+}
 
 class BASE_SMOKE_EXPORT SmokeType {
 protected:
@@ -343,7 +361,9 @@ public:
     }
 };
 
-inline std::ostream& operator<<(std::ostream& stream, const SmokeMethod& method) {
+} // namespace SmokeUtils
+
+inline std::ostream& operator<<(std::ostream& stream, const SmokeUtils::SmokeMethod& method) {
     method.prettyPrint(stream);
     return stream;
 }
@@ -382,7 +402,7 @@ enum MocArgumentType {
 
 struct MocArgument {
     // smoke object and associated typeid
-    SmokeType st;
+    SmokeUtils::SmokeType st;
     MocArgumentType argType;
 };
 

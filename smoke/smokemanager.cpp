@@ -33,6 +33,8 @@
 
 static const int SMOKE_VERSION = 3;
 
+namespace SmokeUtils {
+
 #ifndef _WIN32
 typedef std::vector<void*> HandleList;
 #else
@@ -360,3 +362,4 @@ bool SmokeManager::isDerivedFrom(const Smoke::ModuleIndex& classId, const Smoke:
     return false;
 }
 
+} // namespace SmokeUtils

@@ -27,6 +27,8 @@
 
 class Smoke;
 
+namespace SmokeUtils {
+
 class BASE_SMOKE_EXPORT SmokeManager
 {
 public:
@@ -104,5 +106,7 @@ protected:
     struct Data;
     Data *d;
 };
+
+} // namespace SmokeUtils
 
 #endif // SMOKEMANAGER_H

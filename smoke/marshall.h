@@ -24,6 +24,8 @@
 
 #include "smoke.h"
 
+namespace SmokeUtils {
+
 class SmokeType;
 
 class BASE_SMOKE_EXPORT Marshall {
@@ -75,5 +77,7 @@ public:
 
     virtual ~Marshall() {}
 };
+
+} // namespace SmokeUtils
 
 #endif
