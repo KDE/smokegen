@@ -452,9 +452,13 @@ void SmokeDataFile::write()
             if (meth.parameters().size() > 0) {
                 outArgNames << ";";
                 for (int i = 0; i < meth.parameters().size(); i++) {
-                    QString paramName = meth.parameters()[i].name();
+                    Parameter parameter = meth.parameters()[i];
+                    QString paramName = parameter.name();
                     if (paramName == "") {
                         paramName = "arg" + QString::number(i + 1);
+                    }
+                    if (!parameter.defaultValue().isEmpty()) {
+                        paramName += " = " + parameter.defaultValue();
                     }
                     outArgNames << paramName;
                     if (i < meth.parameters().size() - 1) {
