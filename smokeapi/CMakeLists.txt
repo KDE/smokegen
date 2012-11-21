@@ -7,7 +7,9 @@ add_executable(smokeapi main.cpp)
 
 if (WIN32)
 	# Realign the stack, for compatibility with an older ABI.
-	set_target_properties (smokeapi PROPERTIES COMPILE_FLAGS -mstackrealign)
+	if(CMAKE_COMPILER_IS_GNUCXX)
+		set_target_properties(smokeapi PROPERTIES COMPILE_FLAGS -mstackrealign)
+	endif()
 endif (WIN32)
 
 target_link_libraries(smokeapi smokebase ${QT_QTCORE_LIBRARY})

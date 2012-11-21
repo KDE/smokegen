@@ -46,8 +46,10 @@ install(TARGETS smokegen LIBRARY DESTINATION ${LIB_INSTALL_DIR}
     ARCHIVE DESTINATION ${LIB_INSTALL_DIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 if (WIN32)
-	# Realign the stack, for compatibility with an older ABI.
-	set_target_properties(smokegen PROPERTIES COMPILE_FLAGS -mstackrealign)
+	# Realign the stack, for compatibility with an older ABI
+	if(CMAKE_COMPILER_IS_GNUCXX)
+		set_target_properties(smokegen PROPERTIES COMPILE_FLAGS -mstackrealign)
+	endif()
 
     # Get rid of the "lib" prefix on archives/DLLs in Windows.
     set_target_properties(smokegen PROPERTIES PREFIX "" IMPORT_PREFIX "")
