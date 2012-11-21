@@ -8,5 +8,7 @@ target_link_libraries(smokedeptool smokebase ${QT_QTCORE_LIBRARY})
 
 if (WIN32)
 	# Realign the stack, for compatibility with an older ABI.
-	set_target_properties (smokedeptool PROPERTIES COMPILE_FLAGS -mstackrealign)
+	if(CMAKE_COMPILER_IS_GNUCXX)
+		set_target_properties(smokedeptool PROPERTIES COMPILE_FLAGS -mstackrealign)
+	endif()
 endif (WIN32)
