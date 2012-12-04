@@ -397,6 +397,16 @@ void SmokeDataFile::write()
         out << "    { \"" << it.key() << "\", " << classIdx << ", " << flags << " },\t//" << i++ << "\n";
     }
     out << "};\n\n";
+
+    QFile typeDefsFile(Options::outputDir.filePath(QString("%1.typedefs.txt").arg(Options::module)));
+    typeDefsFile.open(QFile::ReadWrite | QFile::Truncate);
+    QTextStream outTypeDefs(&typeDefsFile);
+
+    foreach (Typedef typeDef, typedefs.values()) {
+        outTypeDefs << typeDef.toString() << ";" << typeDef.resolve().toString() << "\n";
+    }
+    outTypeDefs.flush();
+    typeDefsFile.close();
     
     out << "static Smoke::Index argumentList[] = {\n";
     out << "    0,\t//0  (void)\n";
