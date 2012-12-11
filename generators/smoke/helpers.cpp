@@ -17,14 +17,19 @@
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
+#include <QFileInfo>
 #include <QHash>
 #include <QList>
+#include <QLibrary>
 #include <QStack>
 
 #include <type.h>
+#include <smoke.h>
 
 #include "globals.h"
 #include "../../options.h"
+
+typedef void (*InitSmokeFn)();
 
 QHash<QString, QString> Util::typeMap;
 QHash<const Method*, const Function*> Util::globalFunctionMap;
@@ -92,13 +97,79 @@ bool operator==(const EnumMember& lhs, const EnumMember& rhs)
     return (lhs.name() == rhs.name() && lhs.declaringType() == rhs.declaringType() && lhs.type() == rhs.type());
 }
 
+static Smoke* loadSmokeModule(QString moduleName) {
+#if defined(Q_OS_WIN32)
+    QFileInfo file(QString("smoke") + moduleName);
+#else
+    QFileInfo file(QString("libsmoke") + moduleName);
+#endif
+    QLibrary lib(file.filePath());
+
+    QString init_name = "init_" + moduleName + "_Smoke";
+    InitSmokeFn init = (InitSmokeFn) lib.resolve(init_name.toLatin1());
+
+    if (!init)
+        qFatal("Couldn't resolve %s: %s", qPrintable(init_name), qPrintable(lib.errorString()));
+
+    (*init)();
+
+    QString smoke_name = moduleName + "_Smoke";
+    Smoke** smoke = (Smoke**) lib.resolve(smoke_name.toLatin1());
+    if (!smoke)
+        qFatal("Couldn't resolve %s: %s", qPrintable(smoke_name), qPrintable(lib.errorString()));
+
+    return *smoke;
+}
+
+static bool compareArgs(const Method& method, const Smoke::Method& smokeMethod, Smoke* smoke) {
+    if (method.parameters().count() != smokeMethod.numArgs) {
+        return false;
+    }
+    for (int i = 0; i < method.parameters().count(); i++) {
+        Parameter p = method.parameters()[i];
+        if (p.type()->toString() != smoke->types[smoke->argumentList[smokeMethod.args + i]].name) {
+            return false;
+        }
+    }
+    return true;
+}
+
+static bool isRepeating(const QList<Smoke*>& parentModules, const char* className, const Method& method) {
+    const char* mungedName = Util::mungedName(method).toLatin1();
+    foreach (Smoke* smoke, parentModules) {
+        Smoke::ModuleIndex methodIndex = smoke->findMethod(className, mungedName);
+        if (methodIndex.index) {
+            Smoke::Index index = smoke->methodMaps[methodIndex.index].method;
+            if (index >= 0) {
+                if (compareArgs(method, smoke->methods[index], smoke)) {
+                    return true;
+                }
+                continue;
+            }
+            index = -index;
+            Smoke::Index i;
+            while ((i = smoke->ambiguousMethodList[index++]) != 0) {
+                if (compareArgs(method, smoke->methods[i], smoke)) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
 void Util::preparse(QSet<Type*> *usedTypes, QSet<const Class*> *superClasses, const QList<QString>& keys)
 {
     Class& globalSpace = classes["QGlobalSpace"];
     globalSpace.setName("QGlobalSpace");
     globalSpace.setKind(Class::Kind_Class);
     globalSpace.setIsNameSpace(true);
-    
+
+    QList<Smoke*> parentModules;
+    foreach (QString module, Options::parentModules) {
+        parentModules << loadSmokeModule(module);
+    }
+
     // add all functions as methods to a class called 'QGlobalSpace' or a class that represents a namespace
     for (QHash<QString, Function>::const_iterator it = functions.constBegin(); it != functions.constEnd(); it++) {
         const Function& fn = it.value();
@@ -127,6 +198,9 @@ void Util::preparse(QSet<Type*> *usedTypes, QSet<const Class*> *superClasses, co
         
         Method meth = Method(parent, fn.name(), fn.type(), Access_public, fn.parameters());
         meth.setFlag(Method::Static);
+        if (isRepeating(parentModules, parent->name().toLatin1(), meth)) {
+            continue;
+        }
         parent->appendMethod(meth);
         // map this method to the function, so we can later retrieve the header it was defined in
         globalFunctionMap[&parent->methods().last()] = &fn;
@@ -140,6 +214,10 @@ void Util::preparse(QSet<Type*> *usedTypes, QSet<const Class*> *superClasses, co
         (*usedTypes) << meth.type();
         foreach (const Parameter& param, meth.parameters())
             (*usedTypes) << param.type();
+    }
+
+    foreach (Smoke* smoke, parentModules) {
+        delete smoke;
     }
     
     // all enums that don't have a parent are put under QGlobalSpace, too
