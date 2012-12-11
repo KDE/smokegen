@@ -47,6 +47,7 @@ struct Options
     static int parts;
     static QString module;
     static QStringList parentModules;
+    static QDir libDir;
     static QStringList scalarTypes;
     static QStringList voidpTypes;
     static QList<QFileInfo> headerList;

@@ -56,7 +56,8 @@ static void showUsage()
     "    -p <parts> (default: 20)" << std::endl <<
     "    -pm <comma-seperated list of parent modules>" << std::endl <<
     "    -st <comma-seperated list of types that should be munged to scalars>" << std::endl <<
-    "    -vt <comma-seperated list of types that should be mapped to Smoke::t_voidp>" << std::endl;
+    "    -vt <comma-seperated list of types that should be mapped to Smoke::t_voidp>" << std::endl <<
+    "    -L <directory containing parent libs> (parent smoke libs can be located in a <modulename> subdirectory>" << std::endl;
 }
 
 extern "C" Q_DECL_EXPORT
@@ -92,6 +93,8 @@ int generate()
             smokeConfig = QFileInfo(args[++i]);
         } else if (args[i] == "-o") {
             Options::outputDir = QDir(args[++i]);
+        } else if (args[i] == "-L") {
+            Options::libDir = QDir(args[++i]);
         } else if (args[i] == "-h" || args[i] == "--help") {
             showUsage();
             return EXIT_SUCCESS;
