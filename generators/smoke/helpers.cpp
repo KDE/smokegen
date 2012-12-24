@@ -99,7 +99,7 @@ bool operator==(const EnumMember& lhs, const EnumMember& rhs)
 }
 
 static Smoke* loadSmokeModule(QString moduleName) {
-    QFileInfo file;
+    QLibrary lib;
 #if defined(Q_OS_WIN32)
     QString libName = QLatin1String("smoke") + moduleName;
 #else
@@ -107,21 +107,19 @@ static Smoke* loadSmokeModule(QString moduleName) {
 #endif
 
     // first, try <libdir>/moduleName/libsmokemoduleName
-    if (Options::libDir.exists()) {
-        file.setFile(Options::libDir, moduleName + '/' + libName);
+    lib.setFileName(Options::libDir.filePath(moduleName + '/' + libName));
 
-        // then <libdir>/libsmokemoduleName
-        if (!file.exists()) {
-            file.setFile(Options::libDir, libName);
-        }
+    // then <libdir>/libsmokemoduleName
+    if (!lib.load()) {
+        lib.setFileName(Options::libDir.filePath(libName));
     }
 
     // use the plain library name if everything else fails
-    if (!file.exists()) {
-        file.setFile(libName);
+    if (!lib.load()) {
+        lib.setFileName(libName);
     }
 
-    QLibrary lib(file.filePath());
+    lib.load();
 
     QString init_name = "init_" + moduleName + "_Smoke";
     InitSmokeFn init = (InitSmokeFn) lib.resolve(init_name.toLatin1());
@@ -144,8 +142,8 @@ static bool compareArgs(const Method& method, const Smoke::Method& smokeMethod, 
         return false;
     }
     for (int i = 0; i < method.parameters().count(); i++) {
-        Parameter p = method.parameters()[i];
-        if (p.type()->toString() != smoke->types[smoke->argumentList[smokeMethod.args + i]].name) {
+        const Parameter& p = method.parameters()[i];
+        if (p.type()->toString() != QLatin1String(smoke->types[smoke->argumentList[smokeMethod.args + i]].name)) {
             return false;
         }
     }
@@ -153,9 +151,9 @@ static bool compareArgs(const Method& method, const Smoke::Method& smokeMethod, 
 }
 
 static bool isRepeating(const QList<Smoke*>& parentModules, const char* className, const Method& method) {
-    const char* mungedName = Util::mungedName(method).toLatin1();
+    QString mungedName = Util::mungedName(method).toLatin1();
     foreach (Smoke* smoke, parentModules) {
-        Smoke::ModuleIndex methodIndex = smoke->findMethod(className, mungedName);
+        Smoke::ModuleIndex methodIndex = smoke->findMethod(className, mungedName.toLatin1().constData());
         if (methodIndex.index) {
             Smoke::Index index = smoke->methodMaps[methodIndex.index].method;
             if (index >= 0) {
@@ -172,6 +170,21 @@ static bool isRepeating(const QList<Smoke*>& parentModules, const char* classNam
                 }
             }
         }
+    }
+    return false;
+}
+
+// assuming that enums don't change between modules, checking for the first member only is sufficient
+static bool isRepeating(const QList<Smoke*>& parentModules, const char* className, const Enum& eNum) {
+    if (eNum.members().isEmpty())
+        return false;
+
+    const EnumMember& firstMember = eNum.members().first();
+
+    foreach(Smoke *smoke, parentModules) {
+        Smoke::ModuleIndex methodIndex = smoke->findMethod(className, firstMember.name().toLatin1().constData());
+        if (methodIndex.index)
+            return true;
     }
     return false;
 }
@@ -234,15 +247,12 @@ void Util::preparse(QSet<Type*> *usedTypes, QSet<const Class*> *superClasses, co
             (*usedTypes) << param.type();
     }
 
-    foreach (Smoke* smoke, parentModules) {
-        delete smoke;
-    }
-    
     // all enums that don't have a parent are put under QGlobalSpace, too
     for (QHash<QString, Enum>::iterator it = enums.begin(); it != enums.end(); it++) {
         Enum& e = it.value();
         if (!e.parent()) {
             Class* parent = &globalSpace;
+            // if the enum is defined in a namespace, make that the enum's parent
             if (!e.nameSpace().isEmpty()) {
                 parent = &classes[e.nameSpace()];
                 if (parent->name().isEmpty()) {
@@ -250,6 +260,9 @@ void Util::preparse(QSet<Type*> *usedTypes, QSet<const Class*> *superClasses, co
                     parent->setKind(Class::Kind_Class);
                     parent->setIsNameSpace(true);
                 }
+            // else, see if it is already defined in a parent module
+            } else if (isRepeating(parentModules, parent->name().toLatin1(), e)) {
+                continue;
             }
 
             Type *t = 0;
@@ -265,7 +278,11 @@ void Util::preparse(QSet<Type*> *usedTypes, QSet<const Class*> *superClasses, co
             parent->appendChild(&e);
         }
     }
-    
+
+    foreach (Smoke* smoke, parentModules) {
+        delete smoke;
+    }
+
     foreach (const QString& key, keys) {
         Class& klass = classes[key];
         foreach (const Class::BaseClassSpecifier base, klass.baseClasses()) {
