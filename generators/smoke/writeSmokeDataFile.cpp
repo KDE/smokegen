@@ -296,7 +296,9 @@ void SmokeDataFile::write()
         inheritanceIndex[&klass] = idx;
     }
     out << "};\n\n";
-    
+
+    Class& globalSpace = classes["QGlobalSpace"];
+
     // xenum functions
     out << "// These are the xenum functions for manipulating enum pointers\n";
     QSet<QString> enumClassesHandled;
@@ -318,8 +320,13 @@ void SmokeDataFile::write()
             smokeClassName.replace("::", "__");
             out << "void xenum_" << smokeClassName << "(Smoke::EnumOperation, Smoke::Index, void*&, long&);\n";
         } else if (smokeClassName.isEmpty() && it.value().access() != Access_private) {
-            if (enumClassesHandled.contains("QGlobalSpace"))
+            // see if we have actually put the enum into QGlobalSpace (might not be the case if it's already handled
+            // in a parent module)
+            if (   enumClassesHandled.contains("QGlobalSpace")
+                || !globalSpace.children().contains(const_cast<Enum*>(&it.value())))
+            {
                 continue;
+            }
             out << "void xenum_QGlobalSpace(Smoke::EnumOperation, Smoke::Index, void*&, long&);\n";
             enumClassesHandled << "QGlobalSpace";
         }
