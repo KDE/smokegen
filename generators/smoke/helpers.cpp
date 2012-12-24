@@ -124,15 +124,19 @@ static Smoke* loadSmokeModule(QString moduleName) {
     QString init_name = "init_" + moduleName + "_Smoke";
     InitSmokeFn init = (InitSmokeFn) lib.resolve(init_name.toLatin1());
 
-    if (!init)
-        qFatal("Couldn't resolve %s: %s", qPrintable(init_name), qPrintable(lib.errorString()));
+    if (!init) {
+        qWarning("Couldn't resolve %s: %s", qPrintable(init_name), qPrintable(lib.errorString()));
+        return 0;
+    }
 
     (*init)();
 
     QString smoke_name = moduleName + "_Smoke";
     Smoke** smoke = (Smoke**) lib.resolve(smoke_name.toLatin1());
-    if (!smoke)
-        qFatal("Couldn't resolve %s: %s", qPrintable(smoke_name), qPrintable(lib.errorString()));
+    if (!smoke) {
+        qWarning("Couldn't resolve %s: %s", qPrintable(smoke_name), qPrintable(lib.errorString()));
+        return 0;
+    }
 
     return *smoke;
 }
@@ -198,7 +202,10 @@ void Util::preparse(QSet<Type*> *usedTypes, QSet<const Class*> *superClasses, co
 
     QList<Smoke*> parentModules;
     foreach (QString module, Options::parentModules) {
-        parentModules << loadSmokeModule(module);
+        Smoke *smoke = loadSmokeModule(module);
+        if (smoke) {
+            parentModules << smoke;
+        }
     }
 
     // add all functions as methods to a class called 'QGlobalSpace' or a class that represents a namespace
