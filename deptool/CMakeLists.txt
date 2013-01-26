@@ -1,9 +1,10 @@
 project(smokedeptool)
 
-find_package(Qt4 REQUIRED)
+find_package(Qt5Core REQUIRED)
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/..  ${QT_INCLUDES} )
 
 add_executable(smokedeptool main.cpp)
+qt5_use_modules(smokedeptool Core)
 target_link_libraries(smokedeptool smokebase ${QT_QTCORE_LIBRARY})
 
 if (WIN32)

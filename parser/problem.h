@@ -3,6 +3,7 @@
 
 #include "cppparser_export.h"
 #include "simplecursor.h"
+#include <QString>
 
 struct CPPPARSER_EXPORT Problem {
     enum Source {

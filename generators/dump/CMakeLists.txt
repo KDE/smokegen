@@ -4,6 +4,7 @@ set(generator_dump_SRC
     generator_dump.cpp)
 
 add_library(generator_dump MODULE ${generator_dump_SRC})
+qt5_use_modules(generator_dump Core)
 target_link_libraries(generator_dump ${QT_QTCORE_LIBRARY} smokegen)
 set_target_properties(generator_dump PROPERTIES PREFIX "")
 
