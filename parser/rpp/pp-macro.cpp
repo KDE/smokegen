@@ -22,7 +22,7 @@
 #include "pp-macro.h"
 #include "chartools.h"
 // #include "macrorepository.h"
-#include "../kdevvarlengtharray.h"
+#include "qvarlengtharray.h"
 
 using namespace rpp;
 

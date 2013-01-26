@@ -19,7 +19,7 @@
 */
 
 #include "chartools.h"
-#include "../kdevvarlengtharray.h"
+#include "qvarlengtharray.h"
 #include "../indexedstring.h"
 
 #include <QString>
@@ -102,7 +102,7 @@ PreprocessedContents tokenizeFromByteArray(const QByteArray& array) {
   const char* dataEnd = data + array.size();
   //unsigned int* target = to.data();
   
-  KDevVarLengthArray<char, 100> identifier;
+  QVarLengthArray<char, 100> identifier;
   
   IndexedString::RunningHash hash;
 
