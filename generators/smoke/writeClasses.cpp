@@ -54,10 +54,14 @@ void SmokeClassFiles::write(const QList<QString>& keys)
         
         // write the class code to a QString so we can later prepend the #includes
         if (i == Options::parts - 1) count2 = -1;
+        bool hasMetaType = false;
         foreach (const QString& str, keys.mid(count * i, count2)) {
             const Class* klass = &classes[str];
             includes.insert(klass->fileName());
             writeClass(classOut, klass, str, includes);
+            if (str == "QMetaType") {
+                hasMetaType = true;
+            }
         }
         
         // create the file
@@ -79,6 +83,11 @@ void SmokeClassFiles::write(const QList<QString>& keys)
         }
 
         fileOut << "\n#include <smoke.h>\n#include <" << Options::module << "_smoke.h>\n";
+
+        // HACK: in QMetaType there is an enum member Type::QByteArray which causes a conflict with the QByteArray class
+        if (hasMetaType) {
+            fileOut << "\ntypedef QByteArray ByteArray;\n";
+        }
 
         fileOut << "\nclass __internal_SmokeClass {};\n";
 
@@ -143,6 +152,10 @@ QString SmokeClassFiles::generateMethodBody(const QString& indent, const QString
 
         QString field = Util::stackItemField(param.type());
         QString typeName = param.type()->toString();
+        // HACK: in QMetaType there is an enum member Type::QByteArray which causes a conflict with the QByteArray class
+        if (className == "QMetaType" && typeName.contains("QByteArray")) {
+            typeName.replace("QByteArray", "ByteArray");
+        }
         if (param.type()->isArray()) {
             Type t = *param.type();
             t.setPointerDepth(t.pointerDepth() + 1);
