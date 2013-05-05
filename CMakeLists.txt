@@ -1,7 +1,8 @@
 project(smokegenerator)
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.8.9)
 
-include(${CMAKE_ROOT}/Modules/FindQt5Transitional.cmake)
+find_package(Qt5Core REQUIRED)
+find_package(Qt5Xml REQUIRED)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake )
 set(SMOKE_VERSION_MAJOR 3)
@@ -39,6 +40,7 @@ set (CMAKE_SKIP_RPATH FALSE)
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/config.h.in config.h @ONLY )
 
 add_executable(smokegen ${generator_SRC})
+qt5_use_modules(smokegen Core Xml)
 target_link_libraries(smokegen ${QT_QTCORE_LIBRARY} ${QT_QTXML_LIBRARY} cppparser)
 set_target_properties(smokegen PROPERTIES COMPILE_DEFINITIONS __GENERATOR_BUILDING ENABLE_EXPORTS TRUE)
 
