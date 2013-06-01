@@ -45,13 +45,12 @@ macro (find_smoke_component name)
 
         find_path(SMOKE_${uppercase}_INCLUDE_DIR 
             ${lowercase}_smoke.h 
-            PATH ${SMOKE_INCLUDE_DIR}
-            NO_DEFAULT_PATH)
+            HINTS ${SMOKE_INCLUDE_DIR}
+	    PATH_SUFFIXES smoke)
 
         find_library(SMOKE_${uppercase}_LIBRARY
             smoke${lowercase}
-            PATHS "@SMOKE_LIBRARY_PREFIX@"
-            NO_DEFAULT_PATH)
+	    HINTS "@SMOKE_LIBRARY_PREFIX@")
 
         if (NOT SMOKE_${uppercase}_INCLUDE_DIR OR NOT SMOKE_${uppercase}_LIBRARY)
             if (Smoke_FIND_REQUIRED)
