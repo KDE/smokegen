@@ -159,17 +159,17 @@ static bool isRepeating(const QList<Smoke*>& parentModules, const char* classNam
     foreach (Smoke* smoke, parentModules) {
         Smoke::ModuleIndex methodIndex = smoke->findMethod(className, mungedName.toLatin1().constData());
         if (methodIndex.index) {
-            Smoke::Index index = smoke->methodMaps[methodIndex.index].method;
+            Smoke::Index index = methodIndex.smoke->methodMaps[methodIndex.index].method;
             if (index >= 0) {
-                if (compareArgs(method, smoke->methods[index], smoke)) {
+                if (compareArgs(method, methodIndex.smoke->methods[index], methodIndex.smoke)) {
                     return true;
                 }
                 continue;
             }
             index = -index;
             Smoke::Index i;
-            while ((i = smoke->ambiguousMethodList[index++]) != 0) {
-                if (compareArgs(method, smoke->methods[i], smoke)) {
+            while ((i = methodIndex.smoke->ambiguousMethodList[index++]) != 0) {
+                if (compareArgs(method, methodIndex.smoke->methods[i], methodIndex.smoke)) {
                     return true;
                 }
             }
