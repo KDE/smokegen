@@ -636,7 +636,7 @@ void SmokeDataFile::write()
 
                 int index = 0;
                 QHash<Type*, int>::const_iterator typeIt;
-                if ((typeIt = typeIndex.find(enumType)) == typeIndex.end()) {
+                if ((typeIt = typeIndex.constFind(enumType)) == typeIndex.constEnd()) {
                     // this enum doesn't have an index, so we don't want it here
                     continue;
                 } else {
