@@ -370,9 +370,9 @@ void Parser::reportError(const QString& msg)
       p->file = session->url().str();
       p->position = position;
       for (int i = 0; i < session->size(); ++i)
-          qDebug() << i << session->contents()[i];
+          qDebug() << "A" << i << session->contents()[i];
       for (int i = 0; i < session->size(); ++i)
-          qDebug() << lineFromContents(session->size(), session->contents(), i);
+          qDebug() << "B" << lineFromContents(session->size(), session->contents(), i);
       qDebug() << session->size() << p->position.line;
       p->description = msg + " : " + QString::fromUtf8(lineFromContents(session->size(), session->contents(), p->position.line));
       p->source = Problem::Source_Parser;
