@@ -354,7 +354,7 @@ void Parser::reportPendingErrors()
 
   holdErrors(hold);
 }
-#include <QDebug>
+
 void Parser::reportError(const QString& msg)
 {
   if (!_M_hold_errors && _M_problem_count < _M_max_problem_count)
