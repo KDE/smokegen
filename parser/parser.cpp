@@ -354,7 +354,7 @@ void Parser::reportPendingErrors()
 
   holdErrors(hold);
 }
-
+#include <QDebug>
 void Parser::reportError(const QString& msg)
 {
   if (!_M_hold_errors && _M_problem_count < _M_max_problem_count)
@@ -369,6 +369,11 @@ void Parser::reportError(const QString& msg)
       Problem *p = new Problem;
       p->file = session->url().str();
       p->position = position;
+      for (int i = 0; i < session->size(); ++i)
+          qDebug() << i << session->contents()[i];
+      for (int i = 0; i < session->size(); ++i)
+          qDebug() << lineFromContents(session->size(), session->contents(), i);
+      qDebug() << session->size() << p->position.line;
       p->description = msg + " : " + QString::fromUtf8(lineFromContents(session->size(), session->contents(), p->position.line));
       p->source = Problem::Source_Parser;
       control->reportProblem(p);

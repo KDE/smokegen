@@ -193,8 +193,9 @@ int IndexedString::length() const {
   else
     return strings()->at(m_index).length(); /*globalIndexedStringRepository->itemFromIndex(m_index)->length;*/
 }
-
+#include <QDebug>
 QByteArray IndexedString::byteArray() const {
+qDebug() << m_index << strings()->length();
   if(!m_index)
     return QByteArray();
   else if((m_index & 0xffff0000) == 0xffff0000)
