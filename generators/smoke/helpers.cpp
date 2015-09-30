@@ -223,6 +223,12 @@ void Util::preparse(QSet<Type*> *usedTypes, QSet<const Class*> *superClasses, co
             // we don't want that function...
             continue;
         }
+
+        if (!fn.nameSpace().isEmpty()) {
+            if (!Options::classList.contains(fn.nameSpace())) {
+                continue;
+            }
+        }
         
         Class* parent = &globalSpace;
         if (!fn.nameSpace().isEmpty()) {
