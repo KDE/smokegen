@@ -27,15 +27,8 @@
 
 #include <QtDebug>
 
-#include <control.h>
-#include <parsesession.h>
-#include <parser.h>
-#include <ast.h>
-
 #include <iostream>
 
-#include "generatorpreprocessor.h"
-#include "generatorvisitor.h"
 #include "options.h"
 #include "config.h"
 
@@ -216,25 +209,8 @@ int main(int argc, char **argv)
     foreach (QFileInfo file, ParserOptions::headerList) {
         qDebug() << "parsing" << file.absoluteFilePath();
         // this has already been parsed because it was included by some header
-        if (parsedHeaders.contains(file.absoluteFilePath()))
-            continue;
-        Preprocessor pp(ParserOptions::includeDirs, defines, file);
-        Control c;
-        Parser parser(&c);
-        ParseSession session;
-        session.setContentsAndGenerateLocationTable(pp.preprocess());
-        TranslationUnitAST* ast = parser.parse(&session);
-        // TODO: improve 'header => class' association
-        GeneratorVisitor visitor(&session, file.fileName());
-        visitor.visit(ast);
-        
         if (!logErrors)
             continue;
-        
-        foreach (const Problem* p, c.problems()) {
-            logOut << file.fileName() << ": " << p->file << "(" << p->position.line << ", " << p->position.column << "): "
-                   << p->description << "\n";
-        }
     }
     
     log.close();

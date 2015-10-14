@@ -17,18 +17,11 @@ if (NOT LIB_INSTALL_DIR)
     set (LIB_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX})
 endif (NOT LIB_INSTALL_DIR)
 
-include_directories(${QT_INCLUDES} parser ${CMAKE_BINARY_DIR})
-
-add_subdirectory(parser)
+include_directories(${QT_INCLUDES} ${CMAKE_BINARY_DIR})
 
 set(generator_SRC
     main.cpp
-    generatorenvironment.cpp
-    generatorvisitor.cpp
-    generatorpreprocessor.cpp
     options.cpp
-    type_compiler.cpp
-    name_compiler.cpp
     type.cpp
 )
 
@@ -39,7 +32,7 @@ set (CMAKE_SKIP_RPATH FALSE)
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/config.h.in config.h @ONLY )
 
 add_executable(smokegen ${generator_SRC})
-target_link_libraries(smokegen ${QT_QTCORE_LIBRARY} ${QT_QTXML_LIBRARY} cppparser)
+target_link_libraries(smokegen ${QT_QTCORE_LIBRARY} ${QT_QTXML_LIBRARY})
 set_target_properties(smokegen PROPERTIES COMPILE_DEFINITIONS __GENERATOR_BUILDING ENABLE_EXPORTS TRUE)
 
 install(TARGETS smokegen LIBRARY DESTINATION ${LIB_INSTALL_DIR}
@@ -54,9 +47,8 @@ if (WIN32)
     # Get rid of the "lib" prefix on archives/DLLs in Windows.
     set_target_properties(smokegen PROPERTIES PREFIX "" IMPORT_PREFIX "")
 endif (WIN32)
-install(FILES generatorenvironment.h  generator_export.h  generatorpreprocessor.h  generatorvisitor.h  name_compiler.h  options.h  type_compiler.h  type.h DESTINATION ${CMAKE_INSTALL_PREFIX}/include/smokegen)
-install( FILES  smoke.h DESTINATION ${CMAKE_INSTALL_PREFIX}/include )
-install( FILES smokegen_string.h DESTINATION ${CMAKE_INSTALL_PREFIX}/share/smokegen RENAME string.h )
+install(FILES options.h type.h DESTINATION ${CMAKE_INSTALL_PREFIX}/include/smokegen)
+install(FILES smoke.h DESTINATION ${CMAKE_INSTALL_PREFIX}/include )
 
 add_subdirectory(cmake)
 add_subdirectory(generators)
