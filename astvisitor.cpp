@@ -81,8 +81,13 @@ Class* SmokegenASTVisitor::registerClass(const clang::CXXRecordDecl* clangClass)
 
     QString name = QString::fromStdString(clangClass->getNameAsString());
     QString nspace;
-    if (const auto parent = clang::dyn_cast<clang::NamespaceDecl>(clangClass->getParent())) {
-        nspace = QString::fromStdString(parent->getQualifiedNameAsString());
+    Class* parent = nullptr;
+    if (const auto clangParent = clang::dyn_cast<clang::NamespaceDecl>(clangClass->getParent())) {
+        parent = registerNamespace(clangParent);
+        nspace = QString::fromStdString(clangParent->getQualifiedNameAsString());
+    }
+    else if (const auto clangParent = clang::dyn_cast<clang::CXXRecordDecl>(clangClass->getParent())) {
+        parent = registerClass(clangParent);
     }
     Class::Kind kind;
     switch (clangClass->getTagKind()) {
@@ -101,10 +106,6 @@ Class* SmokegenASTVisitor::registerClass(const clang::CXXRecordDecl* clangClass)
 
     bool isForward = !clangClass->hasDefinition();
 
-    Class* parent = nullptr;
-    if (const auto clangParent = clang::dyn_cast<clang::CXXRecordDecl>(clangClass->getParent())) {
-        parent = registerClass(clangParent);
-    }
     Class localClass(name, nspace, parent, kind, isForward);
     classes[qualifiedName] = localClass;
     Class* klass = &classes[qualifiedName];
