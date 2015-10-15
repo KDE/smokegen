@@ -26,6 +26,7 @@ private:
     Type* registerType(const clang::QualType clangType) const;
 
     Access toAccess(clang::AccessSpecifier clangAccess) const;
+    Parameter toParameter(const clang::ParmVarDecl* param) const;
 
     clang::CompilerInstance &ci;
 };

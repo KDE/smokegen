@@ -70,6 +70,22 @@ Access SmokegenASTVisitor::toAccess(clang::AccessSpecifier clangAccess) const {
     return access;
 }
 
+Parameter SmokegenASTVisitor::toParameter(const clang::ParmVarDecl* param) const {
+    Parameter parameter(
+        QString::fromStdString(param->getNameAsString()),
+        registerType(param->getType())
+    );
+
+    if (const clang::Expr* defaultArgExpr = param->getDefaultArg()) {
+        std::string defaultArgStr;
+        llvm::raw_string_ostream s(defaultArgStr);
+        defaultArgExpr->printPretty(s, nullptr, pp());
+        parameter.setDefaultValue(QString::fromStdString(s.str()));
+    }
+
+    return parameter;
+}
+
 Class* SmokegenASTVisitor::registerClass(const clang::CXXRecordDecl* clangClass) const {
     clangClass = clangClass->hasDefinition() ? clangClass->getDefinition() : clangClass->getCanonicalDecl();
 
@@ -164,19 +180,7 @@ Class* SmokegenASTVisitor::registerClass(const clang::CXXRecordDecl* clangClass)
             }
 
             for (const clang::ParmVarDecl* param : method->parameters()) {
-                Parameter parameter(
-                    QString::fromStdString(param->getNameAsString()),
-                    registerType(param->getType())
-                );
-
-                if (const clang::Expr* defaultArgExpr = param->getDefaultArg()) {
-                    std::string defaultArgStr;
-                    llvm::raw_string_ostream s(defaultArgStr);
-                    defaultArgExpr->printPretty(s, nullptr, pp());
-                    parameter.setDefaultValue(QString::fromStdString(s.str()));
-                }
-
-                newMethod.appendParameter(parameter);
+                newMethod.appendParameter(toParameter(param));
             }
 
             klass->appendMethod(newMethod);
