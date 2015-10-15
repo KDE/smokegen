@@ -44,12 +44,12 @@ bool SmokegenASTVisitor::VisitFunctionDecl(clang::FunctionDecl *D) {
     return true;
 }
 
-clang::QualType SmokegenASTVisitor::getReturnTypeForMethod(const clang::CXXMethodDecl* method) const {
-    if (clang::isa<clang::CXXConstructorDecl>(method)) {
-        return ci.getASTContext().getPointerType(clang::QualType(method->getParent()->getTypeForDecl(), 0));
+clang::QualType SmokegenASTVisitor::getReturnTypeForFunction(const clang::FunctionDecl* function) const {
+    if (const auto ctor = clang::dyn_cast<clang::CXXConstructorDecl>(function)) {
+        return ci.getASTContext().getPointerType(clang::QualType(ctor->getParent()->getTypeForDecl(), 0));
     }
     else {
-        return method->getReturnType();
+        return function->getReturnType();
     }
 }
 
@@ -156,7 +156,7 @@ Class* SmokegenASTVisitor::registerClass(const clang::CXXRecordDecl* clangClass)
             Method newMethod = Method(
                 klass,
                 QString::fromStdString(method->getNameAsString()),
-                registerType(getReturnTypeForMethod(method)),
+                registerType(getReturnTypeForFunction(method)),
                 toAccess(method->getAccess())
             );
             if (const clang::CXXConstructorDecl* ctor = clang::dyn_cast<clang::CXXConstructorDecl>(method)) {
