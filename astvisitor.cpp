@@ -115,7 +115,7 @@ Class* SmokegenASTVisitor::registerClass(const clang::CXXRecordDecl* clangClass)
         klass->setIsTemplate(true);
     }
 
-    if (!isForward) {
+    if (!isForward && !clangClass->getTypeForDecl()->isDependentType()) {
         // Set base classes
         for (const clang::CXXBaseSpecifier& base : clangClass->bases()) {
             const clang::CXXRecordDecl* baseRecordDecl = base.getType()->getAsCXXRecordDecl();
