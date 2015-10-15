@@ -14,6 +14,11 @@ public:
     bool VisitFunctionDecl(clang::FunctionDecl *D);
 
 private:
+
+    Class* registerClass(const clang::CXXRecordDecl* clangClass) const;
+
+    Access toAccess(clang::AccessSpecifier clangAccess) const;
+
     clang::CompilerInstance &ci;
 };
 
