@@ -227,9 +227,9 @@ int main(int argc, char **argv)
         Argv.push_back("-Ilib/clang/3.6.2/include/");
         Argv.push_back("-fsyntax-only");
 
-        clang::FileManager FM({"."});
+        clang::FileManager *FM = new clang::FileManager({"."});
 
-        clang::tooling::ToolInvocation inv(Argv, new SmokegenFrontendAction, &FM);
+        clang::tooling::ToolInvocation inv(Argv, new SmokegenFrontendAction, FM);
         inv.run();
 
         // this has already been parsed because it was included by some header
