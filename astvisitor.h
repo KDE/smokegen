@@ -3,6 +3,9 @@
 
 #include <clang/AST/RecursiveASTVisitor.h>
 #include <clang/Frontend/CompilerInstance.h>
+#include <clang/Sema/Sema.h>
+
+#include "type.h"
 
 class SmokegenASTVisitor : public clang::RecursiveASTVisitor<SmokegenASTVisitor> {
 public:
@@ -14,8 +17,10 @@ public:
     bool VisitFunctionDecl(clang::FunctionDecl *D);
 
 private:
+    clang::PrintingPolicy pp() const { return ci.getSema().getPrintingPolicy(); }
 
     Class* registerClass(const clang::CXXRecordDecl* clangClass) const;
+    Type* registerType(const clang::QualType clangType) const;
 
     Access toAccess(clang::AccessSpecifier clangAccess) const;
 

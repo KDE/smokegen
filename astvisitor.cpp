@@ -1,3 +1,5 @@
+#include <clang/AST/ASTContext.h>
+
 #include "astvisitor.h"
 
 bool SmokegenASTVisitor::VisitCXXRecordDecl(clang::CXXRecordDecl *D) {
@@ -121,3 +123,39 @@ Class* SmokegenASTVisitor::registerClass(const clang::CXXRecordDecl* clangClass)
     return klass;
 }
 
+Type* SmokegenASTVisitor::registerType(clang::QualType clangType) const {
+    clang::QualType orig = clang::QualType(clangType);
+
+    Type type;
+
+    if (clangType->isReferenceType()) {
+        type.setIsRef(true);
+
+        clangType = clangType->getPointeeType();
+    }
+    while (clangType->isPointerType()) {
+        type.setIsConstPointer(type.pointerDepth(), clangType.isConstQualified());
+        type.setPointerDepth(type.pointerDepth() + 1);
+
+        clangType = clangType->getPointeeType();
+    }
+
+    type.setIsConst(clangType.isConstQualified());
+    type.setIsVolatile(clangType.isVolatileQualified());
+
+    type.setName(QString::fromStdString(clangType.getAsString(pp())));
+    type.setIsIntegral(clangType->isBuiltinType());
+
+    if (const clang::CXXRecordDecl* clangClass = clangType->getAsCXXRecordDecl()) {
+        type.setClass(registerClass(clangClass));
+
+        const auto templateSpecializationDecl = clang::dyn_cast<clang::ClassTemplateSpecializationDecl>(clangClass);
+        if (templateSpecializationDecl) {
+            const auto & args = templateSpecializationDecl->getTemplateArgs();
+            for (int i=0; i < args.size(); ++i) {
+                type.appendTemplateArgument(*registerType(args[i].getAsType()));
+            }
+        }
+    }
+    return Type::registerType(type);
+}
