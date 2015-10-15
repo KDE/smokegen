@@ -109,6 +109,12 @@ Class* SmokegenASTVisitor::registerClass(const clang::CXXRecordDecl* clangClass)
     classes[qualifiedName] = localClass;
     Class* klass = &classes[qualifiedName];
 
+    klass->setAccess(toAccess(clangClass->getAccess()));
+
+    if (clangClass->getTypeForDecl()->isDependentType() || clang::isa<clang::ClassTemplateSpecializationDecl>(clangClass)) {
+        klass->setIsTemplate(true);
+    }
+
     if (!isForward) {
         // Set base classes
         for (const clang::CXXBaseSpecifier& base : clangClass->bases()) {
