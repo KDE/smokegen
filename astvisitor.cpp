@@ -134,6 +134,24 @@ Class* SmokegenASTVisitor::registerClass(const clang::CXXRecordDecl* clangClass)
             klass->appendBaseClass(baseClass);
         }
 
+        // Set methods
+        for (const clang::CXXMethodDecl* method : clangClass->methods()) {
+            Method newMethod = Method(
+                klass,
+                QString::fromStdString(method->getNameAsString()),
+                registerType(getReturnTypeForMethod(method)),
+                toAccess(method->getAccess())
+            );
+            if (clang::isa<clang::CXXConstructorDecl>(method)) {
+                newMethod.setIsConstructor(true);
+            }
+            else if (clang::isa<clang::CXXDestructorDecl>(method)) {
+                newMethod.setIsDestructor(true);
+            }
+            newMethod.setIsConst(method->isConst());
+
+            klass->appendMethod(newMethod);
+        }
     }
     return klass;
 }
