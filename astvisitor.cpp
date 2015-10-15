@@ -192,10 +192,13 @@ Class* SmokegenASTVisitor::registerClass(const clang::CXXRecordDecl* clangClass)
 Function* SmokegenASTVisitor::registerFunction(const clang::FunctionDecl* clangFunction) const {
     clangFunction = clangFunction->getCanonicalDecl();
 
-    QString qualifiedName = QString::fromStdString(clangFunction->getQualifiedNameAsString());
-    if (functions.contains(qualifiedName)) {
+    std::string signatureStr = clangFunction->getQualifiedNameAsString();
+    clangFunction->getType().getAsStringInternal(signatureStr, pp());
+    QString signature = QString::fromStdString(signatureStr);
+
+    if (functions.contains(signature)) {
         // We already have this function
-        return &functions[qualifiedName];
+        return &functions[signature];
     }
 
     QString name = QString::fromStdString(clangFunction->getNameAsString());
@@ -217,8 +220,8 @@ Function* SmokegenASTVisitor::registerFunction(const clang::FunctionDecl* clangF
         newFunction.appendParameter(toParameter(param));
     }
 
-    functions[qualifiedName] = newFunction;
-    return &functions[qualifiedName];
+    functions[signature] = newFunction;
+    return &functions[signature];
 }
 
 Class* SmokegenASTVisitor::registerNamespace(const clang::NamespaceDecl* clangNamespace) const {
