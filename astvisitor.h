@@ -19,6 +19,8 @@ public:
 private:
     clang::PrintingPolicy pp() const { return ci.getSema().getPrintingPolicy(); }
 
+    clang::QualType getReturnTypeForMethod(const clang::CXXMethodDecl* method) const;
+
     Class* registerClass(const clang::CXXRecordDecl* clangClass) const;
     Type* registerType(const clang::QualType clangType) const;
 

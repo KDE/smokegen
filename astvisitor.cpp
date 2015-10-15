@@ -44,6 +44,15 @@ bool SmokegenASTVisitor::VisitFunctionDecl(clang::FunctionDecl *D) {
     return true;
 }
 
+clang::QualType SmokegenASTVisitor::getReturnTypeForMethod(const clang::CXXMethodDecl* method) const {
+    if (clang::isa<clang::CXXConstructorDecl>(method)) {
+        return ci.getASTContext().getPointerType(clang::QualType(method->getParent()->getTypeForDecl(), 0));
+    }
+    else {
+        return method->getReturnType();
+    }
+}
+
 Access SmokegenASTVisitor::toAccess(clang::AccessSpecifier clangAccess) const {
     Access access;
     switch (clangAccess) {
