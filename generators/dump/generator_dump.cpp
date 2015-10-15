@@ -27,10 +27,17 @@
 extern "C" Q_DECL_EXPORT
 void generate()
 {
+    std::cout << "Classes:" << std::endl;
     foreach (const QString& className, classes.keys()) {
-        std::cout << qPrintable(className);
+        std::cout << "    " << qPrintable(className);
         if (classes[className].isForwardDecl())
             std::cout << " [forward declaration]";
         std::cout << std::endl;
+    }
+    std::cout << std::endl;
+
+    std::cout << "Types:" << std::endl;
+    foreach (const QString& typeName, types.keys()) {
+        std::cout << "    " << qPrintable(typeName) << std::endl;
     }
 }
