@@ -39,7 +39,7 @@ bool SmokegenASTVisitor::VisitFunctionDecl(clang::FunctionDecl *D) {
     if (!D->getDeclName())
         return true;
 
-    //generator.addFunction(D);
+    registerFunction(D);
 
     return true;
 }
@@ -187,6 +187,38 @@ Class* SmokegenASTVisitor::registerClass(const clang::CXXRecordDecl* clangClass)
         }
     }
     return klass;
+}
+
+Function* SmokegenASTVisitor::registerFunction(const clang::FunctionDecl* clangFunction) const {
+    clangFunction = clangFunction->getCanonicalDecl();
+
+    QString qualifiedName = QString::fromStdString(clangFunction->getQualifiedNameAsString());
+    if (functions.contains(qualifiedName)) {
+        // We already have this function
+        return &functions[qualifiedName];
+    }
+
+    QString name = QString::fromStdString(clangFunction->getNameAsString());
+    QString nspace;
+    Class* parent = nullptr;
+    if (const auto clangParent = clang::dyn_cast<clang::NamespaceDecl>(clangFunction->getParent())) {
+        parent = registerNamespace(clangParent);
+        nspace = QString::fromStdString(clangParent->getQualifiedNameAsString());
+    }
+    // Functions can't be children of classes.  Those are methods.
+
+    Function newFunction(
+        name,
+        nspace,
+        registerType(getReturnTypeForFunction(clangFunction))
+    );
+
+    for (const clang::ParmVarDecl* param : clangFunction->parameters()) {
+        newFunction.appendParameter(toParameter(param));
+    }
+
+    functions[qualifiedName] = newFunction;
+    return &functions[qualifiedName];
 }
 
 Class* SmokegenASTVisitor::registerNamespace(const clang::NamespaceDecl* clangNamespace) const {

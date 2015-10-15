@@ -22,6 +22,7 @@ private:
     clang::QualType getReturnTypeForFunction(const clang::FunctionDecl* function) const;
 
     Class* registerClass(const clang::CXXRecordDecl* clangClass) const;
+    Function* registerFunction(const clang::FunctionDecl* clangFunction) const;
     Class* registerNamespace(const clang::NamespaceDecl* clangNamespace) const;
     Type* registerType(const clang::QualType clangType) const;
 
