@@ -26,7 +26,7 @@ bool SmokegenASTVisitor::VisitNamespaceDecl(clang::NamespaceDecl *D) {
     if (!D->getDeclName())
         return true;
 
-    //generator.addNamespace(D);
+    registerNamespace(D);
 
     return true;
 }
@@ -182,6 +182,27 @@ Class* SmokegenASTVisitor::registerClass(const clang::CXXRecordDecl* clangClass)
         }
     }
     return klass;
+}
+
+Class* SmokegenASTVisitor::registerNamespace(const clang::NamespaceDecl* clangNamespace) const {
+    clangNamespace = clangNamespace->getCanonicalDecl();
+
+    QString qualifiedName = QString::fromStdString(clangNamespace->getQualifiedNameAsString());
+    if (classes.contains(qualifiedName)) {
+        // We already have this class
+        return &classes[qualifiedName];
+    }
+
+    QString name = QString::fromStdString(clangNamespace->getNameAsString());
+    QString nspace;
+    Class* parent = nullptr;
+    if (const auto clangParent = clang::dyn_cast<clang::NamespaceDecl>(clangNamespace->getParent())) {
+        parent = registerNamespace(clangParent);
+        nspace = QString::fromStdString(clangParent->getQualifiedNameAsString());
+    }
+    classes[qualifiedName] = Class(name, nspace, parent, Class::Kind_Class, false);
+    classes[qualifiedName].setIsNameSpace(true);
+    return &classes[qualifiedName];
 }
 
 Type* SmokegenASTVisitor::registerType(clang::QualType clangType) const {

@@ -22,6 +22,7 @@ private:
     clang::QualType getReturnTypeForMethod(const clang::CXXMethodDecl* method) const;
 
     Class* registerClass(const clang::CXXRecordDecl* clangClass) const;
+    Class* registerNamespace(const clang::NamespaceDecl* clangNamespace) const;
     Type* registerType(const clang::QualType clangType) const;
 
     Access toAccess(clang::AccessSpecifier clangAccess) const;
