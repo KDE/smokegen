@@ -3,10 +3,6 @@
 #include "astvisitor.h"
 
 bool SmokegenASTVisitor::VisitCXXRecordDecl(clang::CXXRecordDecl *D) {
-    // We can't make bindings for things that don't have names.
-    if (!D->getDeclName())
-        return true;
-
     registerClass(D);
 
     return true;
@@ -87,6 +83,10 @@ Parameter SmokegenASTVisitor::toParameter(const clang::ParmVarDecl* param) const
 }
 
 Class* SmokegenASTVisitor::registerClass(const clang::CXXRecordDecl* clangClass) const {
+    // We can't make bindings for things that don't have names.
+    if (!clangClass->getDeclName())
+        return nullptr;
+
     clangClass = clangClass->hasDefinition() ? clangClass->getDefinition() : clangClass->getCanonicalDecl();
 
     QString qualifiedName = QString::fromStdString(clangClass->getQualifiedNameAsString());
