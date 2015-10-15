@@ -3,6 +3,14 @@ project(smokegenerator)
 
 find_package(Qt4 REQUIRED)
 
+find_package(LLVM REQUIRED CONFIG)
+
+message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
+message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
+
+include_directories(${LLVM_INCLUDE_DIRS})
+add_definitions(${LLVM_DEFINITIONS})
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake )
 set(SMOKE_VERSION_MAJOR 3)
 set(SMOKE_VERSION_MINOR 0)
@@ -32,8 +40,139 @@ set (CMAKE_SKIP_RPATH FALSE)
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/config.h.in config.h @ONLY )
 
 add_executable(smokegen ${generator_SRC})
-target_link_libraries(smokegen ${QT_QTCORE_LIBRARY} ${QT_QTXML_LIBRARY})
+target_link_libraries(smokegen ${QT_QTCORE_LIBRARY} ${QT_QTXML_LIBRARY}
+    -Wl,--start-group
+    clangAST
+    clangAnalysis
+    clangBasic
+    clangDriver
+    clangEdit
+    clangFrontend
+    clangFrontendTool
+    clangLex
+    clangParse
+    clangSema
+    clangEdit
+    clangASTMatchers
+    clangRewrite
+    clangRewriteFrontend
+    clangStaticAnalyzerFrontend
+    clangStaticAnalyzerCheckers
+    clangStaticAnalyzerCore
+    clangSerialization
+    clangToolingCore
+    clangTooling
+    -Wl,--end-group
+    LLVMLTO
+    LLVMObjCARCOpts
+    LLVMLinker
+    LLVMBitWriter
+    LLVMIRReader
+    LLVMAsmParser
+    LLVMR600CodeGen
+    LLVMipo
+    LLVMVectorize
+    LLVMR600AsmParser
+    LLVMR600Desc
+    LLVMR600Info
+    LLVMR600AsmPrinter
+    LLVMSystemZDisassembler
+    LLVMSystemZCodeGen
+    LLVMSystemZAsmParser
+    LLVMSystemZDesc
+    LLVMSystemZInfo
+    LLVMSystemZAsmPrinter
+    LLVMHexagonDisassembler
+    LLVMHexagonCodeGen
+    LLVMHexagonDesc
+    LLVMHexagonInfo
+    LLVMNVPTXCodeGen
+    LLVMNVPTXDesc
+    LLVMNVPTXInfo
+    LLVMNVPTXAsmPrinter
+    LLVMCppBackendCodeGen
+    LLVMCppBackendInfo
+    LLVMMSP430CodeGen
+    LLVMMSP430Desc
+    LLVMMSP430Info
+    LLVMMSP430AsmPrinter
+    LLVMXCoreDisassembler
+    LLVMXCoreCodeGen
+    LLVMXCoreDesc
+    LLVMXCoreInfo
+    LLVMXCoreAsmPrinter
+    LLVMMipsDisassembler
+    LLVMMipsCodeGen
+    LLVMMipsAsmParser
+    LLVMMipsDesc
+    LLVMMipsInfo
+    LLVMMipsAsmPrinter
+    LLVMAArch64Disassembler
+    LLVMAArch64CodeGen
+    LLVMAArch64AsmParser
+    LLVMAArch64Desc
+    LLVMAArch64Info
+    LLVMAArch64AsmPrinter
+    LLVMAArch64Utils
+    LLVMARMDisassembler
+    LLVMARMCodeGen
+    LLVMARMAsmParser
+    LLVMARMDesc
+    LLVMARMInfo
+    LLVMARMAsmPrinter
+    LLVMPowerPCDisassembler
+    LLVMPowerPCCodeGen
+    LLVMPowerPCAsmParser
+    LLVMPowerPCDesc
+    LLVMPowerPCInfo
+    LLVMPowerPCAsmPrinter
+    LLVMSparcDisassembler
+    LLVMSparcCodeGen
+    LLVMSparcAsmParser
+    LLVMSparcDesc
+    LLVMSparcInfo
+    LLVMSparcAsmPrinter
+    LLVMTableGen
+    LLVMDebugInfo
+    LLVMOption
+    LLVMX86Disassembler
+    LLVMX86AsmParser
+    LLVMX86CodeGen
+    LLVMSelectionDAG
+    LLVMAsmPrinter
+    LLVMX86Desc
+    LLVMMCDisassembler
+    LLVMX86Info
+    LLVMX86AsmPrinter
+    LLVMX86Utils
+    LLVMMCJIT
+    LLVMLineEditor
+    LLVMInstrumentation
+    LLVMInterpreter
+    LLVMExecutionEngine
+    LLVMRuntimeDyld
+    LLVMCodeGen
+    LLVMScalarOpts
+    LLVMProfileData
+    LLVMObject
+    LLVMMCParser
+    LLVMBitReader
+    LLVMInstCombine
+    LLVMTransformUtils
+    LLVMipa
+    LLVMAnalysis
+    LLVMTarget
+    LLVMMC
+    LLVMCore
+    LLVMSupport
+)
+
 set_target_properties(smokegen PROPERTIES COMPILE_DEFINITIONS __GENERATOR_BUILDING ENABLE_EXPORTS TRUE)
+set_property(
+    TARGET smokegen
+    APPEND
+    PROPERTY COMPILE_FLAGS -fno-rtti
+)
 
 install(TARGETS smokegen LIBRARY DESTINATION ${LIB_INSTALL_DIR}
     ARCHIVE DESTINATION ${LIB_INSTALL_DIR}
