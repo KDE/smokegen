@@ -35,6 +35,10 @@ bool SmokegenASTVisitor::VisitFunctionDecl(clang::FunctionDecl *D) {
     if (!D->getDeclName())
         return true;
 
+    if (D->isDependentContext()) {
+        return true;
+    }
+
     registerFunction(D);
 
     return true;
