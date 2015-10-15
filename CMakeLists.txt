@@ -173,7 +173,11 @@ target_link_libraries(smokegen ${QT_QTCORE_LIBRARY} ${QT_QTXML_LIBRARY}
 set_target_properties(smokegen PROPERTIES COMPILE_DEFINITIONS __GENERATOR_BUILDING ENABLE_EXPORTS TRUE)
 target_compile_features(smokegen PRIVATE cxx_nullptr)
 set_property(
-    TARGET smokegen
+    SOURCE
+        astconsumer.cpp
+        astvisitor.cpp
+        frontendaction.cpp
+        main.cpp
     APPEND
     PROPERTY COMPILE_FLAGS -fno-rtti
 )
