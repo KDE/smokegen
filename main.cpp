@@ -212,20 +212,24 @@ int main(int argc, char **argv)
     foreach (QFileInfo file, ParserOptions::headerList) {
         qDebug() << "parsing" << file.absoluteFilePath();
 
-        std::vector<std::string> argv = {
+        std::vector<std::string> Argv = {
+            argv[0],
             "-x", "c++",
             "-fPIC",
         };
         foreach (QDir dir, ParserOptions::includeDirs) {
-            argv.push_back("-I" + dir.path().toStdString());
+            Argv.push_back("-I" + dir.path().toStdString());
         }
         foreach (QString define, defines) {
-            argv.push_back("-D" + define.toStdString());
+            Argv.push_back("-D" + define.toStdString());
         }
+        Argv.push_back(file.absoluteFilePath().toStdString());
+        Argv.push_back("-Ilib/clang/3.6.2/include/");
+        Argv.push_back("-fsyntax-only");
 
         clang::FileManager FM({"."});
 
-        clang::tooling::ToolInvocation inv(argv, new SmokegenFrontendAction, &FM);
+        clang::tooling::ToolInvocation inv(Argv, new SmokegenFrontendAction, &FM);
         inv.run();
 
         // this has already been parsed because it was included by some header
