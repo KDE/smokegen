@@ -29,8 +29,11 @@
 
 #include <iostream>
 
+#include <clang/Tooling/Tooling.h>
+
 #include "options.h"
 #include "config.h"
+#include "frontendaction.h"
 
 
 typedef int (*GenerateFn)();
@@ -208,6 +211,23 @@ int main(int argc, char **argv)
     
     foreach (QFileInfo file, ParserOptions::headerList) {
         qDebug() << "parsing" << file.absoluteFilePath();
+
+        std::vector<std::string> argv = {
+            "-x", "c++",
+            "-fPIC",
+        };
+        foreach (QDir dir, ParserOptions::includeDirs) {
+            argv.push_back("-I" + dir.path().toStdString());
+        }
+        foreach (QString define, defines) {
+            argv.push_back("-D" + define.toStdString());
+        }
+
+        clang::FileManager FM({"."});
+
+        clang::tooling::ToolInvocation inv(argv, new SmokegenFrontendAction, &FM);
+        inv.run();
+
         // this has already been parsed because it was included by some header
         if (!logErrors)
             continue;

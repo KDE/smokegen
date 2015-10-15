@@ -28,6 +28,9 @@ endif (NOT LIB_INSTALL_DIR)
 include_directories(${QT_INCLUDES} ${CMAKE_BINARY_DIR})
 
 set(generator_SRC
+    astconsumer.cpp
+    astvisitor.cpp
+    frontendaction.cpp
     main.cpp
     options.cpp
     type.cpp
@@ -168,6 +171,7 @@ target_link_libraries(smokegen ${QT_QTCORE_LIBRARY} ${QT_QTXML_LIBRARY}
 )
 
 set_target_properties(smokegen PROPERTIES COMPILE_DEFINITIONS __GENERATOR_BUILDING ENABLE_EXPORTS TRUE)
+target_compile_features(smokegen PRIVATE cxx_nullptr)
 set_property(
     TARGET smokegen
     APPEND
