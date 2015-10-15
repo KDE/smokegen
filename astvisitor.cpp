@@ -142,13 +142,41 @@ Class* SmokegenASTVisitor::registerClass(const clang::CXXRecordDecl* clangClass)
                 registerType(getReturnTypeForMethod(method)),
                 toAccess(method->getAccess())
             );
-            if (clang::isa<clang::CXXConstructorDecl>(method)) {
+            if (const clang::CXXConstructorDecl* ctor = clang::dyn_cast<clang::CXXConstructorDecl>(method)) {
                 newMethod.setIsConstructor(true);
+                if (ctor->isExplicitSpecified()) {
+                    newMethod.setFlag(Member::Explicit);
+                }
             }
             else if (clang::isa<clang::CXXDestructorDecl>(method)) {
                 newMethod.setIsDestructor(true);
             }
             newMethod.setIsConst(method->isConst());
+            if (method->isVirtual()) {
+                newMethod.setFlag(Member::Virtual);
+                if (method->isPure()) {
+                    newMethod.setFlag(Member::PureVirtual);
+                }
+            }
+            if (method->isStatic()) {
+                newMethod.setFlag(Member::Static);
+            }
+
+            for (const clang::ParmVarDecl* param : method->parameters()) {
+                Parameter parameter(
+                    QString::fromStdString(param->getNameAsString()),
+                    registerType(param->getType())
+                );
+
+                if (const clang::Expr* defaultArgExpr = param->getDefaultArg()) {
+                    std::string defaultArgStr;
+                    llvm::raw_string_ostream s(defaultArgStr);
+                    defaultArgExpr->printPretty(s, nullptr, pp());
+                    parameter.setDefaultValue(QString::fromStdString(s.str()));
+                }
+
+                newMethod.appendParameter(parameter);
+            }
 
             klass->appendMethod(newMethod);
         }
