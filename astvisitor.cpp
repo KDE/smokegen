@@ -13,7 +13,7 @@ bool SmokegenASTVisitor::VisitEnumDecl(clang::EnumDecl *D) {
     if (!D->getDeclName())
         return true;
 
-    //generator.addEnum(D);
+    registerEnum(D);
 
     return true;
 }
@@ -191,6 +191,59 @@ Class* SmokegenASTVisitor::registerClass(const clang::CXXRecordDecl* clangClass)
         }
     }
     return klass;
+}
+
+Enum* SmokegenASTVisitor::registerEnum(const clang::EnumDecl* clangEnum) const {
+    clangEnum = clangEnum->getDefinition();
+    if (!clangEnum) {
+        return nullptr;
+    }
+
+    QString qualifiedName = QString::fromStdString(clangEnum->getQualifiedNameAsString());
+    if (enums.contains(qualifiedName)) {
+        // We already have this class
+        return &enums[qualifiedName];
+    }
+
+    QString name = QString::fromStdString(clangEnum->getNameAsString());
+    QString nspace;
+    Class* parent = nullptr;
+    if (const auto clangParent = clang::dyn_cast<clang::NamespaceDecl>(clangEnum->getParent())) {
+        parent = registerNamespace(clangParent);
+        nspace = QString::fromStdString(clangParent->getQualifiedNameAsString());
+    }
+    else if (const auto clangParent = clang::dyn_cast<clang::CXXRecordDecl>(clangEnum->getParent())) {
+        parent = registerClass(clangParent);
+    }
+
+    Enum localE(
+        name,
+        nspace,
+        parent
+    );
+
+    enums[qualifiedName] = localE;
+    Enum* e = &enums[qualifiedName];
+    e->setAccess(toAccess(clangEnum->getAccess()));
+
+    if (parent) {
+        parent->appendChild(e);
+    }
+
+    for (const clang::EnumConstantDecl* enumVal : clangEnum->enumerators()) {
+        EnumMember member(
+            e,
+            QString::fromStdString(enumVal->getNameAsString())
+        );
+        if (const clang::Expr* initExpr = enumVal->getInitExpr()) {
+            std::string initExprStr;
+            llvm::raw_string_ostream s(initExprStr);
+            initExpr->printPretty(s, nullptr, pp());
+            member.setValue(QString::fromStdString(s.str()));
+        }
+        e->appendMember(member);
+    }
+    return e;
 }
 
 Function* SmokegenASTVisitor::registerFunction(const clang::FunctionDecl* clangFunction) const {
