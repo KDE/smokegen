@@ -225,11 +225,9 @@ Enum* SmokegenASTVisitor::registerEnum(const clang::EnumDecl* clangEnum) const {
     }
 
     QString name = QString::fromStdString(clangEnum->getNameAsString());
-    QString nspace;
     Class* parent = nullptr;
     if (const auto clangParent = clang::dyn_cast<clang::NamespaceDecl>(clangEnum->getParent())) {
         parent = registerNamespace(clangParent);
-        nspace = QString::fromStdString(clangParent->getQualifiedNameAsString());
     }
     else if (const auto clangParent = clang::dyn_cast<clang::CXXRecordDecl>(clangEnum->getParent())) {
         parent = registerClass(clangParent);
@@ -237,7 +235,7 @@ Enum* SmokegenASTVisitor::registerEnum(const clang::EnumDecl* clangEnum) const {
 
     Enum localE(
         name,
-        nspace,
+        "",
         parent
     );
 
