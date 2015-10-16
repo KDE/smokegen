@@ -189,6 +189,25 @@ Class* SmokegenASTVisitor::registerClass(const clang::CXXRecordDecl* clangClass)
 
             klass->appendMethod(newMethod);
         }
+
+        for (const clang::Decl* decl : clangClass->decls()) {
+            const clang::VarDecl* varDecl = clang::dyn_cast<clang::VarDecl>(decl);
+            const clang::FieldDecl* fieldDecl = clang::dyn_cast<clang::FieldDecl>(decl);
+            if (!varDecl && !fieldDecl) {
+                continue;
+            }
+            const clang::DeclaratorDecl* declaratorDecl = clang::dyn_cast<clang::DeclaratorDecl>(decl);
+            Field field(
+                klass,
+                QString::fromStdString(declaratorDecl->getNameAsString()),
+                registerType(declaratorDecl->getType()),
+                toAccess(declaratorDecl->getAccess())
+            );
+            if (varDecl) {
+                field.setFlag(Member::Static);
+            }
+            klass->appendField(field);
+        }
     }
     return klass;
 }
