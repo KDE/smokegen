@@ -340,5 +340,8 @@ Type* SmokegenASTVisitor::registerType(clang::QualType clangType) const {
             }
         }
     }
+    else if (const clang::EnumDecl* clangEnum = clang::dyn_cast_or_null<clang::EnumDecl>(clangType->getAsTagDecl())) {
+        type.setEnum(registerEnum(clangEnum));
+    }
     return Type::registerType(type);
 }
