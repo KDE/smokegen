@@ -330,10 +330,28 @@ Type* SmokegenASTVisitor::registerType(clang::QualType clangType) const {
         clangType = clangType->getPointeeType();
     }
     while (clangType->isPointerType()) {
-        type.setIsConstPointer(type.pointerDepth(), clangType.isConstQualified());
-        type.setPointerDepth(type.pointerDepth() + 1);
+        if (clangType->isFunctionPointerType()) {
+            type.setIsFunctionPointer(true);
+            const clang::FunctionType* fnType = clangType->getPointeeType()->getAs<clang::FunctionType>();
+            clangType = fnType->getReturnType();
 
-        clangType = clangType->getPointeeType();
+            if (const clang::FunctionProtoType* proto = clang::dyn_cast<clang::FunctionProtoType>(fnType)) {
+                for (const clang::QualType param : proto->param_types()) {
+                    type.appendParameter(Parameter("", registerType(param)));
+                }
+            }
+
+            if (clangType->isReferenceType()) {
+                type.setIsRef(true);
+                clangType = clangType->getPointeeType();
+            }
+        }
+        else {
+            type.setIsConstPointer(type.pointerDepth(), clangType.isConstQualified());
+            type.setPointerDepth(type.pointerDepth() + 1);
+
+            clangType = clangType->getPointeeType();
+        }
     }
 
     type.setIsConst(clangType.isConstQualified());
