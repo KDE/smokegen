@@ -175,7 +175,6 @@ target_compile_features(smokegen PRIVATE cxx_nullptr)
 set_property(
     SOURCE
         astconsumer.cpp
-        astvisitor.cpp
         frontendaction.cpp
         main.cpp
     APPEND
