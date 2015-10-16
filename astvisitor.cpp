@@ -269,6 +269,10 @@ Type* SmokegenASTVisitor::registerType(clang::QualType clangType) const {
     type.setIsConst(clangType.isConstQualified());
     type.setIsVolatile(clangType.isVolatileQualified());
 
+    // We've got all the qualifier info we need.  Remove it so that the
+    // qualifiers don't appear in the type name.
+    clangType = clangType.getUnqualifiedType();
+
     type.setName(QString::fromStdString(clangType.getAsString(pp())));
     type.setIsIntegral(clangType->isBuiltinType());
 
