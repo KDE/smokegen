@@ -381,5 +381,38 @@ Type* SmokegenASTVisitor::registerType(clang::QualType clangType) const {
     else if (const clang::EnumDecl* clangEnum = clang::dyn_cast_or_null<clang::EnumDecl>(clangType->getAsTagDecl())) {
         type.setEnum(registerEnum(clangEnum));
     }
+    else if (const clang::TypedefType* typedefType = clang::dyn_cast<clang::TypedefType>(clangType)) {
+        clang::TypedefNameDecl* typedefDecl = typedefType->getDecl();
+        type.setTypedef(registerTypedef(typedefDecl));
+    }
     return Type::registerType(type);
+}
+
+Typedef* SmokegenASTVisitor::registerTypedef(const clang::TypedefNameDecl* clangTypedef) const {
+    clangTypedef = clangTypedef->getCanonicalDecl();
+
+    QString qualifiedName = QString::fromStdString(clangTypedef->getQualifiedNameAsString());
+    if (typedefs.contains(qualifiedName)) {
+        // We already have this typedef
+        return &typedefs[qualifiedName];
+    }
+
+    QString name = QString::fromStdString(clangTypedef->getNameAsString());
+    Class* parent = nullptr;
+    if (const auto clangParent = clang::dyn_cast_or_null<clang::NamespaceDecl>(clangTypedef->getDeclContext())) {
+        parent = registerNamespace(clangParent);
+    }
+    else if (const auto clangParent = clang::dyn_cast_or_null<clang::CXXRecordDecl>(clangTypedef->getDeclContext())) {
+        parent = registerClass(clangParent);
+    }
+
+    Typedef tdef(
+        registerType(clangTypedef->getUnderlyingType()),
+        name,
+        "",
+        parent
+    );
+
+    typedefs[qualifiedName] = tdef;
+    return &typedefs[qualifiedName];
 }

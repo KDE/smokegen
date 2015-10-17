@@ -26,6 +26,7 @@ private:
     Function* registerFunction(const clang::FunctionDecl* clangFunction) const;
     Class* registerNamespace(const clang::NamespaceDecl* clangNamespace) const;
     Type* registerType(const clang::QualType clangType) const;
+    Typedef* registerTypedef(const clang::TypedefNameDecl* clangTypedef) const;
 
     Access toAccess(clang::AccessSpecifier clangAccess) const;
     Parameter toParameter(const clang::ParmVarDecl* param) const;
