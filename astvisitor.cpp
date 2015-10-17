@@ -157,6 +157,9 @@ Class* SmokegenASTVisitor::registerClass(const clang::CXXRecordDecl* clangClass)
 
         // Set methods
         for (const clang::CXXMethodDecl* method : clangClass->methods()) {
+            if (method->isImplicit()) {
+                continue;
+            }
             Method newMethod = Method(
                 klass,
                 QString::fromStdString(method->getNameAsString()),
