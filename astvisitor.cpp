@@ -110,7 +110,6 @@ Class* SmokegenASTVisitor::registerClass(const clang::CXXRecordDecl* clangClass)
     QString nspace;
     Class* parent = nullptr;
     if (const auto clangParent = clang::dyn_cast<clang::NamespaceDecl>(clangClass->getParent())) {
-        parent = registerNamespace(clangParent);
         nspace = QString::fromStdString(clangParent->getQualifiedNameAsString());
     }
     else if (const auto clangParent = clang::dyn_cast<clang::CXXRecordDecl>(clangClass->getParent())) {
@@ -235,9 +234,10 @@ Enum* SmokegenASTVisitor::registerEnum(const clang::EnumDecl* clangEnum) const {
     }
 
     QString name = QString::fromStdString(clangEnum->getNameAsString());
+    QString nspace;
     Class* parent = nullptr;
     if (const auto clangParent = clang::dyn_cast<clang::NamespaceDecl>(clangEnum->getParent())) {
-        parent = registerNamespace(clangParent);
+        nspace = QString::fromStdString(clangParent->getQualifiedNameAsString());
     }
     else if (const auto clangParent = clang::dyn_cast<clang::CXXRecordDecl>(clangEnum->getParent())) {
         parent = registerClass(clangParent);
@@ -245,7 +245,7 @@ Enum* SmokegenASTVisitor::registerEnum(const clang::EnumDecl* clangEnum) const {
 
     Enum localE(
         name,
-        "",
+        nspace,
         parent
     );
 
@@ -287,12 +287,9 @@ Function* SmokegenASTVisitor::registerFunction(const clang::FunctionDecl* clangF
 
     QString name = QString::fromStdString(clangFunction->getNameAsString());
     QString nspace;
-    Class* parent = nullptr;
     if (const auto clangParent = clang::dyn_cast<clang::NamespaceDecl>(clangFunction->getParent())) {
-        parent = registerNamespace(clangParent);
         nspace = QString::fromStdString(clangParent->getQualifiedNameAsString());
     }
-    // Functions can't be children of classes.  Those are methods.
 
     Function newFunction(
         name,
@@ -319,12 +316,10 @@ Class* SmokegenASTVisitor::registerNamespace(const clang::NamespaceDecl* clangNa
 
     QString name = QString::fromStdString(clangNamespace->getNameAsString());
     QString nspace;
-    Class* parent = nullptr;
     if (const auto clangParent = clang::dyn_cast<clang::NamespaceDecl>(clangNamespace->getParent())) {
-        parent = registerNamespace(clangParent);
         nspace = QString::fromStdString(clangParent->getQualifiedNameAsString());
     }
-    classes[qualifiedName] = Class(name, nspace, parent, Class::Kind_Class, false);
+    classes[qualifiedName] = Class(name, nspace, nullptr, Class::Kind_Class, false);
     classes[qualifiedName].setIsNameSpace(true);
     return &classes[qualifiedName];
 }
@@ -405,9 +400,10 @@ Typedef* SmokegenASTVisitor::registerTypedef(const clang::TypedefNameDecl* clang
     }
 
     QString name = QString::fromStdString(clangTypedef->getNameAsString());
+    QString nspace;
     Class* parent = nullptr;
     if (const auto clangParent = clang::dyn_cast_or_null<clang::NamespaceDecl>(clangTypedef->getDeclContext())) {
-        parent = registerNamespace(clangParent);
+        nspace = QString::fromStdString(clangParent->getQualifiedNameAsString());
     }
     else if (const auto clangParent = clang::dyn_cast_or_null<clang::CXXRecordDecl>(clangTypedef->getDeclContext())) {
         parent = registerClass(clangParent);
@@ -416,7 +412,7 @@ Typedef* SmokegenASTVisitor::registerTypedef(const clang::TypedefNameDecl* clang
     Typedef tdef(
         registerType(clangTypedef->getUnderlyingType()),
         name,
-        "",
+        nspace,
         parent
     );
 
