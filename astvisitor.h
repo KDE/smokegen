@@ -15,6 +15,7 @@ public:
     bool VisitEnumDecl(clang::EnumDecl *D);
     bool VisitNamespaceDecl(clang::NamespaceDecl *D);
     bool VisitFunctionDecl(clang::FunctionDecl *D);
+    bool VisitTypedefNameDecl(clang::TypedefNameDecl *D);
 
 private:
     clang::PrintingPolicy pp() const { return ci.getSema().getPrintingPolicy(); }

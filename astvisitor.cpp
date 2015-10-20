@@ -44,6 +44,13 @@ bool SmokegenASTVisitor::VisitFunctionDecl(clang::FunctionDecl *D) {
     return true;
 }
 
+bool SmokegenASTVisitor::VisitTypedefNameDecl(clang::TypedefNameDecl *D) {
+
+    registerTypedef(D);
+
+    return true;
+}
+
 clang::QualType SmokegenASTVisitor::getReturnTypeForFunction(const clang::FunctionDecl* function) const {
     if (const auto ctor = clang::dyn_cast<clang::CXXConstructorDecl>(function)) {
         return ci.getASTContext().getPointerType(clang::QualType(ctor->getParent()->getTypeForDecl(), 0));
