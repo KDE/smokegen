@@ -258,12 +258,13 @@ Enum* SmokegenASTVisitor::registerEnum(const clang::EnumDecl* clangEnum) const {
             e,
             QString::fromStdString(enumVal->getNameAsString())
         );
-        if (const clang::Expr* initExpr = enumVal->getInitExpr()) {
-            std::string initExprStr;
-            llvm::raw_string_ostream s(initExprStr);
-            initExpr->printPretty(s, nullptr, pp());
-            member.setValue(QString::fromStdString(s.str()));
-        }
+        // The existing parser doesn't set the values for enums.
+        //if (const clang::Expr* initExpr = enumVal->getInitExpr()) {
+        //    std::string initExprStr;
+        //    llvm::raw_string_ostream s(initExprStr);
+        //    initExpr->printPretty(s, nullptr, pp());
+        //    member.setValue(QString::fromStdString(s.str()));
+        //}
         e->appendMember(member);
     }
     return e;
