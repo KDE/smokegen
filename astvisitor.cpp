@@ -398,6 +398,9 @@ Typedef* SmokegenASTVisitor::registerTypedef(const clang::TypedefNameDecl* clang
         // We already have this typedef
         return &typedefs[qualifiedName];
     }
+    if (clangTypedef->getUnderlyingType().getCanonicalType()->isDependentType()) {
+        return nullptr;
+    }
 
     QString name = QString::fromStdString(clangTypedef->getNameAsString());
     QString nspace;
@@ -410,7 +413,7 @@ Typedef* SmokegenASTVisitor::registerTypedef(const clang::TypedefNameDecl* clang
     }
 
     Typedef tdef(
-        registerType(clangTypedef->getUnderlyingType()),
+        registerType(clangTypedef->getUnderlyingType().getCanonicalType()),
         name,
         nspace,
         parent
