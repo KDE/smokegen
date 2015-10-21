@@ -146,7 +146,7 @@ Class* SmokegenASTVisitor::registerClass(const clang::CXXRecordDecl* clangClass)
 
     klass->setAccess(toAccess(clangClass->getAccess()));
     clang::PresumedLoc ploc = ci.getSourceManager().getPresumedLoc(clangClass->getSourceRange().getBegin());
-    klass->setFileName(QString::fromStdString(ploc.getFilename()));
+    klass->setFileName(QString(ploc.getFilename()));
 
     if (clangClass->getTypeForDecl()->isDependentType() || clang::isa<clang::ClassTemplateSpecializationDecl>(clangClass)) {
         klass->setIsTemplate(true);
@@ -328,7 +328,7 @@ Function* SmokegenASTVisitor::registerFunction(const clang::FunctionDecl* clangF
     }
     clang::PresumedLoc ploc = ci.getSourceManager().getPresumedLoc(clangFunction->getSourceRange().getBegin());
     if (ploc.isValid()) {
-        newFunction.setFileName(QString::fromStdString(ploc.getFilename()));
+        newFunction.setFileName(QString(ploc.getFilename()));
     }
 
     functions[signature] = newFunction;
