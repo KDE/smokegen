@@ -31,6 +31,7 @@ set(generator_SRC
     astconsumer.cpp
     astvisitor.cpp
     frontendaction.cpp
+    defaultargvisitor.cpp
     main.cpp
     options.cpp
     type.cpp

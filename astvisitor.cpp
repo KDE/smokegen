@@ -1,6 +1,7 @@
 #include <clang/AST/ASTContext.h>
 
 #include "astvisitor.h"
+#include "defaultargvisitor.h"
 
 bool SmokegenASTVisitor::VisitCXXRecordDecl(clang::CXXRecordDecl *D) {
     registerClass(D);
@@ -88,6 +89,13 @@ Parameter SmokegenASTVisitor::toParameter(const clang::ParmVarDecl* param) const
         llvm::raw_string_ostream s(defaultArgStr);
         defaultArgExpr->printPretty(s, nullptr, pp());
         parameter.setDefaultValue(QString::fromStdString(s.str()));
+
+        DefaultArgVisitor argVisitor(ci);
+        argVisitor.TraverseStmt(const_cast<clang::Expr*>(defaultArgExpr));
+        std::string resolved = argVisitor.toString();
+        if (!resolved.empty()) {
+            parameter.setDefaultValue(QString::fromStdString(resolved));
+        }
     }
 
     return parameter;
