@@ -32,7 +32,7 @@ bool SmokegenASTVisitor::VisitFunctionDecl(clang::FunctionDecl *D) {
     if (!D->getDeclName())
         return true;
 
-    if (D->isDependentContext()) {
+    if (D->isDependentContext() || D->getTemplateSpecializationInfo()) {
         return true;
     }
 
