@@ -416,7 +416,23 @@ Type* SmokegenASTVisitor::registerType(clang::QualType clangType) const {
         if (templateSpecializationDecl) {
             const auto & args = templateSpecializationDecl->getTemplateArgs();
             for (int i=0; i < args.size(); ++i) {
-                type.appendTemplateArgument(*registerType(args[i].getAsType()));
+                switch (args[i].getKind()) {
+                    case clang::TemplateArgument::Integral:
+                    {
+                        Type tempArgType;
+                        tempArgType.setName(QString::fromStdString(args[i].getAsIntegral().toString(10)));
+                        type.appendTemplateArgument(tempArgType);
+                        break;
+                    }
+                    case clang::TemplateArgument::Type:
+                    {
+                        clang::QualType templateType = args[i].getAsType();
+                        type.appendTemplateArgument(*registerType(templateType));
+                        break;
+                    }
+                    default:
+                        break;
+                }
             }
         }
     }
