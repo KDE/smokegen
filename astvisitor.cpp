@@ -351,7 +351,9 @@ Type* SmokegenASTVisitor::registerType(clang::QualType clangType) const {
             }
         }
         else {
-            type.setIsConstPointer(type.pointerDepth(), clangType.isConstQualified());
+            if (clangType.isConstQualified()) {
+                type.setIsConstPointer(type.pointerDepth(), true);
+            }
             type.setPointerDepth(type.pointerDepth() + 1);
 
             clangType = clangType->getPointeeType();
