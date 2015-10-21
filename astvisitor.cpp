@@ -216,6 +216,9 @@ Class* SmokegenASTVisitor::registerClass(const clang::CXXRecordDecl* clangClass)
             if (fieldType->getTypedef()) {
                 fieldType = typeFromTypedef(fieldType->getTypedef(), fieldType);
             }
+            if (!fieldType->isValid()) {
+                continue;
+            }
             Field field(
                 klass,
                 QString::fromStdString(declaratorDecl->getNameAsString()),
@@ -383,10 +386,12 @@ Type* SmokegenASTVisitor::registerType(clang::QualType clangType) const {
     // qualifiers don't appear in the type name.
     clangType = clangType.getUnqualifiedType();
 
-    type.setName(QString::fromStdString(clangType.getAsString(pp())));
     type.setIsIntegral(clangType->isBuiltinType());
-
-    if (const clang::TypedefType* typedefType = clang::dyn_cast<clang::TypedefType>(clangType)) {
+    type.setName(QString::fromStdString(clangType.getAsString(pp())));
+    if (clangType->isRecordType() && !clangType->castAs<clang::RecordType>()->getDecl()->getIdentifier()) {
+        type.setName(""); // Makes the type invalid.  Don't set typedef or class.
+    }
+    else if (const clang::TypedefType* typedefType = clang::dyn_cast<clang::TypedefType>(clangType)) {
         clang::TypedefNameDecl* typedefDecl = typedefType->getDecl();
         if (type.name().toStdString() != typedefDecl->getUnderlyingType().getCanonicalType().getAsString(pp())) {
             type.setTypedef(registerTypedef(typedefDecl));
