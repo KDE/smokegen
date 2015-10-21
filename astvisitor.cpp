@@ -370,7 +370,13 @@ Type* SmokegenASTVisitor::registerType(clang::QualType clangType) const {
     type.setName(QString::fromStdString(clangType.getAsString(pp())));
     type.setIsIntegral(clangType->isBuiltinType());
 
-    if (const clang::CXXRecordDecl* clangClass = clangType->getAsCXXRecordDecl()) {
+    if (const clang::TypedefType* typedefType = clang::dyn_cast<clang::TypedefType>(clangType)) {
+        clang::TypedefNameDecl* typedefDecl = typedefType->getDecl();
+        if (type.name().toStdString() != typedefDecl->getUnderlyingType().getCanonicalType().getAsString(pp())) {
+            type.setTypedef(registerTypedef(typedefDecl));
+        }
+    }
+    else if (const clang::CXXRecordDecl* clangClass = clangType->getAsCXXRecordDecl()) {
         type.setClass(registerClass(clangClass));
 
         const auto templateSpecializationDecl = clang::dyn_cast<clang::ClassTemplateSpecializationDecl>(clangClass);
@@ -383,10 +389,6 @@ Type* SmokegenASTVisitor::registerType(clang::QualType clangType) const {
     }
     else if (const clang::EnumDecl* clangEnum = clang::dyn_cast_or_null<clang::EnumDecl>(clangType->getAsTagDecl())) {
         type.setEnum(registerEnum(clangEnum));
-    }
-    else if (const clang::TypedefType* typedefType = clang::dyn_cast<clang::TypedefType>(clangType)) {
-        clang::TypedefNameDecl* typedefDecl = typedefType->getDecl();
-        type.setTypedef(registerTypedef(typedefDecl));
     }
     return Type::registerType(type);
 }
