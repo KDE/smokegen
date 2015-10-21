@@ -32,6 +32,12 @@ private:
     Access toAccess(clang::AccessSpecifier clangAccess) const;
     Parameter toParameter(const clang::ParmVarDecl* param) const;
 
+    // The typedef knows what type it aliases.  But places where the typedef is
+    // used can add additional pointer depths to the type. eg:
+    // typdef double qreal;
+    // qreal** somefunc() // returns a double**, but typedef resolves will just return double
+    Type* typeFromTypedef(const Typedef* tdef, const Type* sourceType) const;
+
     clang::CompilerInstance &ci;
 };
 

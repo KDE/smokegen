@@ -74,9 +74,13 @@ Access SmokegenASTVisitor::toAccess(clang::AccessSpecifier clangAccess) const {
 }
 
 Parameter SmokegenASTVisitor::toParameter(const clang::ParmVarDecl* param) const {
+    Type* paramType = registerType(param->getType());
+    if (paramType->getTypedef()) {
+        paramType = typeFromTypedef(paramType->getTypedef(), paramType);
+    }
     Parameter parameter(
         QString::fromStdString(param->getNameAsString()),
-        registerType(param->getType())
+        paramType
     );
 
     if (const clang::Expr* defaultArgExpr = param->getDefaultArg()) {
@@ -164,10 +168,14 @@ Class* SmokegenASTVisitor::registerClass(const clang::CXXRecordDecl* clangClass)
             if (method->isImplicit()) {
                 continue;
             }
+            Type* returnType = registerType(getReturnTypeForFunction(method));
+            if (returnType->getTypedef()) {
+                returnType = typeFromTypedef(returnType->getTypedef(), returnType);
+            }
             Method newMethod = Method(
                 klass,
                 QString::fromStdString(method->getNameAsString()),
-                registerType(getReturnTypeForFunction(method)),
+                returnType,
                 toAccess(method->getAccess())
             );
             if (const clang::CXXConstructorDecl* ctor = clang::dyn_cast<clang::CXXConstructorDecl>(method)) {
@@ -204,10 +212,14 @@ Class* SmokegenASTVisitor::registerClass(const clang::CXXRecordDecl* clangClass)
                 continue;
             }
             const clang::DeclaratorDecl* declaratorDecl = clang::dyn_cast<clang::DeclaratorDecl>(decl);
+            Type* fieldType = registerType(declaratorDecl->getType());
+            if (fieldType->getTypedef()) {
+                fieldType = typeFromTypedef(fieldType->getTypedef(), fieldType);
+            }
             Field field(
                 klass,
                 QString::fromStdString(declaratorDecl->getNameAsString()),
-                registerType(declaratorDecl->getType()),
+                fieldType,
                 toAccess(declaratorDecl->getAccess())
             );
             if (varDecl) {
@@ -290,10 +302,14 @@ Function* SmokegenASTVisitor::registerFunction(const clang::FunctionDecl* clangF
         nspace = QString::fromStdString(clangParent->getQualifiedNameAsString());
     }
 
+    Type* returnType = registerType(getReturnTypeForFunction(clangFunction));
+    if (returnType->getTypedef()) {
+        returnType = typeFromTypedef(returnType->getTypedef(), returnType);
+    }
     Function newFunction(
         name,
         nspace,
-        registerType(getReturnTypeForFunction(clangFunction))
+        returnType
     );
 
     for (const clang::ParmVarDecl* param : clangFunction->parameters()) {
@@ -424,4 +440,20 @@ Typedef* SmokegenASTVisitor::registerTypedef(const clang::TypedefNameDecl* clang
 
     typedefs[qualifiedName] = tdef;
     return &typedefs[qualifiedName];
+}
+
+Type* SmokegenASTVisitor::typeFromTypedef(const Typedef* tdef, const Type* sourceType) const {
+    Type targetType = tdef->resolve();
+    targetType.setIsRef(sourceType->isRef());
+    targetType.setIsConst(sourceType->isConst());
+    targetType.setIsVolatile(sourceType->isVolatile());
+    targetType.setPointerDepth(targetType.pointerDepth() + sourceType->pointerDepth());
+    for (int i = 0; i < sourceType->pointerDepth(); i++) {
+        targetType.setIsConstPointer(i, sourceType->isConstPointer(i));
+    }
+    targetType.setIsFunctionPointer(sourceType->isFunctionPointer());
+    for (int i = 0; i < sourceType->parameters().size(); i++) {
+        targetType.appendParameter(sourceType->parameters()[i]);
+    }
+    return Type::registerType(targetType);
 }
