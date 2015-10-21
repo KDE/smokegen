@@ -318,6 +318,10 @@ Function* SmokegenASTVisitor::registerFunction(const clang::FunctionDecl* clangF
     for (const clang::ParmVarDecl* param : clangFunction->parameters()) {
         newFunction.appendParameter(toParameter(param));
     }
+    clang::PresumedLoc ploc = ci.getSourceManager().getPresumedLoc(clangFunction->getSourceRange().getBegin());
+    if (ploc.isValid()) {
+        newFunction.setFileName(QString::fromStdString(ploc.getFilename()));
+    }
 
     functions[signature] = newFunction;
     return &functions[signature];
