@@ -133,6 +133,8 @@ Class* SmokegenASTVisitor::registerClass(const clang::CXXRecordDecl* clangClass)
     Class* klass = &classes[qualifiedName];
 
     klass->setAccess(toAccess(clangClass->getAccess()));
+    clang::PresumedLoc ploc = ci.getSourceManager().getPresumedLoc(clangClass->getSourceRange().getBegin());
+    klass->setFileName(QString::fromStdString(ploc.getFilename()));
 
     if (clangClass->getTypeForDecl()->isDependentType() || clang::isa<clang::ClassTemplateSpecializationDecl>(clangClass)) {
         klass->setIsTemplate(true);
