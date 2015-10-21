@@ -108,8 +108,7 @@ QString SmokeClassFiles::generateMethodBody(const QString& indent, const QString
         if (func)
             includes.insert(func->fileName());
 
-        if (meth.type()->getClass())
-            includes.insert(meth.type()->getClass()->fileName());
+        addIncludesForType(includes, meth.type());
 
         if (meth.type()->isFunctionPointer() || meth.type()->isArray())
             out << meth.type()->toString("xret") << " = ";
@@ -136,8 +135,7 @@ QString SmokeClassFiles::generateMethodBody(const QString& indent, const QString
     for (int j = 0; j < meth.parameters().count(); j++) {
         const Parameter& param = meth.parameters()[j];
 
-        if (param.type()->getClass())
-            includes.insert(param.type()->getClass()->fileName());
+        addIncludesForType(includes, param.type());
 
         if (j > 0) out << ",";
 
@@ -280,16 +278,14 @@ void SmokeClassFiles::generateVirtualMethod(QTextStream& out, const Method& meth
 {
     QString x_params, x_list;
     QString type = meth.type()->toString();
-    if (meth.type()->getClass())
-        includes.insert(meth.type()->getClass()->fileName());
+    addIncludesForType(includes, meth.type());
     
     out << "    virtual " << type << " " << meth.name() << "(";
     for (int i = 0; i < meth.parameters().count(); i++) {
         if (i > 0) { out << ", "; x_list.append(", "); }
         const Parameter& param = meth.parameters()[i];
         
-        if (param.type()->getClass())
-            includes.insert(param.type()->getClass()->fileName());
+        addIncludesForType(includes, param.type());
         
         out << param.type()->toString() << " x" << i + 1;
         x_params += QString("        x[%1].%2 = %3;\n")
@@ -499,4 +495,14 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
         out << "        case " << xcall_index << ": delete (" << className << "*)xself;\tbreak;\n";
     out << "    }\n";
     out << "}\n";
+}
+
+void SmokeClassFiles::addIncludesForType(QSet< QString >& includes, const Type* type) {
+    if (type->getClass()) {
+        includes.insert(type->getClass()->fileName());
+    }
+
+    for (int i = 0; i < type->templateArguments().size(); i++) {
+        addIncludesForType(includes, &type->templateArguments()[i]);
+    }
 }

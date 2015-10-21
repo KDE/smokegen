@@ -96,6 +96,7 @@ private:
     void generateVirtualMethod(QTextStream& out, const Method& meth, QSet<QString>& includes);
     
     void writeClass(QTextStream& out, const Class* klass, const QString& className, QSet<QString>& includes);
+    void addIncludesForType(QSet< QString >& includes, const Type* type);
     
     SmokeDataFile *m_smokeData;
 };
