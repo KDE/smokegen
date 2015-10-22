@@ -400,6 +400,20 @@ Type* SmokegenASTVisitor::registerType(clang::QualType clangType) const {
 
     type.setIsIntegral(clangType->isBuiltinType());
     type.setName(QString::fromStdString(clangType.getAsString(pp())));
+
+    // According to the clang docs, elaborated types:
+    // Represents a type that was referred to using an elaborated type keyword,
+    // e.g., struct S, or via a qualified name, e.g., N::M::type, or both.
+    // This type is used to keep track of a type name as written in the source
+    // code, including tag keywords and any nested-name-specifiers. The type
+    // itself is always "sugar", used to express what was written in the source
+    // code but containing no additional semantic information.
+    // This specifically comes up in QtGui, that makes use of the HANDLE
+    // typedef defined in the Qt namespace, and referred to via Qt::HANDLE
+    if (const clang::ElaboratedType* elaboratedType = clang::dyn_cast<clang::ElaboratedType>(clangType)) {
+        clangType = elaboratedType->getNamedType();
+    }
+
     if (clangType->isRecordType() && !clangType->castAs<clang::RecordType>()->getDecl()->getIdentifier()) {
         type.setName(""); // Makes the type invalid.  Don't set typedef or class.
     }
