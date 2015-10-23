@@ -13,7 +13,6 @@ public:
 
     bool VisitCXXRecordDecl(clang::CXXRecordDecl *D);
     bool VisitEnumDecl(clang::EnumDecl *D);
-    bool VisitNamespaceDecl(clang::NamespaceDecl *D);
     bool VisitFunctionDecl(clang::FunctionDecl *D);
     bool VisitTypedefNameDecl(clang::TypedefNameDecl *D);
 
@@ -25,7 +24,6 @@ private:
     Class* registerClass(const clang::CXXRecordDecl* clangClass) const;
     Enum* registerEnum(const clang::EnumDecl* clangEnum) const;
     Function* registerFunction(const clang::FunctionDecl* clangFunction) const;
-    Class* registerNamespace(const clang::NamespaceDecl* clangNamespace) const;
     Type* registerType(const clang::QualType clangType) const;
     Typedef* registerTypedef(const clang::TypedefNameDecl* clangTypedef) const;
 

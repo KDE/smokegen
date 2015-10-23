@@ -15,15 +15,6 @@ bool SmokegenASTVisitor::VisitEnumDecl(clang::EnumDecl *D) {
     return true;
 }
 
-bool SmokegenASTVisitor::VisitNamespaceDecl(clang::NamespaceDecl *D) {
-    if (!D->getDeclName())
-        return true;
-
-    registerNamespace(D);
-
-    return true;
-}
-
 bool SmokegenASTVisitor::VisitFunctionDecl(clang::FunctionDecl *D) {
     if (clang::isa<clang::CXXMethodDecl>(D)){
         return true;
@@ -333,25 +324,6 @@ Function* SmokegenASTVisitor::registerFunction(const clang::FunctionDecl* clangF
 
     functions[signature] = newFunction;
     return &functions[signature];
-}
-
-Class* SmokegenASTVisitor::registerNamespace(const clang::NamespaceDecl* clangNamespace) const {
-    clangNamespace = clangNamespace->getCanonicalDecl();
-
-    QString qualifiedName = QString::fromStdString(clangNamespace->getQualifiedNameAsString());
-    if (classes.contains(qualifiedName)) {
-        // We already have this class
-        return &classes[qualifiedName];
-    }
-
-    QString name = QString::fromStdString(clangNamespace->getNameAsString());
-    QString nspace;
-    if (const auto clangParent = clang::dyn_cast<clang::NamespaceDecl>(clangNamespace->getParent())) {
-        nspace = QString::fromStdString(clangParent->getQualifiedNameAsString());
-    }
-    classes[qualifiedName] = Class(name, nspace, nullptr, Class::Kind_Class, false);
-    classes[qualifiedName].setIsNameSpace(true);
-    return &classes[qualifiedName];
 }
 
 Type* SmokegenASTVisitor::registerType(clang::QualType clangType) const {
