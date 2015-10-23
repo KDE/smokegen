@@ -230,7 +230,9 @@ int main(int argc, char **argv)
         clang::FileManager *FM = new clang::FileManager({"."});
 
         clang::tooling::ToolInvocation inv(Argv, new SmokegenFrontendAction, FM);
-        inv.run();
+        if (!inv.run()) {
+            return 1;
+        }
 
         // this has already been parsed because it was included by some header
         if (!logErrors)
