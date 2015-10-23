@@ -27,6 +27,18 @@ bool SmokegenASTVisitor::VisitFunctionDecl(clang::FunctionDecl *D) {
         return true;
     }
 
+
+    // Skip functions that use va_args
+    for (const clang::ParmVarDecl* parm : D->parameters()) {
+        clang::QualType t = parm->getType();
+        while (t->isPointerType()) {
+            t = t->getPointeeType();
+        }
+        t = t.getCanonicalType();
+        if (t == ci.getASTContext().getVaListTagType()) {
+            return true;
+        }
+    }
     registerFunction(D);
 
     return true;
