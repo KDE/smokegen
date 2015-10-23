@@ -62,7 +62,7 @@ static const char Injected[] = R"-(
 #endif
 #define Q_PRIVATE_PROPERTY(d, text)  QT_ANNOTATE_CLASS2(qt_private_property, d, text)
 
-#define Q_REVISION(v) __attribute__((annotate("qt_revision:" QT_STRINGIFY2(v))))
+#define Q_REVISION(v)
 #define Q_ENUMS(x) QT_ANNOTATE_CLASS(qt_enums, x)
 #define Q_FLAGS(x) QT_ANNOTATE_CLASS(qt_flags, x)
 #define Q_ENUM_IMPL(ENUM) \
@@ -71,7 +71,7 @@ static const char Injected[] = R"-(
 #define Q_ENUM(x) Q_ENUMS(x) Q_ENUM_IMPL(x)
 #define Q_FLAG(x) Q_FLAGS(x) Q_ENUM_IMPL(x)
 #define Q_SCRIPTABLE  __attribute__((annotate("qt_scriptable")))
-#define Q_INVOKABLE  __attribute__((annotate("qt_invokable")))
+#define Q_INVOKABLE
 #define Q_SIGNAL __attribute__((annotate("qt_signal")))
 #define Q_SLOT __attribute__((annotate("qt_slot")))
 #endif // QT_NO_META_MACROS
