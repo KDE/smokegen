@@ -375,6 +375,12 @@ Type* SmokegenASTVisitor::registerType(clang::QualType clangType) const {
         }
     }
 
+    while (const clang::ConstantArrayType* arrayType = clang::dyn_cast<clang::ConstantArrayType>(clangType)) {
+        type.setArrayDimensions(type.arrayDimensions() + 1);
+        type.setArrayLength(type.arrayDimensions() - 1, arrayType->getSize().getLimitedValue());
+        clangType = arrayType->getElementType();
+    }
+
     type.setIsConst(clangType.isConstQualified());
     type.setIsVolatile(clangType.isVolatileQualified());
 
@@ -485,6 +491,10 @@ Type* SmokegenASTVisitor::typeFromTypedef(const Typedef* tdef, const Type* sourc
     targetType.setIsFunctionPointer(sourceType->isFunctionPointer());
     for (int i = 0; i < sourceType->parameters().size(); i++) {
         targetType.appendParameter(sourceType->parameters()[i]);
+    }
+    targetType.setArrayDimensions(sourceType->arrayDimensions());
+    for (int i = 0; i < sourceType->arrayDimensions(); i++) {
+        targetType.setArrayLength(i, sourceType->arrayLength(i));
     }
     return Type::registerType(targetType);
 }
