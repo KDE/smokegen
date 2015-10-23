@@ -562,10 +562,11 @@ void SmokegenASTVisitor::addQPropertyAnnotations(const clang::CXXRecordDecl* D) 
                         if (std::regex_search(propertyStr, match, readRe)) {
                             auto Name = ctx->DeclarationNames.getIdentifier(&ctx->Idents.get(llvm::StringRef(match[1])));
                             auto lookup = D->lookup(Name);
-                            auto data = lookup.data();
-                            if (const auto& method = clang::dyn_cast<clang::CXXMethodDecl>(*data)) {
-                                auto annotate = clang::AnnotateAttr(clang::SourceRange(), *ctx, llvm::StringRef("qt_property"), 0).clone(*ctx);
-                                method->addAttr(annotate);
+                            for (clang::NamedDecl* namedDecl : lookup) {
+                                if (clang::CXXMethodDecl* method = clang::dyn_cast<clang::CXXMethodDecl>(namedDecl)) {
+                                    auto annotate = clang::AnnotateAttr(clang::SourceRange(), *ctx, llvm::StringRef("qt_property"), 0).clone(*ctx);
+                                    method->addAttr(annotate);
+                                }
                             }
                         }
 
@@ -573,10 +574,11 @@ void SmokegenASTVisitor::addQPropertyAnnotations(const clang::CXXRecordDecl* D) 
                         if (std::regex_search(propertyStr, match, writeRe)) {
                             auto Name = ctx->DeclarationNames.getIdentifier(&ctx->Idents.get(llvm::StringRef(match[1])));
                             auto lookup = D->lookup(Name);
-                            auto data = lookup.data();
-                            if (const auto& method = clang::dyn_cast<clang::CXXMethodDecl>(*data)) {
-                                auto annotate = clang::AnnotateAttr(clang::SourceRange(), *ctx, llvm::StringRef("qt_property"), 0).clone(*ctx);
-                                method->addAttr(annotate);
+                            for (clang::NamedDecl* namedDecl : lookup) {
+                                if (clang::CXXMethodDecl* method = clang::dyn_cast<clang::CXXMethodDecl>(namedDecl)) {
+                                    auto annotate = clang::AnnotateAttr(clang::SourceRange(), *ctx, llvm::StringRef("qt_property"), 0).clone(*ctx);
+                                    method->addAttr(annotate);
+                                }
                             }
                         }
                     }
