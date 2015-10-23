@@ -434,7 +434,25 @@ Type* SmokegenASTVisitor::registerType(clang::QualType clangType) const {
                     case clang::TemplateArgument::Integral:
                     {
                         Type tempArgType;
-                        tempArgType.setName(QString::fromStdString(args[i].getAsIntegral().toString(10)));
+                        clang::QualType clangTempArgType = args[i].getIntegralType();
+                        if (const clang::EnumType* e = clang::dyn_cast<clang::EnumType>(clangTempArgType)) {
+                            // Handle templates specializations based on enum
+                            // values.  Clang identifies these as an integral
+                            // type.  Find the enum constant that corresponds
+                            // to this template argument value
+                            for (const clang::EnumConstantDecl* enumConstant : e->getDecl()->enumerators()) {
+                                if (enumConstant->getInitVal() == args[i].getAsIntegral()) {
+                                    tempArgType.setName(QString::fromStdString(
+                                        clang::cast<clang::NamedDecl>(enumConstant->getDeclContext()->getParent())->getQualifiedNameAsString() + "::" +
+                                        enumConstant->getNameAsString()
+                                    ));
+                                    break;
+                                }
+                            }
+                        }
+                        if (tempArgType.name().isEmpty()) {
+                            tempArgType.setName(QString::fromStdString(args[i].getAsIntegral().toString(10)));
+                        }
                         type.appendTemplateArgument(tempArgType);
                         break;
                     }
