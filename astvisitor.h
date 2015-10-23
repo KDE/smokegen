@@ -36,6 +36,8 @@ private:
     // qreal** somefunc() // returns a double**, but typedef resolves will just return double
     Type* typeFromTypedef(const Typedef* tdef, const Type* sourceType) const;
 
+    void addQPropertyAnnotations(const clang::CXXRecordDecl* D) const;
+
     clang::CompilerInstance &ci;
 };
 

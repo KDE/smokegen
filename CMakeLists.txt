@@ -34,6 +34,7 @@ set(generator_SRC
     defaultargvisitor.cpp
     main.cpp
     options.cpp
+    ppcallbacks.cpp
     type.cpp
 )
 
@@ -178,6 +179,7 @@ set_property(
         astconsumer.cpp
         frontendaction.cpp
         main.cpp
+        ppcallbacks.cpp
     APPEND
     PROPERTY COMPILE_FLAGS -fno-rtti
 )

@@ -1,3 +1,5 @@
+#include <regex>
+
 #include <clang/AST/ASTContext.h>
 
 #include "astvisitor.h"
@@ -156,6 +158,8 @@ Class* SmokegenASTVisitor::registerClass(const clang::CXXRecordDecl* clangClass)
     }
 
     if (!isForward && !clangClass->getTypeForDecl()->isDependentType()) {
+        addQPropertyAnnotations(clangClass);
+
         // Set base classes
         for (const clang::CXXBaseSpecifier& base : clangClass->bases()) {
             const clang::CXXRecordDecl* baseRecordDecl = base.getType()->getAsCXXRecordDecl();
@@ -189,6 +193,20 @@ Class* SmokegenASTVisitor::registerClass(const clang::CXXRecordDecl* clangClass)
                 returnType,
                 toAccess(method->getAccess())
             );
+            for (auto attr_it = method->specific_attr_begin<clang::AnnotateAttr>();
+              attr_it != method->specific_attr_end<clang::AnnotateAttr>();
+              ++attr_it) {
+                const clang::AnnotateAttr *A = *attr_it;
+                if (A->getAnnotation() == "qt_signal") {
+                    newMethod.setIsSignal(true);
+                }
+                else if (A->getAnnotation() == "qt_slot") {
+                    newMethod.setIsSlot(true);
+                }
+                if (A->getAnnotation() == "qt_property") {
+                    newMethod.setIsQPropertyAccessor(true);
+                }
+            }
             if (const clang::CXXConversionDecl* conversion = clang::dyn_cast<clang::CXXConversionDecl>(method)) {
                 newMethod.setName(QString::fromStdString("operator " + conversion->getConversionType().getAsString(pp())));
             }
@@ -525,4 +543,45 @@ Type* SmokegenASTVisitor::typeFromTypedef(const Typedef* tdef, const Type* sourc
         targetType.setArrayLength(i, sourceType->arrayLength(i));
     }
     return Type::registerType(targetType);
+}
+
+void SmokegenASTVisitor::addQPropertyAnnotations(const clang::CXXRecordDecl* D) const {
+    clang::ASTContext* ctx = &ci.getASTContext();
+    for (const auto& d : D->decls()) {
+        if (clang::StaticAssertDecl *S = llvm::dyn_cast<clang::StaticAssertDecl>(d) ) {
+            if (auto *E = llvm::dyn_cast<clang::UnaryExprOrTypeTraitExpr>(S->getAssertExpr())) {
+                if (clang::ParenExpr *PE = llvm::dyn_cast<clang::ParenExpr>(E->getArgumentExpr())) {
+                    llvm::StringRef key = S->getMessage()->getString();
+                    if (key == "qt_property") {
+                        clang::StringLiteral *Val = llvm::dyn_cast<clang::StringLiteral>(PE->getSubExpr());
+
+                        std::string propertyStr = Val->getString().str();
+                        std::smatch match;
+                        std::regex readRe("READ +([^ ]*)");
+
+                        if (std::regex_search(propertyStr, match, readRe)) {
+                            auto Name = ctx->DeclarationNames.getIdentifier(&ctx->Idents.get(llvm::StringRef(match[1])));
+                            auto lookup = D->lookup(Name);
+                            auto data = lookup.data();
+                            if (const auto& method = clang::dyn_cast<clang::CXXMethodDecl>(*data)) {
+                                auto annotate = clang::AnnotateAttr(clang::SourceRange(), *ctx, llvm::StringRef("qt_property"), 0).clone(*ctx);
+                                method->addAttr(annotate);
+                            }
+                        }
+
+                        std::regex writeRe("WRITE +([^ ]*)");
+                        if (std::regex_search(propertyStr, match, writeRe)) {
+                            auto Name = ctx->DeclarationNames.getIdentifier(&ctx->Idents.get(llvm::StringRef(match[1])));
+                            auto lookup = D->lookup(Name);
+                            auto data = lookup.data();
+                            if (const auto& method = clang::dyn_cast<clang::CXXMethodDecl>(*data)) {
+                                auto annotate = clang::AnnotateAttr(clang::SourceRange(), *ctx, llvm::StringRef("qt_property"), 0).clone(*ctx);
+                                method->addAttr(annotate);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
