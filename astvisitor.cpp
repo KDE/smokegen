@@ -189,6 +189,9 @@ Class* SmokegenASTVisitor::registerClass(const clang::CXXRecordDecl* clangClass)
                 returnType,
                 toAccess(method->getAccess())
             );
+            if (const clang::CXXConversionDecl* conversion = clang::dyn_cast<clang::CXXConversionDecl>(method)) {
+                newMethod.setName(QString::fromStdString("operator " + conversion->getConversionType().getAsString(pp())));
+            }
             if (const clang::CXXConstructorDecl* ctor = clang::dyn_cast<clang::CXXConstructorDecl>(method)) {
                 newMethod.setIsConstructor(true);
                 if (ctor->isExplicitSpecified()) {
