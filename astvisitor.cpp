@@ -351,6 +351,7 @@ Type* SmokegenASTVisitor::registerType(clang::QualType clangType) const {
 
         clangType = clangType->getPointeeType();
     }
+    clang::QualType prevType = clangType;
     while (clangType->isPointerType()) {
         if (clangType->isFunctionPointerType()) {
             type.setIsFunctionPointer(true);
@@ -369,13 +370,19 @@ Type* SmokegenASTVisitor::registerType(clang::QualType clangType) const {
             }
         }
         else {
-            if (clangType.isConstQualified()) {
-                type.setIsConstPointer(type.pointerDepth(), true);
-            }
             type.setPointerDepth(type.pointerDepth() + 1);
 
             clangType = clangType->getPointeeType();
+
+            if (type.pointerDepth() > 1) {
+                if (prevType.isConstQualified()) {
+                    // type.isConst is used if the first pointer depth type is
+                    // const. isConstPointer referrs to things farther down.
+                    type.setIsConstPointer(type.pointerDepth() - 2, true);
+                }
+            }
         }
+        prevType = clangType;
     }
 
     while (const clang::ConstantArrayType* arrayType = clang::dyn_cast<clang::ConstantArrayType>(clangType)) {
