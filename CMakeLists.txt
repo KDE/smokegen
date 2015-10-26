@@ -1,7 +1,8 @@
-cmake_minimum_required(VERSION 2.8.9)
+cmake_minimum_required(VERSION 2.8.11)
 project(smokegenerator)
 
-find_package(Qt4 REQUIRED)
+find_package(Qt5Core REQUIRED)
+find_package(Qt5Xml REQUIRED)
 
 find_package(LLVM REQUIRED CONFIG)
 
@@ -25,7 +26,7 @@ if (NOT LIB_INSTALL_DIR)
     set (LIB_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX})
 endif (NOT LIB_INSTALL_DIR)
 
-include_directories(${QT_INCLUDES} ${CMAKE_BINARY_DIR})
+include_directories(${CMAKE_BINARY_DIR})
 
 set(generator_SRC
     astconsumer.cpp
@@ -45,7 +46,7 @@ set (CMAKE_SKIP_RPATH FALSE)
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/config.h.in config.h @ONLY )
 
 add_executable(smokegen ${generator_SRC})
-target_link_libraries(smokegen ${QT_QTCORE_LIBRARY} ${QT_QTXML_LIBRARY}
+target_link_libraries(smokegen Qt5::Core Qt5::Xml
     -Wl,--start-group
     clangAST
     clangAnalysis
