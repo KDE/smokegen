@@ -5,6 +5,7 @@ find_package(Qt5Core REQUIRED)
 find_package(Qt5Xml REQUIRED)
 
 find_package(LLVM REQUIRED CONFIG)
+link_directories(${LLVM_LIBRARY_DIRS})
 
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
@@ -69,108 +70,7 @@ target_link_libraries(smokegen Qt5::Core Qt5::Xml
     clangToolingCore
     clangTooling
     -Wl,--end-group
-    LLVMLTO
-    LLVMObjCARCOpts
-    LLVMLinker
-    LLVMBitWriter
-    LLVMIRReader
-    LLVMAsmParser
-    LLVMR600CodeGen
-    LLVMipo
-    LLVMVectorize
-    LLVMR600AsmParser
-    LLVMR600Desc
-    LLVMR600Info
-    LLVMR600AsmPrinter
-    LLVMSystemZDisassembler
-    LLVMSystemZCodeGen
-    LLVMSystemZAsmParser
-    LLVMSystemZDesc
-    LLVMSystemZInfo
-    LLVMSystemZAsmPrinter
-    LLVMHexagonDisassembler
-    LLVMHexagonCodeGen
-    LLVMHexagonDesc
-    LLVMHexagonInfo
-    LLVMNVPTXCodeGen
-    LLVMNVPTXDesc
-    LLVMNVPTXInfo
-    LLVMNVPTXAsmPrinter
-    LLVMCppBackendCodeGen
-    LLVMCppBackendInfo
-    LLVMMSP430CodeGen
-    LLVMMSP430Desc
-    LLVMMSP430Info
-    LLVMMSP430AsmPrinter
-    LLVMXCoreDisassembler
-    LLVMXCoreCodeGen
-    LLVMXCoreDesc
-    LLVMXCoreInfo
-    LLVMXCoreAsmPrinter
-    LLVMMipsDisassembler
-    LLVMMipsCodeGen
-    LLVMMipsAsmParser
-    LLVMMipsDesc
-    LLVMMipsInfo
-    LLVMMipsAsmPrinter
-    LLVMAArch64Disassembler
-    LLVMAArch64CodeGen
-    LLVMAArch64AsmParser
-    LLVMAArch64Desc
-    LLVMAArch64Info
-    LLVMAArch64AsmPrinter
-    LLVMAArch64Utils
-    LLVMARMDisassembler
-    LLVMARMCodeGen
-    LLVMARMAsmParser
-    LLVMARMDesc
-    LLVMARMInfo
-    LLVMARMAsmPrinter
-    LLVMPowerPCDisassembler
-    LLVMPowerPCCodeGen
-    LLVMPowerPCAsmParser
-    LLVMPowerPCDesc
-    LLVMPowerPCInfo
-    LLVMPowerPCAsmPrinter
-    LLVMSparcDisassembler
-    LLVMSparcCodeGen
-    LLVMSparcAsmParser
-    LLVMSparcDesc
-    LLVMSparcInfo
-    LLVMSparcAsmPrinter
-    LLVMTableGen
-    LLVMDebugInfo
-    LLVMOption
-    LLVMX86Disassembler
-    LLVMX86AsmParser
-    LLVMX86CodeGen
-    LLVMSelectionDAG
-    LLVMAsmPrinter
-    LLVMX86Desc
-    LLVMMCDisassembler
-    LLVMX86Info
-    LLVMX86AsmPrinter
-    LLVMX86Utils
-    LLVMMCJIT
-    LLVMLineEditor
-    LLVMInstrumentation
-    LLVMInterpreter
-    LLVMExecutionEngine
-    LLVMRuntimeDyld
-    LLVMCodeGen
-    LLVMScalarOpts
-    LLVMProfileData
-    LLVMObject
-    LLVMMCParser
-    LLVMBitReader
-    LLVMInstCombine
-    LLVMTransformUtils
-    LLVMipa
-    LLVMAnalysis
-    LLVMTarget
-    LLVMMC
-    LLVMCore
-    LLVMSupport
+    ${LLVM_AVAILABLE_LIBS}
 )
 
 set_target_properties(smokegen PROPERTIES COMPILE_DEFINITIONS __GENERATOR_BUILDING ENABLE_EXPORTS TRUE)
