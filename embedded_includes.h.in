@@ -1,0 +1,23 @@
+#ifndef SMOKEGEN_EMBEDDED_INCLUDES
+#define SMOKEGEN_EMBEDDED_INCLUDES
+
+#include <utility>
+#include <vector>
+#include <string>
+
+struct EmbeddedFile {
+    const char *filename;
+    const char *content;
+    size_t size;
+    template <int N>
+    constexpr EmbeddedFile(const char *filename, const char (&data)[N])
+        : filename(filename) , content(data), size(N-1) {}
+    constexpr EmbeddedFile () : filename(nullptr) , content(nullptr), size(0) {}
+};
+
+static constexpr EmbeddedFile EmbeddedFiles[] = {
+    @EMBEDDED_DATA@
+    {}
+};
+
+#endif

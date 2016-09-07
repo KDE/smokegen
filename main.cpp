@@ -34,6 +34,7 @@
 #include "options.h"
 #include "config.h"
 #include "frontendaction.h"
+#include "embedded_includes.h"
 
 
 typedef int (*GenerateFn)();
@@ -224,12 +225,19 @@ int main(int argc, char **argv)
             Argv.push_back("-D" + define.toStdString());
         }
         Argv.push_back(file.absoluteFilePath().toStdString());
-        Argv.push_back("-Ilib/clang/3.6.2/include/");
+        Argv.push_back("-I/builtins");
         Argv.push_back("-fsyntax-only");
 
         clang::FileManager *FM = new clang::FileManager({"."});
 
         clang::tooling::ToolInvocation inv(Argv, new SmokegenFrontendAction, FM);
+
+        const EmbeddedFile* f = EmbeddedFiles;
+        while (f->filename) {
+            inv.mapVirtualFile(f->filename, {f->content, f->size});
+            ++f;
+        }
+
         if (!inv.run()) {
             return 1;
         }

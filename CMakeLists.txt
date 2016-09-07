@@ -46,6 +46,17 @@ set (CMAKE_SKIP_RPATH FALSE)
 
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/config.h.in config.h @ONLY )
 
+# Embed the clang header into the binary:
+file(GLOB BUILTINS_HEADERS "${LLVM_INSTALL_PREFIX}/lib/clang/${LLVM_PACKAGE_VERSION}/include/*.h")
+foreach(BUILTIN_HEADER ${BUILTINS_HEADERS})
+    file(READ ${BUILTIN_HEADER} BINARY_DATA HEX)
+    string(REGEX REPLACE "(..)" "\\\\x\\1" BINARY_DATA "${BINARY_DATA}")
+    string(REPLACE "${LLVM_INSTALL_PREFIX}/lib/clang/${LLVM_VERSION}/include/" "/builtins/" FN "${BUILTIN_HEADER}"  )
+    set(EMBEDDED_DATA "${EMBEDDED_DATA} { \"${FN}\" , \"${BINARY_DATA}\" } , ")
+endforeach()
+
+configure_file(embedded_includes.h.in embedded_includes.h)
+
 add_executable(smokegen ${generator_SRC})
 target_link_libraries(smokegen Qt5::Core Qt5::Xml
     -Wl,--start-group
