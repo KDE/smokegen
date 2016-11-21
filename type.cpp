@@ -110,10 +110,12 @@ Type Typedef::resolve() const {
     const Type tmp(const_cast<Typedef*>(this));
     const Type* t = &tmp;
 
-    while (t->getTypedef() && !ParserOptions::notToBeResolved.contains(t->getTypedef()->name())) {
+    QString name;
+    while (t->getTypedef() && t->name() != name && !ParserOptions::notToBeResolved.contains(t->getTypedef()->name())) {
         if (!isRef) isRef = t->isRef();
         if (!isConst) isConst = t->isConst();
         if (!isVolatile) isVolatile = t->isVolatile();
+        name = t->name();
         t = t->getTypedef()->type();
         for (int i = t->pointerDepth() - 1; i >= 0; i--) {
             pointerDepth.prepend(t->isConstPointer(i));

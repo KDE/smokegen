@@ -217,6 +217,7 @@ int main(int argc, char **argv)
             argv[0],
             "-x", "c++",
             "-fPIC",
+            "-std=c++11",
         };
         foreach (QDir dir, ParserOptions::includeDirs) {
             Argv.push_back("-I" + dir.path().toStdString());
