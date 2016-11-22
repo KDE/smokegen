@@ -229,9 +229,10 @@ int main(int argc, char **argv)
         Argv.push_back("-I/builtins");
         Argv.push_back("-fsyntax-only");
 
-        clang::FileManager *FM = new clang::FileManager({"."});
+        clang::FileManager FM({"."});
+        FM.Retain();
 
-        clang::tooling::ToolInvocation inv(Argv, new SmokegenFrontendAction, FM);
+        clang::tooling::ToolInvocation inv(Argv, new SmokegenFrontendAction, &FM);
 
         const EmbeddedFile* f = EmbeddedFiles;
         while (f->filename) {

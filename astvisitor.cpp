@@ -1,6 +1,7 @@
 #include <regex>
 
 #include <clang/AST/ASTContext.h>
+#include <clang/Basic/Version.h>
 
 #include "astvisitor.h"
 #include "defaultargvisitor.h"
@@ -37,7 +38,12 @@ bool SmokegenASTVisitor::VisitFunctionDecl(clang::FunctionDecl *D) {
             t = t->getPointeeType();
         }
         t = t.getCanonicalType();
+
+#if CLANG_VERSION_MAJOR > 3 || CLANG_VERSION_MINOR > 7
+        if (t == ci.getASTContext().getRecordType((clang::RecordDecl*)ci.getASTContext().getVaListTagDecl())) {
+#else
         if (t == ci.getASTContext().getVaListTagType()) {
+#endif
             return true;
         }
     }

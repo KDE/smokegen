@@ -10,6 +10,8 @@ link_directories(${LLVM_LIBRARY_DIRS})
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 
+list(APPEND CMAKE_MODULE_PATH ${LLVM_CMAKE_DIR})
+include(AddLLVM)
 include_directories(${LLVM_INCLUDE_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
 
@@ -97,6 +99,8 @@ target_link_libraries(smokegen Qt5::Core Qt5::Xml
 )
 
 set_target_properties(smokegen PROPERTIES COMPILE_DEFINITIONS __GENERATOR_BUILDING ENABLE_EXPORTS TRUE)
+set(LLVM_REQUIRES_RTTI ON)
+llvm_update_compile_flags(smokegen)
 target_compile_features(smokegen PRIVATE cxx_nullptr)
 set_property(
     SOURCE
