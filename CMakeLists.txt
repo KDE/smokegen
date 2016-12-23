@@ -104,7 +104,7 @@ target_link_libraries(smokegen Qt5::Core Qt5::Xml
     clangToolingCore
     clangTooling
     -Wl,--end-group
-    ${LLVM_AVAILABLE_LIBS}
+    LLVM
 )
 
 set_target_properties(smokegen PROPERTIES COMPILE_DEFINITIONS __GENERATOR_BUILDING ENABLE_EXPORTS TRUE)
