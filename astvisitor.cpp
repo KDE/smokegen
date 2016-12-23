@@ -117,6 +117,10 @@ Class* SmokegenASTVisitor::registerClass(const clang::CXXRecordDecl* clangClass)
     if (!clangClass->getDeclName())
         return nullptr;
 
+    clang::PresumedLoc ploc = ci.getSourceManager().getPresumedLoc(clangClass->getSourceRange().getBegin());
+    if (!ploc.isValid())
+        return nullptr;
+
     clangClass = clangClass->hasDefinition() ? clangClass->getDefinition() : clangClass->getCanonicalDecl();
 
     QString qualifiedName = QString::fromStdString(clangClass->getQualifiedNameAsString());
@@ -156,7 +160,6 @@ Class* SmokegenASTVisitor::registerClass(const clang::CXXRecordDecl* clangClass)
     Class* klass = &classes[qualifiedName];
 
     klass->setAccess(toAccess(clangClass->getAccess()));
-    clang::PresumedLoc ploc = ci.getSourceManager().getPresumedLoc(clangClass->getSourceRange().getBegin());
     klass->setFileName(QString(ploc.getFilename()));
 
     if (clangClass->getTypeForDecl()->isDependentType() || clang::isa<clang::ClassTemplateSpecializationDecl>(clangClass)) {
