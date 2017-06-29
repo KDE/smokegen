@@ -125,6 +125,16 @@ install(TARGETS smokegen LIBRARY DESTINATION ${LIB_INSTALL_DIR}
     ARCHIVE DESTINATION ${LIB_INSTALL_DIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 if (WIN32)
+    # Copy Qt dlls to the build directory, so the generator works without
+    # installation
+    add_custom_command(
+        TARGET smokegen POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:Qt5::Core>
+            $<TARGET_FILE:Qt5::Xml>
+            $<TARGET_FILE_DIR:smokegen>
+    )
+
 	# Realign the stack, for compatibility with an older ABI
 	if(CMAKE_COMPILER_IS_GNUCXX)
 		set_target_properties(smokegen PROPERTIES COMPILE_FLAGS -mstackrealign)
@@ -132,7 +142,16 @@ if (WIN32)
 
     # Get rid of the "lib" prefix on archives/DLLs in Windows.
     set_target_properties(smokegen PROPERTIES PREFIX "" IMPORT_PREFIX "")
+
+    # Make sure the dependent Qt dlls are copied to the smokegen executable
+    # directory
+    install(FILES
+        $<TARGET_FILE:Qt5::Core>
+        $<TARGET_FILE:Qt5::Xml>
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
+    )
 endif (WIN32)
+
 install(FILES options.h type.h DESTINATION ${CMAKE_INSTALL_PREFIX}/include/smokegen)
 install(FILES smoke.h DESTINATION ${CMAKE_INSTALL_PREFIX}/include )
 
