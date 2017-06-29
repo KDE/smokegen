@@ -138,7 +138,12 @@ set_property(
 install(TARGETS smokegen LIBRARY DESTINATION ${LIB_INSTALL_DIR}
     ARCHIVE DESTINATION ${LIB_INSTALL_DIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+
 if (WIN32)
+    target_link_libraries(smokegen
+        version
+    )
+
     # Copy Qt dlls to the build directory, so the generator works without
     # installation
     add_custom_command(
