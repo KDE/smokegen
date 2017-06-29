@@ -81,7 +81,21 @@ endforeach()
 configure_file(embedded_includes.h.in embedded_includes.h)
 
 add_executable(smokegen ${generator_SRC})
-target_link_libraries(smokegen Qt5::Core Qt5::Xml
+
+llvm_map_components_to_libnames(
+    llvm_libs
+    bitreader
+    core
+    mc
+    mcparser
+    option
+    profiledata
+    support
+)
+
+target_link_libraries(smokegen
+    Qt5::Core
+    Qt5::Xml
     -Wl,--start-group
     clangAST
     clangAnalysis
@@ -104,7 +118,7 @@ target_link_libraries(smokegen Qt5::Core Qt5::Xml
     clangToolingCore
     clangTooling
     -Wl,--end-group
-    LLVM
+    ${llvm_libs}
 )
 
 set_target_properties(smokegen PROPERTIES COMPILE_DEFINITIONS __GENERATOR_BUILDING ENABLE_EXPORTS TRUE)
