@@ -220,7 +220,6 @@ int main(int argc, char **argv)
         std::vector<std::string> Argv = {
             argv[0],
             "-x", "c++",
-            "-std=c++11",
         };
         if (setfPICflag)
             Argv.push_back("-fPIC");
