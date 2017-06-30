@@ -51,6 +51,7 @@ static void showUsage()
     "    -qt enables Qt-mode (special treatment of QFlags)" << std::endl <<
     "    -t resolve typedefs" << std::endl <<
     "    -o <output dir>" << std::endl <<
+    "    -fPIC (set the -fPIC flag while parsing the headers)" << std::endl <<
     "    -config <config file>" << std::endl <<
     "    -h shows this message" << std::endl;
 }
@@ -70,6 +71,7 @@ int main(int argc, char **argv)
     bool addHeaders = false;
     bool hasCommandLineGenerator = false;
     QStringList classes;
+    bool setfPICflag = false;
 
     ParserOptions::notToBeResolved << "FILE";
 
@@ -98,6 +100,8 @@ int main(int argc, char **argv)
             ParserOptions::resolveTypedefs = true;
         } else if (args[i] == "-qt") {
             ParserOptions::qtMode = true;
+        } else if (args[i] == "-fPIC") {
+            setfPICflag = true;
         } else if (args[i] == "--") {
             addHeaders = true;
         } else if (addHeaders) {
@@ -216,9 +220,10 @@ int main(int argc, char **argv)
         std::vector<std::string> Argv = {
             argv[0],
             "-x", "c++",
-            "-fPIC",
             "-std=c++11",
         };
+        if (setfPICflag)
+            Argv.push_back("-fPIC");
         foreach (QDir dir, ParserOptions::includeDirs) {
             Argv.push_back("-I" + dir.path().toStdString());
         }
