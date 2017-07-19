@@ -94,7 +94,8 @@ void SmokeClassFiles::write(const QList<QString>& keys)
 }
 
 QString SmokeClassFiles::generateMethodBody(const QString& indent, const QString& className, const QString& smokeClassName, const Method& meth,
-                                            int index, bool dynamicDispatch, QSet<QString>& includes)
+                                            int index, bool dynamicDispatch, QSet<QString>& includes,
+                                            bool privateDestructor)
 {
     QString methodBody;
     QTextStream out(&methodBody);
@@ -116,10 +117,11 @@ QString SmokeClassFiles::generateMethodBody(const QString& indent, const QString
             out << meth.type()->toString() << " xret = ";
 
         if (!(meth.flags() & Method::Static)) {
+            QString objName = privateDestructor ? "obj" : "this";
             if (meth.isConst()) {
-                out << "((const " << smokeClassName << "*)this)->";
+                out << "((const " << (privateDestructor ? className : smokeClassName) << QString("*)%1)->").arg(objName);
             } else {
-                out << "this->";
+                out << QString("%1->").arg(objName);
             }
         }
         if (!dynamicDispatch && !func) {
@@ -176,12 +178,14 @@ QString SmokeClassFiles::generateMethodBody(const QString& indent, const QString
 }
 
 void SmokeClassFiles::generateMethod(QTextStream& out, const QString& className, const QString& smokeClassName,
-                                     const Method& meth, int index, QSet<QString>& includes)
+                                     const Method& meth, int index, QSet<QString>& includes,
+                                     bool privateDestructor)
 {
     out << "    ";
-    if ((meth.flags() & Method::Static) || meth.isConstructor())
+    if ((meth.flags() & Method::Static) || meth.isConstructor() || privateDestructor)
         out << "static ";
-    out << QString("void x_%1(Smoke::Stack x) {\n").arg(index);
+    out << QString("void x_%1(%2Smoke::Stack x) {\n").arg(index)
+        .arg((!(meth.flags() & Method::Static) && privateDestructor) ? (className + "* obj, ") : "");
     out << "        // " << meth.toString() << "\n";
 
     bool dynamicDispatch = ((meth.flags() & Method::PureVirtual) || (meth.flags() & Method::DynamicDispatch));
@@ -190,16 +194,16 @@ void SmokeClassFiles::generateMethod(QTextStream& out, const QString& className,
         // This is either already flagged as dynamic dispatch or just a normal method. We can generate a normal method call for it.
 
         out << generateMethodBody("        ",   // indent
-                                  className, smokeClassName, meth, index, dynamicDispatch, includes);
+                                  className, smokeClassName, meth, index, dynamicDispatch, includes, privateDestructor);
     } else {
         // This is a virtual method. To know whether we should call with dynamic dispatch, we need a bit of RTTI magic.
         includes.insert("typeinfo");
         out << "        if (dynamic_cast<__internal_SmokeClass*>(static_cast<" << className << "*>(this))) {\n";   //
         out << generateMethodBody("            ",   // indent
-                                  className, smokeClassName, meth, index, false, includes);
+                                  className, smokeClassName, meth, index, false, includes, privateDestructor);
         out << "        } else {\n";
         out << generateMethodBody("            ",   // indent
-                                  className, smokeClassName, meth, index, true, includes);
+                                  className, smokeClassName, meth, index, true, includes, privateDestructor);
         out << "        }\n";
     }
 
@@ -354,6 +358,12 @@ void SmokeClassFiles::generateVirtualMethod(QTextStream& out, const Method& meth
 
 void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QString& className, QSet<QString>& includes)
 {
+    // Find the destructor.  If the destructor is private, then we can't
+    // subclass from this class.  All calls in the x_Class must be static, and
+    // the class won't inherit from anything.
+    const Method *destructor = Util::findDestructor(klass);
+    bool privateDestructor = destructor ? (destructor->access() == Access_private) : false;
+
     const QString underscoreName = QString(className).replace("::", "__");
     const QString smokeClassName = "x_" + underscoreName;
 
@@ -362,9 +372,11 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
 
     out << QString("class %1").arg(smokeClassName);
     if (!klass->isNameSpace()) {
-        out << QString(" : public %1").arg(className);
-        if (Util::hasClassVirtualDestructor(klass) && Util::hasClassPublicDestructor(klass)) {
-            out << ", public __internal_SmokeClass";
+        if (!privateDestructor) {
+            out << QString(" : public %1").arg(className);
+            if (Util::hasClassVirtualDestructor(klass) && Util::hasClassPublicDestructor(klass)) {
+                out << ", public __internal_SmokeClass";
+            }
         }
     }
     out << " {\n";
@@ -382,17 +394,24 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
     }
     
     int xcall_index = 1;
-    const Method *destructor = 0;
+
     foreach (const Method& meth, klass->methods()) {
+        if (&meth == destructor)
+            continue;
+
         if (meth.access() == Access_private)
             continue;
-        if (meth.isDestructor()) {
-            destructor = &meth;
-            continue;
-        }
+
+        QString obj;
+        if ((meth.flags() & Method::Static) || meth.isConstructor() || privateDestructor)
+            obj = smokeClassName + "::";
+        else
+            obj = "xself->";
+
         switchOut << "        case " << xcall_index << ": "
-                  << (((meth.flags() & Method::Static) || meth.isConstructor()) ? smokeClassName + "::" : "xself->")
-                  << "x_" << xcall_index << "(args);\tbreak;\n";
+                  << obj
+                  << "x_" << xcall_index << QString("(%1args);\tbreak;\n")
+                     .arg((!(meth.flags() & Method::Static) && privateDestructor) ? "xself, " : "");
         if (Util::fieldAccessors.contains(&meth)) {
             // accessor method?
             const Field* field = Util::fieldAccessors[&meth];
@@ -402,7 +421,7 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
                 generateGetAccessor(out, className, *field, meth.type(), xcall_index);
             }
         } else {
-            generateMethod(out, className, smokeClassName, meth, xcall_index, includes);
+            generateMethod(out, className, smokeClassName, meth, xcall_index, includes, privateDestructor);
         }
         xcall_index++;
     }
@@ -488,7 +507,10 @@ void SmokeClassFiles::writeClass(QTextStream& out, const Class* klass, const QSt
     
     // xcall_class function
     out << "void xcall_" << underscoreName << "(Smoke::Index xi, void *obj, Smoke::Stack args) {\n";
-    out << "    " << smokeClassName << " *xself = (" << smokeClassName << "*)obj;\n";
+    if (privateDestructor)
+        out << "    " << className << " *xself = (" << className << "*)obj;\n";
+    else
+        out << "    " << smokeClassName << " *xself = (" << smokeClassName << "*)obj;\n";
     out << "    switch(xi) {\n";
     out << switchCode;
     if (Util::hasClassPublicDestructor(klass))

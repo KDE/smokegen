@@ -88,8 +88,8 @@ struct SmokeClassFiles
     void write(const QList<QString>& keys);
 
 private:
-    QString generateMethodBody(const QString& indent, const QString& className, const QString& smokeClassName, const Method& meth, int index, bool dynamicDispatch, QSet< QString >& includes);
-    void generateMethod(QTextStream& out, const QString& className, const QString& smokeClassName, const Method& meth, int index, QSet<QString>& includes);
+    QString generateMethodBody(const QString& indent, const QString& className, const QString& smokeClassName, const Method& meth, int index, bool dynamicDispatch, QSet< QString >& includes, bool privateDestructor);
+    void generateMethod(QTextStream& out, const QString& className, const QString& smokeClassName, const Method& meth, int index, QSet<QString>& includes, bool privateDestructor);
     void generateGetAccessor(QTextStream& out, const QString& className, const Field& field, const Type* type, int index);
     void generateSetAccessor(QTextStream& out, const QString& className, const Field& field, const Type* type, int index);
     void generateEnumMemberCall(QTextStream& out, const QString& className, const QString& member, int index);

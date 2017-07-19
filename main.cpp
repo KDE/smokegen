@@ -42,7 +42,7 @@ typedef int (*GenerateFn)();
 static void showUsage()
 {
     std::cout << 
-    "Usage: smokegen [options] -- <header files>" << std::endl <<
+    "Usage: smokegen [options] [-clangOptions [options]] -- <header files>" << std::endl <<
     "Possible command line options are:" << std::endl <<
     "    -I <include dir>" << std::endl <<
     "    -d <path to file containing #defines>" << std::endl <<
@@ -52,6 +52,7 @@ static void showUsage()
     "    -t resolve typedefs" << std::endl <<
     "    -o <output dir>" << std::endl <<
     "    -config <config file>" << std::endl <<
+    "    -clangOptions <flags to pass to the clang tool>" << std::endl <<
     "    -h shows this message" << std::endl;
 }
 
@@ -68,10 +69,16 @@ int main(int argc, char **argv)
     QFileInfo configFile;
     QString generator;
     bool addHeaders = false;
+    bool addClangOptions = false;
     bool hasCommandLineGenerator = false;
     QStringList classes;
 
     ParserOptions::notToBeResolved << "FILE";
+
+    std::vector<std::string> Argv {
+        argv[0],
+        "-x", "c++",
+    };
 
     for (int i = 1; i < args.count(); i++) {
         if ((args[i] == "-I" || args[i] == "-d" || args[i] == "-dm" ||
@@ -98,8 +105,13 @@ int main(int argc, char **argv)
             ParserOptions::resolveTypedefs = true;
         } else if (args[i] == "-qt") {
             ParserOptions::qtMode = true;
+        } else if (args[i] == "-clangOptions") {
+            addClangOptions = true;
         } else if (args[i] == "--") {
+            addClangOptions = false;
             addHeaders = true;
+        } else if (addClangOptions) {
+            Argv.push_back(args[i].toStdString());
         } else if (addHeaders) {
             ParserOptions::headerList << QFileInfo(args[i]);
         }
@@ -213,12 +225,6 @@ int main(int argc, char **argv)
     foreach (QFileInfo file, ParserOptions::headerList) {
         qDebug() << "parsing" << file.absoluteFilePath();
 
-        std::vector<std::string> Argv = {
-            argv[0],
-            "-x", "c++",
-            "-fPIC",
-            "-std=c++11",
-        };
         foreach (QDir dir, ParserOptions::includeDirs) {
             Argv.push_back("-I" + dir.path().toStdString());
         }

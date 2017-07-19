@@ -1,8 +1,7 @@
 cmake_minimum_required(VERSION 2.8.11)
 project(smokegenerator)
 
-find_package(Qt5Core REQUIRED)
-find_package(Qt5Xml REQUIRED)
+find_package(Qt5 COMPONENTS Core Xml REQUIRED)
 
 find_package(LLVM REQUIRED CONFIG)
 link_directories(${LLVM_LIBRARY_DIRS})
@@ -81,7 +80,21 @@ endforeach()
 configure_file(embedded_includes.h.in embedded_includes.h)
 
 add_executable(smokegen ${generator_SRC})
-target_link_libraries(smokegen Qt5::Core Qt5::Xml
+
+llvm_map_components_to_libnames(
+    llvm_libs
+    bitreader
+    core
+    mc
+    mcparser
+    option
+    profiledata
+    support
+)
+
+target_link_libraries(smokegen
+    Qt5::Core
+    Qt5::Xml
     -Wl,--start-group
     clangAST
     clangAnalysis
@@ -104,7 +117,7 @@ target_link_libraries(smokegen Qt5::Core Qt5::Xml
     clangToolingCore
     clangTooling
     -Wl,--end-group
-    LLVM
+    ${llvm_libs}
 )
 
 set_target_properties(smokegen PROPERTIES COMPILE_DEFINITIONS __GENERATOR_BUILDING ENABLE_EXPORTS TRUE)
@@ -124,7 +137,22 @@ set_property(
 install(TARGETS smokegen LIBRARY DESTINATION ${LIB_INSTALL_DIR}
     ARCHIVE DESTINATION ${LIB_INSTALL_DIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+
 if (WIN32)
+    target_link_libraries(smokegen
+        version
+    )
+
+    # Copy Qt dlls to the build directory, so the generator works without
+    # installation
+    add_custom_command(
+        TARGET smokegen POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:Qt5::Core>
+            $<TARGET_FILE:Qt5::Xml>
+            $<TARGET_FILE_DIR:smokegen>
+    )
+
 	# Realign the stack, for compatibility with an older ABI
 	if(CMAKE_COMPILER_IS_GNUCXX)
 		set_target_properties(smokegen PROPERTIES COMPILE_FLAGS -mstackrealign)
@@ -132,7 +160,16 @@ if (WIN32)
 
     # Get rid of the "lib" prefix on archives/DLLs in Windows.
     set_target_properties(smokegen PROPERTIES PREFIX "" IMPORT_PREFIX "")
+
+    # Make sure the dependent Qt dlls are copied to the smokegen executable
+    # directory
+    install(FILES
+        $<TARGET_FILE:Qt5::Core>
+        $<TARGET_FILE:Qt5::Xml>
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
+    )
 endif (WIN32)
+
 install(FILES options.h type.h DESTINATION ${CMAKE_INSTALL_PREFIX}/include/smokegen)
 install(FILES smoke.h DESTINATION ${CMAKE_INSTALL_PREFIX}/include )
 

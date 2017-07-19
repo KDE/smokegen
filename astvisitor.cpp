@@ -40,7 +40,8 @@ bool SmokegenASTVisitor::VisitFunctionDecl(clang::FunctionDecl *D) {
         t = t.getCanonicalType();
 
 #if CLANG_VERSION_MAJOR > 3 || CLANG_VERSION_MINOR > 7
-        if (t == ci.getASTContext().getRecordType((clang::RecordDecl*)ci.getASTContext().getVaListTagDecl())) {
+        clang::RecordDecl* vaListTagDecl = (clang::RecordDecl*)ci.getASTContext().getVaListTagDecl();
+        if (vaListTagDecl && t == ci.getASTContext().getRecordType(vaListTagDecl)) {
 #else
         if (t == ci.getASTContext().getVaListTagType()) {
 #endif
@@ -200,7 +201,7 @@ Class* SmokegenASTVisitor::registerClass(const clang::CXXRecordDecl* clangClass)
                 klass,
                 QString::fromStdString(method->getNameAsString()),
                 returnType,
-                toAccess(method->getAccess())
+                method->isDeleted() ? Access_private : toAccess(method->getAccess())
             );
             for (auto attr_it = method->specific_attr_begin<clang::AnnotateAttr>();
               attr_it != method->specific_attr_end<clang::AnnotateAttr>();
