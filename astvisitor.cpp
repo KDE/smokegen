@@ -201,7 +201,7 @@ Class* SmokegenASTVisitor::registerClass(const clang::CXXRecordDecl* clangClass)
                 klass,
                 QString::fromStdString(method->getNameAsString()),
                 returnType,
-                toAccess(method->getAccess())
+                method->isDeleted() ? Access_private : toAccess(method->getAccess())
             );
             for (auto attr_it = method->specific_attr_begin<clang::AnnotateAttr>();
               attr_it != method->specific_attr_end<clang::AnnotateAttr>();
