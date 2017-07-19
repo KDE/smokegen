@@ -1,8 +1,7 @@
 cmake_minimum_required(VERSION 2.8.11)
 project(smokegenerator)
 
-find_package(Qt5Core REQUIRED)
-find_package(Qt5Xml REQUIRED)
+find_package(Qt5 COMPONENTS Core Xml REQUIRED)
 
 find_package(LLVM REQUIRED CONFIG)
 link_directories(${LLVM_LIBRARY_DIRS})
