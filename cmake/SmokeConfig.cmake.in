@@ -98,3 +98,33 @@ if (Smoke_FIND_COMPONENTS)
         find_smoke_component(${component})
     endforeach(component)
 endif (Smoke_FIND_COMPONENTS)
+
+function(get_smokegen_output_files RESULT_NAME numXfiles)
+    set(outputFiles "${CMAKE_CURRENT_BINARY_DIR}/smokedata.cpp")
+    foreach(i RANGE 1 ${numXfiles})
+        list(APPEND outputFiles "${CMAKE_CURRENT_BINARY_DIR}/x_${i}.cpp")
+    endforeach()
+    set(${RESULT_NAME} ${outputFiles} PARENT_SCOPE)
+endfunction()
+
+function(run_smokegen numXfiles smokegenArgs)
+    # Generate the list of output files based on numXfiles
+
+    get_smokegen_output_files(outputFiles ${numXfiles})
+
+    add_custom_command(
+        OUTPUT ${outputFiles}
+        COMMAND ${SMOKE_GEN_BIN}
+        ARGS ${smokegenArgs}
+        DEPENDS
+            ${SMOKE_GEN_BIN}
+            #${SMOKE_GENERATOR_SMOKE_LIB}
+            "${CMAKE_CURRENT_SOURCE_DIR}/smokeconfig.xml"
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    )
+
+    set_property(
+        SOURCE ${CMAKE_CURRENT_BINARY_DIR}/smokedata.cpp
+        APPEND PROPERTY OBJECT_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/x_1.cpp
+    )
+endfunction(run_smokegen)
