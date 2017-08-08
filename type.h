@@ -173,6 +173,14 @@ public:
     QList<EnumMember>& membersRef() { return m_members; }
     void appendMember(const EnumMember& member) { m_members.append(member); }
 
+    QString qualifiedName() const {
+        QString ret = m_nspace;
+        if (!ret.isEmpty())
+            ret += "::";
+        ret += m_name;
+        return ret;
+    }
+
 private:
     QList<EnumMember> m_members;
 };

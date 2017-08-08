@@ -277,6 +277,11 @@ void Util::preparse(QSet<Type*> *usedTypes, QSet<const Class*> *superClasses, co
             } else if (isRepeating(parentModules, parent->name().toLatin1(), e)) {
                 continue;
             }
+            // Top-level enums have to be explicitly included
+            else if ((e.nameSpace().isEmpty() && !Options::functionNameIncluded(e.qualifiedName()) && !Options::functionSignatureIncluded(e.toString()))
+            || Options::typeExcluded(e.toString())) {
+                continue;
+            }
 
             Type *t = 0;
             if (e.name().isEmpty()) {
