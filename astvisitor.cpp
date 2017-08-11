@@ -104,9 +104,11 @@ Parameter SmokegenASTVisitor::toParameter(const clang::ParmVarDecl* param) const
 
         DefaultArgVisitor argVisitor(ci);
         argVisitor.TraverseStmt(const_cast<clang::Expr*>(defaultArgExpr));
-        std::string resolved = argVisitor.toString();
+        std::string resolved = argVisitor.toString(defaultArgExpr);
         if (!resolved.empty()) {
-            parameter.setDefaultValue(QString::fromStdString(resolved));
+            QString resolvedQString = QString::fromStdString(resolved);
+            resolvedQString = resolvedQString.replace(QRegExp("^=[\\s]*"), "");
+            parameter.setDefaultValue(resolvedQString);
         }
     }
 

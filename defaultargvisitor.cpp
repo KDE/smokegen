@@ -1,33 +1,36 @@
 #include "defaultargvisitor.h"
+#include <clang/Basic/SourceLocation.h>
 
 bool DefaultArgVisitor::VisitDeclRefExpr(clang::DeclRefExpr* D) {
     if (clang::EnumConstantDecl* enumConstant = clang::dyn_cast<clang::EnumConstantDecl>(D->getDecl())) {
-        ops.push_back(
-            clang::cast<clang::NamedDecl>(enumConstant->getDeclContext()->getParent())->getQualifiedNameAsString() + "::" +
-            enumConstant->getNameAsString()
-        );
+        containsEnum = true;
+
+        std::string enumStr;
+        llvm::raw_string_ostream s(enumStr);
+        D->printPretty(s, nullptr, pp());
+        s.flush();
+
+        std::string prefix = clang::cast<clang::NamedDecl>(enumConstant->getDeclContext()->getParent())->getQualifiedNameAsString() + "::";
+
+        if (enumStr.compare(0, prefix.length(), prefix)) {
+            rewriter.InsertText(
+                rewriter.getSourceMgr().getFileLoc(D->getLocStart()),
+                prefix,
+                true,
+                true
+            );
+        }
     }
     return true;
 }
 
-bool DefaultArgVisitor::VisitBinaryOperator(clang::BinaryOperator* D) {
-    isSimple = false;
-    return true;
-}
-
-bool DefaultArgVisitor::VisitCXXOperatorCallExpr(clang::CXXOperatorCallExpr* D) {
-    isSimple = false;
-    return true;
-}
-
-std::string DefaultArgVisitor::toString() const {
-    std::string ret;
-    if (!isSimple) {
-        return ret;
+std::string DefaultArgVisitor::toString(const clang::Expr* D) const {
+    if (!containsEnum) {
+        return std::string();
     }
 
-    for (const std::string& op : ops) {
-        ret += op;
-    }
-    return ret;
+    clang::SourceLocation startLoc = rewriter.getSourceMgr().getFileLoc(D->getLocStart());
+    clang::SourceLocation endLoc = rewriter.getSourceMgr().getFileLoc(D->getLocEnd());
+    clang::SourceRange expandedLoc(startLoc, endLoc);
+    return rewriter.getRewrittenText(expandedLoc);
 }

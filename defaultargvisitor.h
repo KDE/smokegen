@@ -4,6 +4,7 @@
 #include <clang/AST/RecursiveASTVisitor.h>
 #include <clang/Frontend/CompilerInstance.h>
 #include <clang/Sema/Sema.h>
+#include <clang/Rewrite/Core/Rewriter.h>
 
 #include "type.h"
 
@@ -28,31 +29,25 @@
 // to be fully qualified as QTextCodec::DefaultArgVisitor.
 //
 // This RecursiveASTVisitor is used to walk the default expression used for a
-// parameter, and resolve enums to their fully-qualified versions.  It only
-// supports "simple" expressions, ie, expressions that really only contain a
-// reference to the enum itself.  Any fancier default value, such as
-// Qt::Flags(IgnoreHeader|FreeFunction) are not supported.
-         
-        
+// parameter, and resolve enums to their fully-qualified versions.
+
 class DefaultArgVisitor : public clang::RecursiveASTVisitor<DefaultArgVisitor> {
 public:
-    DefaultArgVisitor(clang::CompilerInstance &ci) : ci(ci), isSimple(true) {}
+    DefaultArgVisitor(clang::CompilerInstance &ci) : ci(ci), containsEnum(false) {
+        rewriter.setSourceMgr(ci.getSourceManager(), ci.getLangOpts());
+    }
 
     bool VisitDeclRefExpr(clang::DeclRefExpr* D);
 
-    bool VisitBinaryOperator(clang::BinaryOperator* D);
-
-    bool VisitCXXOperatorCallExpr(clang::CXXOperatorCallExpr* D);
-
-    std::string toString() const;
+    std::string toString(const clang::Expr* D) const;
 
 private:
     clang::PrintingPolicy pp() const { return ci.getSema().getPrintingPolicy(); }
 
-    std::vector<std::string> ops;
-    bool isSimple;
-
     clang::CompilerInstance &ci;
+    clang::Rewriter rewriter;
+
+    bool containsEnum;
 };
 
 #endif
